@@ -1,0 +1,181 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { DriversService } from '../../core/services/drivers.service';
+import { Driver } from '../../core/models/driver.model';
+import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
+import { debounce } from '../../core/utils/debounce';
+import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
+import { Icon } from '../../shared/icon/icon';
+import { Pager } from '../../shared/pager/pager';
+import { Skeleton } from '../../shared/skeleton/skeleton';
+import { ToastService } from '../../shared/toast/toast.service';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-password-modal.service';
+
+@Component({
+  selector: 'app-repartidores',
+  standalone: true,
+  imports: [FormsModule, Icon, Pager, Skeleton],
+  templateUrl: './repartidores.html',
+  styleUrl: './repartidores.scss',
+})
+export class Repartidores implements OnInit {
+  private readonly drivers = inject(DriversService);
+  private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly tempPasswordModal = inject(TempPasswordModalService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  readonly isLoading = signal(true);
+  readonly items = signal<Driver[]>([]);
+  readonly page = signal(1);
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
+  readonly totalPages = signal(1);
+  readonly total = signal(0);
+
+  readonly formModalOpen = signal(false);
+  readonly isSaving = signal(false);
+  editingDriver: Driver | null = null;
+  form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '' };
+
+  search = '';
+  private readonly debouncedSearch = debounce(() => {
+    this.page.set(1);
+    this.reload();
+  }, 300);
+
+  async ngOnInit(): Promise<void> {
+    this.page.set(getQueryParamNumber(this.route, 'page', 1));
+    this.pageSize.set(getQueryParamNumber(this.route, 'pageSize', DEFAULT_PAGE_SIZE));
+    this.search = getQueryParam(this.route, 'search') ?? '';
+    await this.reload();
+  }
+
+  onSearchChange(): void {
+    this.debouncedSearch();
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+    this.reload();
+  }
+
+  onPageSizeChange(pageSize: number): void {
+    this.pageSize.set(pageSize);
+    this.page.set(1);
+    this.reload();
+  }
+
+  async reload(): Promise<void> {
+    syncQueryParams(this.router, this.route, {
+      page: this.page() > 1 ? this.page() : null,
+      pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
+      search: this.search.trim() || null,
+    });
+    this.isLoading.set(true);
+    try {
+      const { data, meta } = await this.drivers.list({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        search: this.search.trim(),
+      });
+      this.items.set(data);
+      this.totalPages.set(meta.totalPages);
+      this.total.set(meta.total);
+    } catch {
+      this.toast.error('No se pudieron cargar los repartidores');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  openNewModal(): void {
+    this.editingDriver = null;
+    this.form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '' };
+    this.formModalOpen.set(true);
+  }
+
+  openEditModal(driver: Driver): void {
+    this.editingDriver = driver;
+    this.form = {
+      name: driver.User?.name ?? '',
+      email: driver.User?.email ?? '',
+      phone: driver.User?.phone ?? '',
+      vehicleType: driver.vehicleType ?? '',
+      plateNumber: driver.plateNumber ?? '',
+    };
+    this.formModalOpen.set(true);
+  }
+
+  closeFormModal(): void {
+    this.formModalOpen.set(false);
+  }
+
+  async saveDriver(): Promise<void> {
+    const name = this.form.name.trim();
+    if (!name) return;
+
+    this.isSaving.set(true);
+    try {
+      if (this.editingDriver) {
+        await this.drivers.update(this.editingDriver.id, {
+          name,
+          phone: this.form.phone.trim(),
+          vehicleType: this.form.vehicleType.trim(),
+          plateNumber: this.form.plateNumber.trim(),
+        });
+        this.closeFormModal();
+        this.toast.success('Repartidor actualizado');
+      } else {
+        const email = this.form.email.trim();
+        if (!email) return;
+        const { tempPassword } = await this.drivers.create({
+          name,
+          email,
+          phone: this.form.phone.trim(),
+          vehicleType: this.form.vehicleType.trim(),
+          plateNumber: this.form.plateNumber.trim(),
+        });
+        this.closeFormModal();
+        this.tempPasswordModal.show({ title: 'Repartidor creado', email, password: tempPassword });
+      }
+      this.page.set(1);
+      await this.reload();
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo guardar el repartidor');
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  async approve(driver: Driver): Promise<void> {
+    try {
+      const updated = await this.drivers.updateStatus(driver.id, 'active');
+      this.items.update((list) => list.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+      this.toast.success('Repartidor aprobado');
+    } catch {
+      this.toast.error('No se pudo aprobar el repartidor');
+    }
+  }
+
+  async suspend(driver: Driver): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Suspender repartidor',
+      message: `${driver.User?.name ?? 'Este repartidor'} no podrá tomar más pedidos. ¿Confirmas?`,
+      variant: 'danger',
+      confirmLabel: 'Suspender',
+    });
+    if (!ok) return;
+
+    try {
+      const updated = await this.drivers.updateStatus(driver.id, 'suspended');
+      this.items.update((list) => list.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+      this.toast.success('Repartidor suspendido');
+    } catch {
+      this.toast.error('No se pudo suspender el repartidor');
+    }
+  }
+}

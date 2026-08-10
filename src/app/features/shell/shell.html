@@ -1,0 +1,68 @@
+<div class="layout">
+  @if (sidebarOpen()) {
+    <div class="backdrop" (click)="closeSidebar()"></div>
+  }
+
+  <aside class="sidebar" [class.open]="sidebarOpen()" [class.collapsed]="sidebarCollapsed()">
+    <div class="brand">
+      <img class="brand-mark" src="/logo/Logo_Te_Llego_Verde_Transparente.png" alt="Te llego" />
+      <span class="brand-name">Admin</span>
+    </div>
+
+    <nav class="menu">
+      @for (item of menuItems; track item.path) {
+        <a class="menu-item" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">
+          <app-icon class="menu-icon" [name]="item.icon" />
+          <span class="menu-label">{{ item.label }}</span>
+        </a>
+      }
+
+      <button
+        type="button"
+        class="menu-item menu-group-toggle"
+        [class.active]="settingsOpen()"
+        (click)="toggleSettings()"
+      >
+        <app-icon class="menu-icon" name="settings" />
+        <span class="menu-label">Configuraciones</span>
+        <app-icon class="menu-chevron" name="chevron-down" [class.rotated]="settingsOpen()" />
+      </button>
+      @if (settingsOpen()) {
+        <div class="menu-submenu">
+          @for (item of settingsItems; track item.path) {
+            <a class="menu-item menu-subitem" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">
+              <app-icon class="menu-icon" [name]="item.icon" />
+              <span class="menu-label">{{ item.label }}</span>
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button type="button" class="sidebar-user" (click)="logout()" title="Cerrar sesión">
+        <span class="user-avatar">
+          <app-icon name="logout" />
+        </span>
+        <span class="user-name">Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="menu-toggle" (click)="toggleSidebar()" aria-label="Abrir menú">
+        <app-icon name="menu" />
+      </button>
+      <span class="topbar-title">Panel</span>
+      <div class="topbar-user">
+        <span class="user-avatar">{{ userInitial() }}</span>
+        <span class="user-name">{{ user()?.name }}</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

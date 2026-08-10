@@ -1,0 +1,222 @@
+<h1>{{ title }}</h1>
+<p class="muted">{{ subtitle }}</p>
+
+<div class="toolbar">
+  <button class="btn-primary" (click)="openCreateModal()">+ Crear publicidad</button>
+</div>
+
+<div class="tabs">
+  @for (t of tabs; track t.value) {
+    <button class="tab-btn" [class.active]="tab() === t.value" (click)="setTab(t.value)">{{ t.label }}</button>
+  }
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (items().length === 0) {
+  <p class="empty">No hay solicitudes en esta categoría.</p>
+} @else {
+  <div class="list">
+    @for (ad of items(); track ad.id) {
+      <div class="row ad-row">
+        @if (isProductMode) {
+          @if (ad.product?.imageUrl) {
+            <img class="row-thumb" [src]="ad.product?.imageUrl" alt="" />
+          } @else {
+            <app-icon name="megaphone" class="row-icon" />
+          }
+        } @else {
+          <app-icon name="megaphone" class="row-icon" />
+        }
+
+        <div class="row-info">
+          <span class="row-title">
+            {{ isProductMode ? (ad.product?.name || 'Producto #' + ad.productId) : (ad.store?.name || 'Negocio #' + ad.storeId) }}
+          </span>
+          <span class="muted">
+            {{ ad.store?.name }}{{ ad.store?.company?.name ? ' · ' + ad.store?.company?.name : '' }} · Pedida por
+            {{ ad.requestedBy?.name || '—' }} el {{ formatShortDate(ad.createdAt) }}
+          </span>
+
+          @if (ad.status === 'approved') {
+            <span class="muted">
+              {{ formatShortDate(ad.startsAt) }} — {{ formatShortDate(ad.endsAt) }} ·
+              {{ ad.cost === '0.00' ? 'Cortesía' : '$' + ad.cost }}
+            </span>
+          }
+          @if (ad.status === 'rejected' && ad.rejectionReason) {
+            <span class="muted">Motivo: {{ ad.rejectionReason }}</span>
+          }
+        </div>
+
+        @if (ad.status === 'pending') {
+          <span class="status-badge status-pending"><app-icon name="clock" />En revisión</span>
+        } @else if (ad.status === 'approved') {
+          <span class="status-badge" [class.status-active]="isActive(ad)" [class.status-expired]="!isActive(ad)">
+            <app-icon [name]="isActive(ad) ? 'check-circle' : 'clock'" />
+            {{ isActive(ad) ? 'Activa' : 'Expirada' }}
+          </span>
+        } @else {
+          <span class="status-badge status-rejected"><app-icon name="x-circle" />Rechazada</span>
+        }
+
+        @if (ad.status === 'pending') {
+          <div class="row-actions">
+            <button class="btn-text" (click)="openRejectModal(ad)">Rechazar</button>
+            <button class="btn-primary" (click)="openApproveModal(ad)">Aprobar</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Modal: crear publicidad directamente -->
+@if (createModalOpen()) {
+  <div class="modal-backdrop" (click)="closeCreateModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Crear publicidad{{ isProductMode ? ' de producto' : ' de negocio' }}</h2>
+        <button class="modal-close" (click)="closeCreateModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="muted">Queda activa de inmediato — tú defines la duración y el costo.</p>
+
+        <label>
+          Negocio
+          <app-select
+            [(ngModel)]="createForm.companyId"
+            name="companyId"
+            [options]="companyOptions()"
+            [remote]="true"
+            [loading]="isSearchingCompanies()"
+            (searchChange)="searchCompanies($event)"
+            (ngModelChange)="onCompanyChange($event)"
+            placeholder="Selecciona un negocio"
+          />
+        </label>
+
+        <label>
+          Sucursal
+          <app-select
+            [(ngModel)]="createForm.storeId"
+            name="storeId"
+            [options]="storeOptions()"
+            (ngModelChange)="onStoreChange($event)"
+            placeholder="Selecciona una sucursal"
+          />
+        </label>
+
+        @if (isProductMode) {
+          <label>
+            Producto
+            <app-select
+              [(ngModel)]="createForm.productId"
+              name="productId"
+              [options]="productOptions()"
+              placeholder="Selecciona un producto"
+            />
+          </label>
+          @if (createForm.storeId && productOptions().length === 0) {
+            <p class="muted hint">Esta sucursal no tiene productos disponibles para anunciar.</p>
+          }
+        }
+
+        <label>
+          Duración (días desde hoy)
+          <input type="number" min="1" [(ngModel)]="createForm.durationDays" name="durationDays" />
+        </label>
+        <label>
+          Costo (0 = cortesía)
+          <input type="number" min="0" step="0.01" [(ngModel)]="createForm.cost" name="cost" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeCreateModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isCreating() || !canSubmitCreate()" (click)="confirmCreate()">
+          {{ isCreating() ? 'Creando…' : 'Crear publicidad' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: aprobar -->
+@if (approveModalTarget(); as target) {
+  <div class="modal-backdrop" (click)="closeApproveModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Aprobar publicidad</h2>
+        <button class="modal-close" (click)="closeApproveModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="muted">{{ isProductMode ? (target.product?.name || 'Producto #' + target.productId) : (target.store?.name || 'Negocio #' + target.storeId) }}</p>
+
+        <label>
+          Duración (días desde hoy)
+          <input type="number" min="1" [(ngModel)]="approveForm.durationDays" name="approveDurationDays" />
+        </label>
+        <label>
+          Costo (0 = cortesía)
+          <input type="number" min="0" step="0.01" [(ngModel)]="approveForm.cost" name="approveCost" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeApproveModal()">Cancelar</button>
+        <button
+          class="btn-primary"
+          [disabled]="isApproving() || approveForm.durationDays <= 0 || approveForm.cost < 0"
+          (click)="confirmApprove()"
+        >
+          {{ isApproving() ? 'Aprobando…' : 'Aprobar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: rechazar -->
+@if (rejectModalTarget(); as target) {
+  <div class="modal-backdrop" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Rechazar publicidad</h2>
+        <button class="modal-close" (click)="closeRejectModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="muted">{{ isProductMode ? (target.product?.name || 'Producto #' + target.productId) : (target.store?.name || 'Negocio #' + target.storeId) }}</p>
+
+        <label>
+          Motivo (opcional)
+          <textarea rows="3" [(ngModel)]="rejectReason" name="rejectReason" placeholder="El dueño podrá ver este motivo"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeRejectModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isRejecting()" (click)="confirmReject()">
+          {{ isRejecting() ? 'Rechazando…' : 'Rechazar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,214 @@
+<h1>Pagos</h1>
+<p class="muted">Estado de pago a la plataforma por negocio (solo negocios activos).</p>
+
+<div class="payment-tabs">
+  <button type="button" class="tab" [class.active]="paymentTab() === 'all'" (click)="setPaymentTab('all')">
+    Todos
+  </button>
+  <button type="button" class="tab" [class.active]="paymentTab() === 'overdue'" (click)="setPaymentTab('overdue')">
+    Pendientes de pago
+    <span class="tab-count" [class.overdue]="paymentCounts().overdue > 0">{{ paymentCounts().overdue }}</span>
+  </button>
+  <button type="button" class="tab" [class.active]="paymentTab() === 'current'" (click)="setPaymentTab('current')">
+    Pagados
+    <span class="tab-count">{{ paymentCounts().current }}</span>
+  </button>
+</div>
+
+<div class="search-bar">
+  <app-icon name="search" />
+  <input
+    type="search"
+    placeholder="Buscar por nombre de negocio..."
+    [(ngModel)]="search"
+    (ngModelChange)="onSearchChange()"
+  />
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (items().length === 0) {
+  <p class="empty">
+    @if (search) {
+      No se encontraron negocios con ese nombre.
+    } @else if (paymentTab() === 'overdue') {
+      No hay negocios con pagos pendientes.
+    } @else if (paymentTab() === 'current') {
+      No hay negocios activos al día todavía.
+    } @else {
+      Todavía no hay negocios activos registrados.
+    }
+  </p>
+} @else {
+  <div class="list">
+    @for (company of items(); track company.id) {
+      <div class="row">
+        <app-icon name="credit-card" class="row-icon" />
+        <div class="row-info">
+          <span class="row-title">
+            {{ company.name }}
+            @if (company.isBlocked) {
+              <span class="pill pill-blocked">Bloqueada</span>
+            }
+          </span>
+          <span class="muted">
+            @if (company.billingType === 'commission') {
+              Comisión: {{ company.commissionRate }}% sobre ventas
+            } @else {
+              Cuota mensual: ${{ company.monthlyFee }}
+            }
+          </span>
+        </div>
+        <div class="due-date">
+          @if (company.nextPaymentDueDate) {
+            <span [class.overdue]="isOverdue(company)">
+              {{ isOverdue(company) ? 'Vencido' : 'Próximo pago' }}: {{ formatDate(company.nextPaymentDueDate) }}
+            </span>
+          } @else {
+            <span class="muted">Sin fecha configurada</span>
+          }
+          @if (company.billingStartsAt) {
+            <span class="muted small">Factura desde {{ formatDate(company.billingStartsAt) }}</span>
+          }
+        </div>
+        @if (isOverdue(company) && company.owner?.phone) {
+          <a class="icon-btn call-btn" [href]="'tel:' + company.owner!.phone" [title]="'Llamar a ' + company.owner!.phone">
+            <app-icon name="phone" />
+          </a>
+        }
+        @if (isOverdue(company)) {
+          <button class="btn-secondary" (click)="openReminderModal(company)">Enviar recordatorio</button>
+        }
+        <button class="btn-primary" (click)="openPaymentModal(company)">Registrar pago</button>
+      </div>
+    }
+  </div>
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Modal: registrar pago -->
+@if (paymentModalOpen()) {
+  <div class="modal-backdrop" (click)="closePaymentModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Registrar pago</h2>
+        <button class="modal-close" (click)="closePaymentModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      @if (paymentModalCompany()?.billingType === 'commission') {
+        <div class="modal-body">
+          <label>
+            Periodo desde
+            <input type="date" [(ngModel)]="paymentForm.periodStart" name="periodStart" />
+          </label>
+          <label>
+            Periodo hasta
+            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" />
+          </label>
+          <div class="toolbar">
+            <button type="button" class="btn-secondary" [disabled]="isCalculatingSales()" (click)="calculateFromSales()">
+              {{ isCalculatingSales() ? 'Calculando…' : 'Calcular desde ventas' }}
+            </button>
+          </div>
+          @if (salesInfo(); as sales) {
+            <p class="muted hint">
+              Ventas del periodo: ${{ sales.totalSales }} · Comisión {{ sales.commissionRate }}% = ${{ sales.suggestedAmount }}
+            </p>
+          }
+          <label>
+            Monto (USD)
+            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" />
+          </label>
+          <label>
+            Método
+            <app-select [(ngModel)]="paymentForm.method" name="method" [options]="methodOptions" />
+          </label>
+          <label>
+            Nota
+            <input type="text" [(ngModel)]="paymentForm.note" name="note" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-text" (click)="closePaymentModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="isSavingPayment()" (click)="savePayment()">
+            {{ isSavingPayment() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      } @else {
+        <div class="modal-body">
+          <p class="muted hint">
+            Cuota mensual: ${{ paymentModalCompany()?.monthlyFee }}. Puedes registrar varios meses de una sola vez.
+          </p>
+          <label>
+            Meses a pagar
+            <input type="number" min="1" max="24" step="1" [(ngModel)]="advanceForm.months" name="months" />
+          </label>
+          <p class="muted hint">
+            Total: <strong>${{ advanceTotal().toFixed(2) }}</strong> · Próximo pago quedará para el
+            <strong>{{ formatDate(advanceNextDueDate()) }}</strong>
+          </p>
+          <label>
+            Método
+            <app-select [(ngModel)]="advanceForm.method" name="advanceMethod" [options]="methodOptions" />
+          </label>
+          <label>
+            Nota
+            <input type="text" [(ngModel)]="advanceForm.note" name="advanceNote" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-text" (click)="closePaymentModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="isSavingPayment() || advanceForm.months < 1" (click)="saveAdvancePayment()">
+            {{ isSavingPayment() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Modal: enviar recordatorio de pago -->
+@if (reminderModalOpen()) {
+  <div class="modal-backdrop" (click)="closeReminderModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Enviar recordatorio</h2>
+        <button class="modal-close" (click)="closeReminderModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="muted hint">
+          Le llega como notificación dentro de su panel. Puedes editar el mensaje antes de enviarlo.
+        </p>
+        <label>
+          Título
+          <input type="text" [(ngModel)]="reminderForm.title" name="reminderTitle" />
+        </label>
+        <label>
+          Mensaje
+          <textarea rows="4" [(ngModel)]="reminderForm.body" name="reminderBody"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeReminderModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSendingReminder()" (click)="sendReminder()">
+          {{ isSendingReminder() ? 'Enviando…' : 'Enviar recordatorio' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

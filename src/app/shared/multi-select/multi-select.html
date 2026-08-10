@@ -1,0 +1,73 @@
+<div class="app-select app-multi-select" [class.open]="isOpen()">
+  <button
+    type="button"
+    class="select-trigger"
+    [disabled]="disabled"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="listbox"
+    (click)="toggle()"
+  >
+    <span class="select-value" [class.placeholder]="selectedLabels.length === 0">{{ triggerLabel }}</span>
+    <app-icon name="chevron-down" class="select-chevron" />
+  </button>
+
+  @if (isOpen()) {
+    <div class="select-panel" role="listbox" aria-multiselectable="true">
+      @if (showSearch) {
+        <div class="select-search">
+          <app-icon name="search" />
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchInput($event)"
+            placeholder="Buscar..."
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+      }
+
+      @if (loading) {
+        <p class="select-empty">Buscando…</p>
+      } @else if (filteredOptions.length === 0) {
+        <p class="select-empty">Sin resultados</p>
+      } @else if (useVirtualScroll) {
+        <cdk-virtual-scroll-viewport itemSize="36" class="select-options select-options-virtual">
+          <div
+            class="select-option"
+            role="option"
+            *cdkVirtualFor="let option of filteredOptions; trackBy: trackByValue"
+            [attr.aria-selected]="isSelected(option)"
+            [class.selected]="isSelected(option)"
+            (click)="toggleOption(option)"
+          >
+            <span class="option-checkbox" [class.checked]="isSelected(option)">
+              @if (isSelected(option)) {
+                <app-icon name="check" />
+              }
+            </span>
+            {{ option.label }}
+          </div>
+        </cdk-virtual-scroll-viewport>
+      } @else {
+        <div class="select-options select-options-plain">
+          @for (option of filteredOptions; track option.value) {
+            <div
+              class="select-option"
+              role="option"
+              [attr.aria-selected]="isSelected(option)"
+              [class.selected]="isSelected(option)"
+              (click)="toggleOption(option)"
+            >
+              <span class="option-checkbox" [class.checked]="isSelected(option)">
+                @if (isSelected(option)) {
+                  <app-icon name="check" />
+                }
+              </span>
+              {{ option.label }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

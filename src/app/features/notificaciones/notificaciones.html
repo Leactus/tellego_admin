@@ -1,0 +1,126 @@
+<h1>Notificaciones</h1>
+<p class="muted">Envía pagos, actualizaciones, novedades o avisos a los dueños de negocio.</p>
+
+<div class="toolbar">
+  <button class="btn-primary" (click)="openComposeModal()">
+    <app-icon name="send" />
+    Nueva notificación
+  </button>
+</div>
+
+<section class="card">
+  <h2>Historial</h2>
+
+  <div class="search-bar">
+    <app-icon name="search" />
+    <input
+      type="search"
+      placeholder="Buscar por título o mensaje..."
+      [(ngModel)]="historySearch"
+      (ngModelChange)="onHistorySearchChange()"
+    />
+  </div>
+
+  @if (isLoadingHistory()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (history().length === 0) {
+    <p class="empty">
+      {{ historySearch ? 'No se encontraron notificaciones con ese texto.' : 'Todavía no se han enviado notificaciones.' }}
+    </p>
+  } @else {
+    <div class="list">
+      @for (item of history(); track item.id) {
+        <div class="row">
+          <app-icon name="bell" class="row-icon" />
+          <div class="row-info">
+            <span class="row-title">{{ item.title }}</span>
+            <span class="muted">{{ item.body }}</span>
+            <span class="muted small">
+              {{ item.User?.name || ('Dueño #' + item.userId) }} ·
+              {{
+                item.data?.broadcast
+                  ? 'Envío masivo'
+                  : (item.data?.companyIds?.length ?? 0) > 1
+                    ? item.data?.companyIds?.length + ' negocios elegidos'
+                    : 'Negocio #' + item.data?.companyId
+              }}
+            </span>
+          </div>
+          <span class="pill">{{ item.type }}</span>
+        </div>
+      }
+    </div>
+    <app-pager
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="total()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</section>
+
+<!-- Modal: nueva notificación -->
+@if (composeModalOpen()) {
+  <div class="modal-backdrop" (click)="closeComposeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Nueva notificación</h2>
+        <button class="modal-close" (click)="closeComposeModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Título
+          <input type="text" [(ngModel)]="form.title" name="title" placeholder="Ej. Recordatorio de pago" />
+        </label>
+        <label>
+          Mensaje
+          <textarea [(ngModel)]="form.body" name="body" rows="3" placeholder="Escribe el contenido del mensaje"></textarea>
+        </label>
+        <div class="form-row">
+          <label>
+            Tipo
+            <app-select [(ngModel)]="form.type" name="type" [options]="typeOptions" />
+          </label>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="form.sendToAll" name="sendToAll" />
+          Enviar a todos los negocios
+        </label>
+        @if (!form.sendToAll) {
+          <label>
+            Negocios
+            <app-multi-select
+              [(ngModel)]="form.companyIds"
+              name="companyIds"
+              [options]="companyOptions()"
+              placeholder="Selecciona negocios"
+              [remote]="true"
+              [loading]="isSearchingCompanies()"
+              (searchChange)="loadCompanies($event)"
+            />
+          </label>
+        }
+        @if (isBroadcastPagoFiltered) {
+          <p class="muted hint">
+            <app-icon name="info-circle" />
+            Se enviará solo a los negocios con pago vencido — quien ya pagó, pagó por adelantado o sigue en período
+            de cortesía no recibe este mensaje.
+          </p>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeComposeModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSending() || !form.title || !form.body" (click)="send()">
+          <app-icon name="send" />
+          {{ isSending() ? 'Enviando…' : 'Enviar notificación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

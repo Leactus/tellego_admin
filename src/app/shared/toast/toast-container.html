@@ -1,0 +1,13 @@
+@if (toastService.toasts().length > 0) {
+  <div class="toast-stack">
+    @for (toast of toastService.toasts(); track toast.id) {
+      <div class="toast" [class]="toast.type" role="status">
+        <app-icon class="toast-icon" [name]="iconFor(toast.type)" />
+        <span class="toast-message">{{ toast.message }}</span>
+        <button class="toast-close" (click)="toastService.dismiss(toast.id)" aria-label="Cerrar notificación">
+          <app-icon name="close" />
+        </button>
+      </div>
+    }
+  </div>
+}

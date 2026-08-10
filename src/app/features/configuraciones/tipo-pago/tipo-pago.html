@@ -1,0 +1,51 @@
+<h1>Tipo de pago</h1>
+<p class="muted">
+  Valores por defecto que se sugieren al crear un negocio nuevo (cuota mensual o comisión sobre ventas). Cambiar esto
+  <strong>no afecta</strong> a los negocios que ya existen: cada uno conserva la cuota o el % de comisión que se le
+  asignó cuando se creó (o que se le haya editado después desde su propia página de Facturación).
+</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="3" />
+} @else {
+  <section class="card">
+    <h2>Valores por defecto para negocios nuevos</h2>
+    <div class="billing-form">
+      <label>
+        Cuota mensual por defecto (USD)
+        <input type="number" min="0" step="0.01" [(ngModel)]="form.defaultMonthlyFee" name="defaultMonthlyFee" />
+      </label>
+      <label>
+        Comisión por defecto (%)
+        <input type="number" min="0" max="100" step="0.01" [(ngModel)]="form.defaultCommissionRate" name="defaultCommissionRate" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Periodo de gracia general</h2>
+    <p class="muted">
+      Días después de la fecha de pago en que se bloquea automáticamente un negocio vencido — deja de
+      aparecer en la app y pierde acceso a su panel. Aplica a todos los negocios que no tengan su propio
+      override (editable por negocio, desde su página de Facturación).
+    </p>
+    <div class="billing-form">
+      <label>
+        Días de gracia (0 = bloquea el mismo día que vence)
+        <input
+          type="number"
+          min="0"
+          step="1"
+          [(ngModel)]="form.defaultGracePeriodDays"
+          name="defaultGracePeriodDays"
+        />
+      </label>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <button class="btn-primary" [disabled]="isSaving()" (click)="save()">
+      {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+}

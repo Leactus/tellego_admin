@@ -1,0 +1,272 @@
+<a class="back-link" [routerLink]="['/negocios', company()?.id]">&larr; Volver al negocio</a>
+
+<h1>Menú</h1>
+<p class="muted">{{ company()?.name }} — categorías y productos, compartidos por todas sus sucursales.</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="4" />
+} @else {
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'categorias'" (click)="setTab('categorias')">
+      Categorías
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'productos'" (click)="setTab('productos')">
+      Productos
+    </button>
+  </div>
+
+  @if (activeTab() === 'categorias') {
+    <div class="toolbar">
+      <button class="btn-primary" (click)="openNewCategory()">+ Nueva categoría</button>
+    </div>
+
+    @if (categories().length === 0) {
+      <p class="empty">Todavía no hay categorías.</p>
+    } @else {
+      <div class="list">
+        @for (category of categories(); track category.id) {
+          <div class="row">
+            <span class="row-title">{{ category.name }}</span>
+            <div class="row-actions">
+              <button class="icon-btn" (click)="openEditCategory(category)" aria-label="Editar">
+                <app-icon name="edit" />
+              </button>
+              <button class="icon-btn danger" (click)="deleteCategory(category)" aria-label="Borrar">
+                <app-icon name="trash" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (activeTab() === 'productos') {
+    <div class="toolbar">
+      <button class="btn-primary" (click)="openNewProduct()">+ Nuevo producto</button>
+    </div>
+
+    @if (products().length === 0) {
+      <p class="empty">Todavía no hay productos.</p>
+    } @else {
+      <div class="list">
+        @for (product of products(); track product.id) {
+          <div class="product-card">
+            <div class="product-main">
+              @if (product.imageUrl) {
+                <img [src]="product.imageUrl" class="product-thumb" alt="" />
+              } @else {
+                <div class="product-thumb product-thumb-empty">
+                  <app-icon name="camera" />
+                </div>
+              }
+              <div class="row-info">
+                <span class="row-title">{{ product.name }}</span>
+                <span class="muted">
+                  ${{ product.price }}
+                  @if (product.salePrice) {
+                    · Oferta ${{ product.salePrice }}
+                  }
+                  @if (product.category) {
+                    · {{ product.category.name }}
+                  }
+                </span>
+              </div>
+              <div class="row-actions">
+                <button class="btn-text" (click)="openOptions(product)">Opciones</button>
+                <button class="icon-btn" (click)="openEditProduct(product)" aria-label="Editar">
+                  <app-icon name="edit" />
+                </button>
+                <button class="icon-btn danger" (click)="deleteProduct(product)" aria-label="Borrar">
+                  <app-icon name="trash" />
+                </button>
+              </div>
+            </div>
+
+            @if (branches().length > 0) {
+              <div class="availability-row">
+                <span class="muted small">Disponible en:</span>
+                @for (branch of branches(); track branch.id) {
+                  <label class="availability-check">
+                    <input
+                      type="checkbox"
+                      [checked]="isAvailableInStore(product, branch.id)"
+                      (change)="toggleStoreAvailability(product, branch.id, $event)"
+                    />
+                    {{ branch.name }}
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+}
+
+<!-- Modal: categoría -->
+@if (categoryModalOpen()) {
+  <div class="modal-backdrop" (click)="closeCategoryModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingCategory ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+        <button class="modal-close" (click)="closeCategoryModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="categoryName" name="categoryName" placeholder="Ej. Bebidas" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeCategoryModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="!categoryName.trim()" (click)="saveCategory()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: producto -->
+@if (productModalOpen()) {
+  <div class="modal-backdrop" (click)="closeProductModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingProduct ? 'Editar producto' : 'Nuevo producto' }}</h2>
+        <button class="modal-close" (click)="closeProductModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="productForm.name" name="productName" placeholder="Ej. Pizza Pepperoni" />
+        </label>
+        <label>
+          Descripción
+          <textarea [(ngModel)]="productForm.description" name="productDescription" rows="2"></textarea>
+        </label>
+        <div class="form-row">
+          <label>
+            Precio (USD)
+            <input type="number" min="0" step="0.01" [(ngModel)]="productForm.price" name="productPrice" />
+          </label>
+          <label>
+            Categoría
+            <app-select [(ngModel)]="productForm.categoryId" name="productCategory" [options]="categoryOptions()" />
+          </label>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="productForm.hasSale" name="hasSale" />
+          Tiene precio de oferta
+        </label>
+        @if (productForm.hasSale) {
+          <label>
+            Precio de oferta (USD)
+            <input type="number" min="0" step="0.01" [(ngModel)]="productForm.salePrice" name="salePrice" />
+          </label>
+        }
+        @if (!editingProduct) {
+          <label>
+            Sucursal donde se activa primero
+            <app-select [(ngModel)]="productForm.storeId" name="productStore" [options]="storeOptions()" />
+          </label>
+        }
+        <label>
+          Foto
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeProductModal()">Cancelar</button>
+        <button
+          class="btn-primary"
+          [disabled]="isSavingProduct() || !productForm.name || productForm.price <= 0"
+          (click)="saveProduct()"
+        >
+          {{ isSavingProduct() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: opciones (ingredientes/extras) -->
+@if (optionsModalOpen() && optionsProduct) {
+  <div class="modal-backdrop" (click)="closeOptionsModal()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Opciones — {{ optionsProduct.name }}</h2>
+        <button class="modal-close" (click)="closeOptionsModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      @if (optionsProduct.optionGroups.length === 0) {
+        <p class="empty">Todavía no hay grupos de opciones.</p>
+      } @else {
+        @for (group of optionsProduct.optionGroups; track group.id) {
+          <div class="option-group">
+            <div class="option-group-header">
+              <span class="row-title">{{ group.name }}</span>
+              <span class="muted small">
+                {{ group.isRequired ? 'Obligatorio' : 'Opcional' }} · min {{ group.minSelection }} / max
+                {{ group.maxSelection }}
+              </span>
+              <button class="icon-btn danger" (click)="deleteGroup(group)" aria-label="Borrar grupo">
+                <app-icon name="trash" />
+              </button>
+            </div>
+
+            @if (group.items.length > 0) {
+              <div class="option-items">
+                @for (item of group.items; track item.id) {
+                  <div class="option-item">
+                    <span>{{ item.name }}</span>
+                    <span class="muted small">{{ itemPriceLabel(item.extraPrice) }}</span>
+                    <button class="icon-btn danger" (click)="deleteItem(item.id)" aria-label="Borrar opción">
+                      <app-icon name="close" />
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="add-item-row">
+              <input
+                type="text"
+                placeholder="Nueva opción (ej. Extra queso)"
+                [(ngModel)]="newItemNameByGroup[group.id]"
+                [name]="'itemName' + group.id"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Precio extra"
+                [(ngModel)]="newItemPriceByGroup[group.id]"
+                [name]="'itemPrice' + group.id"
+              />
+              <button class="btn-text" (click)="addItem(group)">+ Agregar</button>
+            </div>
+          </div>
+        }
+      }
+
+      <div class="add-group-row">
+        <input type="text" placeholder="Nombre del grupo (ej. Tamaño)" [(ngModel)]="newGroupName" name="newGroupName" />
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="newGroupRequireOne" name="newGroupRequireOne" />
+          Obligatorio (elige 1)
+        </label>
+        <button class="btn-primary" [disabled]="!newGroupName.trim()" (click)="addGroup()">+ Nuevo grupo</button>
+      </div>
+    </div>
+  </div>
+}

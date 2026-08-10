@@ -1,0 +1,21 @@
+@if (total > 0) {
+  <div class="pager">
+    <div class="pager-pill">
+      @if (totalPages > 1) {
+        <button class="pager-btn" (click)="goPrev()" [disabled]="page <= 1" aria-label="Página anterior">‹</button>
+        <span class="pager-label">Página {{ page }} de {{ totalPages }} · {{ total }} en total</span>
+        <button class="pager-btn" (click)="goNext()" [disabled]="page >= totalPages" aria-label="Página siguiente">›</button>
+      } @else {
+        <span class="pager-label">{{ total }} en total</span>
+      }
+      <label class="pager-size">
+        Mostrar
+        <select class="pager-size-select" [value]="pageSize" (change)="onPageSizeChange($event)" aria-label="Elementos por página">
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+}

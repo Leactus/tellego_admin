@@ -1,0 +1,182 @@
+/* Bloques comunes de las páginas del panel de negocio: encabezado, listas tipo fila y botones. */
+
+h1 {
+  margin: 0 0 4px;
+  color: var(--color-text);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  max-width: 360px;
+}
+
+@media (max-width: 640px) {
+  .search-bar {
+    max-width: 100%;
+  }
+}
+
+.search-bar app-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: transparent;
+}
+
+.btn-primary {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 10px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-variant);
+}
+
+.btn-text {
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-text:hover {
+  color: var(--color-text);
+}
+
+.empty {
+  color: var(--color-text-muted);
+  padding: 24px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+}
+
+/* flex-basis en vez de flex:1 para que compita por espacio con sus vecinos
+   (icono, acciones, badges) en vez de forzarlos a 0 en pantallas angostas —
+   causa raíz del texto cortado en palabra por palabra reportado en /pagos. */
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.row-title {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .row-actions {
+    margin-left: 0;
+  }
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+}
+
+.icon-btn:hover {
+  background: var(--color-surface-variant);
+}
+
+.icon-btn.danger {
+  color: var(--color-error);
+}
+
+.icon-btn.danger:hover {
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-variant);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}

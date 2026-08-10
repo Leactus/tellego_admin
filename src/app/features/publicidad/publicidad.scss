@@ -1,0 +1,83 @@
+@use '../../shared/styles/page' as *;
+@use '../../shared/styles/modal' as *;
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 20px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.ad-row {
+  flex-wrap: wrap;
+}
+
+.row-icon {
+  font-size: 1.3rem;
+  color: var(--color-text-muted);
+}
+
+.row-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.hint {
+  font-size: 0.82rem;
+  margin: -6px 0 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.status-pending {
+  background: color-mix(in srgb, orange 16%, white);
+  color: #b8720a;
+}
+
+.status-active {
+  background: color-mix(in srgb, var(--color-success) 14%, white);
+  color: var(--color-success);
+}
+
+.status-expired {
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+.status-rejected {
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+  color: var(--color-error);
+}

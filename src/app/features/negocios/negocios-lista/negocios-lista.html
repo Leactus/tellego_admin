@@ -1,0 +1,130 @@
+<h1>Negocios</h1>
+<p class="muted">Empresas registradas en la plataforma y sus sucursales.</p>
+
+<div class="toolbar">
+  <button class="btn-primary" (click)="openCreateModal()">+ Crear negocio</button>
+</div>
+
+<div class="search-bar">
+  <app-icon name="search" />
+  <input
+    type="search"
+    placeholder="Buscar por nombre de negocio..."
+    [(ngModel)]="search"
+    (ngModelChange)="onSearchChange()"
+  />
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (items().length === 0) {
+  <p class="empty">
+    {{ search ? 'No se encontraron negocios con ese nombre.' : 'Todavía no hay negocios registrados.' }}
+  </p>
+} @else {
+  <div class="list">
+    @for (company of items(); track company.id) {
+      <div class="row">
+        <app-icon name="store" class="row-icon" />
+        <div class="row-info">
+          <span class="row-title">{{ company.name }}</span>
+          <span class="muted">
+            {{ company.branches?.length || 0 }} sucursal(es)
+            @if (company.nextPaymentDueDate) {
+              · Próximo pago: <span [class.overdue]="isOverdue(company)">{{ company.nextPaymentDueDate }}</span>
+            }
+          </span>
+        </div>
+        <button
+          type="button"
+          class="status-badge"
+          [class.status-suspended]="company.status === 'suspended'"
+          (click)="toggleStatus(company)"
+          [attr.aria-label]="company.status === 'active' ? 'Suspender negocio' : 'Activar negocio'"
+        >
+          <span class="status-dot"></span>
+          {{ company.status === 'active' ? 'Activo' : 'Suspendido' }}
+        </button>
+        <div class="row-actions">
+          <a class="btn-text" [routerLink]="['/negocios', company.id]">Ver detalle</a>
+        </div>
+      </div>
+    }
+  </div>
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Modal: crear negocio -->
+@if (createModalOpen()) {
+  <div class="modal-backdrop" (click)="closeCreateModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Crear negocio</h2>
+        <button class="modal-close" (click)="closeCreateModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre del negocio
+          <input type="text" [(ngModel)]="createForm.companyName" name="companyName" placeholder="Ej. Sushi Kobe" />
+        </label>
+        <label>
+          Nombre del dueño
+          <input type="text" [(ngModel)]="createForm.ownerName" name="ownerName" placeholder="Ej. José Martínez" />
+        </label>
+        <label>
+          Email del dueño
+          <input type="email" [(ngModel)]="createForm.ownerEmail" name="ownerEmail" placeholder="dueno@correo.com" />
+        </label>
+        <label>
+          Teléfono del dueño
+          <input type="text" [(ngModel)]="createForm.ownerPhone" name="ownerPhone" placeholder="Ej. +503 7000-0000" />
+        </label>
+        <label>
+          País
+          <app-select [(ngModel)]="createForm.countryId" name="countryId" [options]="countryOptions()" />
+        </label>
+        <p class="muted hint">La moneda de cobro de este negocio se toma automáticamente del país elegido.</p>
+        <label>
+          Tipo de cobro
+          <app-select [(ngModel)]="createForm.billingType" name="billingType" [options]="billingTypeOptions" />
+        </label>
+        @if (createForm.billingType === 'fee') {
+          <label>
+            Cuota mensual (USD)
+            <input type="number" min="0" step="0.01" [(ngModel)]="createForm.monthlyFee" name="monthlyFee" />
+          </label>
+        } @else {
+          <label>
+            Comisión (%)
+            <input type="number" min="0" max="100" step="0.01" [(ngModel)]="createForm.commissionRate" name="commissionRate" />
+          </label>
+        }
+        <p class="muted hint">
+          Esto queda fijo para este negocio: si luego cambias el valor por defecto en Configuraciones &gt; Tipo de
+          pago, no afecta lo que ya se le asignó aquí.
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeCreateModal()">Cancelar</button>
+        <button
+          class="btn-primary"
+          [disabled]="isCreating() || !createForm.companyName || !createForm.ownerName || !createForm.ownerEmail"
+          (click)="createCompany()"
+        >
+          {{ isCreating() ? 'Creando…' : 'Crear negocio' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,43 @@
+<div class="login-page">
+  <div class="login-form-panel">
+    <form class="login-card" (ngSubmit)="handleSubmit()">
+      <img class="brand-mark" src="/logo/Logo_Te_Llego_Verde_Transparente.png" alt="Te llego" />
+      <h1>Te llego Admin</h1>
+      <p class="subtitle">Control global de la plataforma</p>
+
+      @if (errorMessage()) {
+        <div class="error-banner">{{ errorMessage() }}</div>
+      }
+
+      <label>
+        Correo electrónico
+        <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
+      </label>
+
+      <label>
+        Contraseña
+        <div class="password-field">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
+            required
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" />
+          </button>
+        </div>
+      </label>
+
+      <button type="submit" class="btn-submit" [disabled]="isLoading()">
+        {{ isLoading() ? 'Ingresando…' : 'INICIAR SESIÓN' }}
+      </button>
+    </form>
+  </div>
+</div>

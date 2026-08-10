@@ -1,0 +1,21 @@
+@if (confirmService.current(); as state) {
+  <div class="confirm-backdrop" (click)="confirmService.respond(false)">
+    <div class="confirm-card" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="confirm-icon" [class.danger]="state.variant === 'danger'">
+        <app-icon [name]="state.icon ?? (state.variant === 'danger' ? 'trash' : 'info-circle')" />
+      </div>
+      <h3>{{ state.title }}</h3>
+      <p>{{ state.message }}</p>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="confirmService.respond(false)">{{ state.cancelLabel }}</button>
+        <button
+          class="btn-confirm"
+          [class.danger]="state.variant === 'danger'"
+          (click)="confirmService.respond(true)"
+        >
+          {{ state.confirmLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

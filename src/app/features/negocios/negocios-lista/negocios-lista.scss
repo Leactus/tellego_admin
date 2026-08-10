@@ -1,0 +1,64 @@
+@use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
+
+.hint {
+  font-size: 0.82rem;
+  margin: -6px 0 0;
+}
+
+a.btn-text {
+  text-decoration: none;
+}
+
+.row-icon {
+  font-size: 1.3rem;
+  color: var(--color-text-muted);
+}
+
+.overdue {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-success) 12%, white);
+  color: var(--color-success);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.status-badge:hover {
+  background: color-mix(in srgb, var(--color-success) 20%, white);
+  transform: scale(1.03);
+}
+
+.status-badge:active {
+  transform: scale(0.98);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-suspended {
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+  color: var(--color-error);
+}
+
+.status-suspended:hover {
+  background: color-mix(in srgb, var(--color-error) 20%, white);
+}

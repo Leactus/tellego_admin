@@ -1,0 +1,169 @@
+@use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  color: var(--color-text);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-header h2 {
+  margin: 0;
+}
+
+.type-row {
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+
+.type-row.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+}
+
+.type-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.type-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+.country-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  min-width: 220px;
+  margin-bottom: 16px;
+}
+
+.category-viewport {
+  height: 480px;
+}
+
+.category-row {
+  /* cdk-virtual-scroll necesita altura uniforme por ítem (itemSize="78" en el html);
+     el gap de .list no aplica dentro del viewport, así que el espaciado va por margen. */
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.category-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.category-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.image-field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.image-preview {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 1.4rem;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-field-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.image-field-info strong {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.image-field-info .muted {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.image-field .btn-upload {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 7px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.image-field .btn-upload:hover {
+  background: var(--color-surface-variant);
+}

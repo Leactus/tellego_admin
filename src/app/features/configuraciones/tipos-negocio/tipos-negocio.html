@@ -1,0 +1,189 @@
+<h1>Tipos de negocio</h1>
+<p class="muted">
+  Catálogo de tipos de negocio (ej. Restaurante, Farmacia, Supermercado) y, dentro de cada uno, sus subcategorías (ej.
+  Pizzas, Medicamentos). Cada sucursal elige un tipo de negocio al crearse y ya no lo puede cambiar; sus subcategorías
+  sí se pueden agregar o quitar después.
+</p>
+
+<section class="card">
+  <div class="card-header">
+    <h2>Tipos de negocio</h2>
+    <button class="btn-primary" (click)="openNewTypeModal()">+ Nuevo tipo de negocio</button>
+  </div>
+
+  @if (isLoadingTypes()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (types().length === 0) {
+    <p class="empty">Todavía no hay tipos de negocio.</p>
+  } @else {
+    <div class="list">
+      @for (type of types(); track type.id) {
+        <div class="row type-row" [class.selected]="selectedType()?.id === type.id" (click)="selectType(type)">
+          @if (type.imageUrl) {
+            <img [src]="type.imageUrl" class="type-thumb" alt="" />
+          } @else {
+            <div class="type-thumb type-thumb-empty">
+              <app-icon name="store" />
+            </div>
+          }
+          <span class="row-title">{{ type.name }}</span>
+          @if (type.status === 'inactive') {
+            <span class="pill">Inactivo</span>
+          }
+          <div class="row-actions">
+            <button class="icon-btn" (click)="openEditTypeModal(type); $event.stopPropagation()" aria-label="Editar">
+              <app-icon name="edit" />
+            </button>
+            <button class="icon-btn danger" (click)="deleteType(type); $event.stopPropagation()" aria-label="Borrar">
+              <app-icon name="trash" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+@if (selectedType(); as type) {
+  <section class="card">
+    <div class="card-header">
+      <h2>Subcategorías de {{ type.name }}</h2>
+      <button class="btn-primary" (click)="openNewSubcategoryModal()">+ Nueva subcategoría</button>
+    </div>
+
+    <label class="country-picker">
+      País
+      <app-select
+        [(ngModel)]="selectedCountryId"
+        (ngModelChange)="onCountryChange()"
+        name="subcategoryCountry"
+        [options]="countryOptions"
+      />
+    </label>
+
+    @if (isLoadingSubcategories()) {
+      <app-skeleton variant="list" [rows]="5" />
+    } @else if (subcategoryItems().length === 0) {
+      <p class="empty">Todavía no hay subcategorías para {{ type.name }}.</p>
+    } @else {
+      <cdk-virtual-scroll-viewport itemSize="78" class="category-viewport">
+        <div class="row category-row" *cdkVirtualFor="let subcategory of subcategoryItems(); trackBy: trackBySubcategoryId">
+          @if (subcategory.imageUrl) {
+            <img [src]="subcategory.imageUrl" class="category-thumb" alt="" />
+          } @else {
+            <div class="category-thumb category-thumb-empty">
+              <app-icon name="camera" />
+            </div>
+          }
+          <span class="row-title">{{ subcategory.name }}</span>
+          <label class="switch">
+            <input type="checkbox" [checked]="subcategory.enabled" (change)="toggleSubcategoryEnabled(subcategory)" />
+            {{ subcategory.enabled ? 'Habilitado' : 'Deshabilitado' }}
+          </label>
+          <div class="row-actions">
+            <button class="icon-btn" (click)="openEditSubcategoryModal(subcategory)" aria-label="Editar">
+              <app-icon name="edit" />
+            </button>
+            <button class="icon-btn danger" (click)="deleteSubcategory(subcategory)" aria-label="Borrar">
+              <app-icon name="trash" />
+            </button>
+          </div>
+        </div>
+      </cdk-virtual-scroll-viewport>
+    }
+  </section>
+}
+
+<!-- Modal: nuevo/editar tipo de negocio -->
+@if (typeModalOpen()) {
+  <div class="modal-backdrop" (click)="closeTypeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingType ? 'Editar tipo de negocio' : 'Nuevo tipo de negocio' }}</h2>
+        <button class="modal-close" (click)="closeTypeModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="typeName" name="typeName" placeholder="Ej. Restaurante" />
+        </label>
+
+        <div class="image-field">
+          <div class="image-preview">
+            @if (typeImagePreviewUrl()) {
+              <img [src]="typeImagePreviewUrl()!" alt="" />
+            } @else {
+              <app-icon name="camera" />
+            }
+          </div>
+          <div class="image-field-info">
+            <strong>Imagen</strong>
+            <p class="muted">Ícono cuadrado que representa este tipo de negocio en la app.</p>
+            <label class="btn-upload">
+              <app-icon name="camera" />
+              {{ typeImagePreviewUrl() ? 'Cambiar imagen' : 'Subir imagen' }}
+              <input type="file" accept="image/*" (change)="onTypeImageSelected($event)" hidden />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeTypeModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSavingType() || !typeName.trim()" (click)="saveType()">
+          {{ isSavingType() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: nueva/editar subcategoría -->
+@if (subcategoryModalOpen()) {
+  <div class="modal-backdrop" (click)="closeSubcategoryModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingSubcategory ? 'Editar subcategoría' : 'Nueva subcategoría' }}</h2>
+        <button class="modal-close" (click)="closeSubcategoryModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="subcategoryName" name="subcategoryName" placeholder="Ej. Pizzas" />
+        </label>
+
+        <div class="image-field">
+          <div class="image-preview">
+            @if (subcategoryImagePreviewUrl()) {
+              <img [src]="subcategoryImagePreviewUrl()!" alt="" />
+            } @else {
+              <app-icon name="camera" />
+            }
+          </div>
+          <div class="image-field-info">
+            <strong>Imagen</strong>
+            <p class="muted">Ícono cuadrado que representa esta subcategoría en la app.</p>
+            <label class="btn-upload">
+              <app-icon name="camera" />
+              {{ subcategoryImagePreviewUrl() ? 'Cambiar imagen' : 'Subir imagen' }}
+              <input type="file" accept="image/*" (change)="onSubcategoryImageSelected($event)" hidden />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeSubcategoryModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSavingSubcategory() || !subcategoryName.trim()" (click)="saveSubcategory()">
+          {{ isSavingSubcategory() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

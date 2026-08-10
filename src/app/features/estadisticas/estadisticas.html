@@ -1,0 +1,198 @@
+<div class="page-head">
+  <div>
+    <h1>Estadísticas</h1>
+    <p class="muted">Ventas, negocios y repartidores más destacados de toda la plataforma.</p>
+  </div>
+  <button class="btn-secondary" (click)="exportCsv()" [disabled]="!data()">
+    <app-icon name="receipt" />
+    Exportar CSV
+  </button>
+</div>
+
+<div class="filters-bar">
+  <div class="presets">
+    @for (preset of presets; track preset.key) {
+      <button class="preset" [class.active]="activePreset === preset.key" (click)="applyPreset(preset.key)">
+        {{ preset.label }}
+      </button>
+    }
+  </div>
+
+  <div class="date-inputs">
+    <label>
+      Desde
+      <input type="date" [(ngModel)]="from" [max]="to" (change)="onCustomDateChange()" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" [(ngModel)]="to" [min]="from" (change)="onCustomDateChange()" />
+    </label>
+  </div>
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="card" [rows]="4" />
+} @else if (data(); as stats) {
+  <div class="platform-grid">
+    <div class="mini-stat">
+      <app-icon name="store" />
+      <div>
+        <span class="mini-value">{{ stats.platform.activeCompanies }}</span>
+        <span class="mini-label">Negocios activos ({{ stats.platform.totalCompanies }} en total)</span>
+      </div>
+    </div>
+    <div class="mini-stat">
+      <app-icon name="map-pin" />
+      <div>
+        <span class="mini-value">{{ stats.platform.totalStores }}</span>
+        <span class="mini-label">Sucursales registradas</span>
+      </div>
+    </div>
+    <div class="mini-stat">
+      <app-icon name="truck" />
+      <div>
+        <span class="mini-value">{{ stats.platform.activeDrivers }}</span>
+        <span class="mini-label">Repartidores activos ({{ stats.platform.totalDrivers }} en total)</span>
+      </div>
+    </div>
+    <div class="mini-stat" [class.warn]="stats.platform.companiesOverdue > 0">
+      <app-icon name="credit-card" />
+      <div>
+        <span class="mini-value">{{ stats.platform.companiesOverdue }}</span>
+        <span class="mini-label">Negocios con pago vencido</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="stat-card">
+      <div class="stat-icon success"><app-icon name="trending-up" /></div>
+      <div class="stat-text">
+        <span class="stat-label">GMV (ventas de la plataforma)</span>
+        <span class="stat-value">${{ stats.summary.gmv | number: '1.2-2' }}</span>
+        <span class="stat-sub">{{ stats.summary.deliveredCount }} pedido(s) entregado(s)</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon info"><app-icon name="credit-card" /></div>
+      <div class="stat-text">
+        <span class="stat-label">Ingresos de la plataforma</span>
+        <span class="stat-value">${{ stats.platformRevenue.total | number: '1.2-2' }}</span>
+        <span class="stat-sub">{{ stats.platformRevenue.paymentsCount }} pago(s) de negocios cobrados</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon neutral"><app-icon name="receipt" /></div>
+      <div class="stat-text">
+        <span class="stat-label">Pedidos totales</span>
+        <span class="stat-value">{{ stats.summary.ordersCount }}</span>
+        <span class="stat-sub">ticket promedio ${{ stats.summary.avgTicket | number: '1.2-2' }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon error"><app-icon name="x-circle" /></div>
+      <div class="stat-text">
+        <span class="stat-label">Cancelados / rechazados</span>
+        <span class="stat-value">{{ stats.summary.cancelledCount }}</span>
+        <span class="stat-sub">
+          {{ stats.summary.ordersCount ? (stats.summary.cancelledCount / stats.summary.ordersCount * 100 | number: '1.0-1') : 0 }}%
+          del total
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Ventas de la plataforma por día</h2>
+      <span class="muted">{{ stats.range.from }} — {{ stats.range.to }}</span>
+    </div>
+    @if (stats.revenueByDay.length === 0) {
+      <p class="empty">No hubo ventas entregadas en este rango.</p>
+    } @else {
+      <div class="bar-chart">
+        @for (day of stats.revenueByDay; track day.date) {
+          <div class="bar-col" [title]="'$' + day.revenue.toFixed(2) + ' · ' + day.orders + ' pedido(s) · ' + day.date">
+            <div class="bar" [style.height.%]="barHeight(day.revenue)"></div>
+            <span class="bar-label">{{ dayLabel(day.date) }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <h2>Negocios con más ventas</h2>
+      @if (stats.topCompanies.length === 0) {
+        <p class="empty">Todavía no hay ventas de negocios en este rango.</p>
+      } @else {
+        <div class="rank-list">
+          @for (company of stats.topCompanies; track company.companyId; let i = $index) {
+            <div class="rank-row">
+              <span class="rank-index">{{ i + 1 }}</span>
+              <div class="rank-info">
+                <span class="rank-title">{{ company.name }}</span>
+                <span class="rank-sub">{{ company.orders }} pedido(s)</span>
+              </div>
+              <span class="rank-amount">${{ company.revenue | number: '1.2-2' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="panel">
+      <h2>Sucursales con más ventas</h2>
+      @if (stats.topStores.length === 0) {
+        <p class="empty">Todavía no hay ventas de sucursales en este rango.</p>
+      } @else {
+        <div class="rank-list">
+          @for (store of stats.topStores; track store.storeId; let i = $index) {
+            <div class="rank-row">
+              <span class="rank-index">{{ i + 1 }}</span>
+              <div class="rank-info">
+                <span class="rank-title">{{ store.storeName }}</span>
+                <span class="rank-sub">{{ store.companyName }} · {{ store.orders }} pedido(s)</span>
+              </div>
+              <span class="rank-amount">${{ store.revenue | number: '1.2-2' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <h2>Repartidores con más entregas</h2>
+      @if (stats.topDrivers.length === 0) {
+        <p class="empty">Todavía no hay entregas asignadas a un repartidor en este rango.</p>
+      } @else {
+        <div class="rank-list">
+          @for (driver of stats.topDrivers; track driver.driverId; let i = $index) {
+            <div class="rank-row">
+              <span class="rank-index">{{ i + 1 }}</span>
+              <div class="rank-info">
+                <span class="rank-title">{{ driver.name }}</span>
+                <span class="rank-sub">{{ driver.deliveries }} entrega(s)</span>
+              </div>
+              <span class="rank-amount">${{ driver.revenue | number: '1.2-2' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="panel">
+      <h2>Pedidos por estado</h2>
+      <div class="status-pills">
+        @for (item of stats.ordersByStatus; track item.status) {
+          <span class="status-pill" [class]="statusColorClass[item.status]">
+            {{ statusLabels[item.status] }} · {{ item.count }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+}

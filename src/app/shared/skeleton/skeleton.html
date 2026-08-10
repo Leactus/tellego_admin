@@ -1,0 +1,50 @@
+<div class="skeleton" [class]="'skeleton--' + variant()" aria-hidden="true">
+  @switch (variant()) {
+    @case ('card') {
+      @for (i of rowsArray(); track i) {
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <span class="sk-line sk-line--title sk-line--40"></span>
+            <span class="sk-pill"></span>
+          </div>
+          <span class="sk-line sk-line--90"></span>
+          <span class="sk-line sk-line--70"></span>
+          <div class="skeleton-card-footer">
+            <span class="sk-line sk-line--30"></span>
+            <span class="sk-btn"></span>
+          </div>
+        </div>
+      }
+    }
+    @case ('modal') {
+      <div class="skeleton-modal">
+        @for (i of rowsArray(); track i) {
+          <span class="sk-line sk-line--field"></span>
+        }
+      </div>
+    }
+    @case ('text') {
+      <div class="skeleton-text">
+        @for (i of rowsArray(); track i) {
+          <span class="sk-line"></span>
+        }
+      </div>
+    }
+    @default {
+      <div class="skeleton-list">
+        @for (i of rowsArray(); track i) {
+          <div class="skeleton-row">
+            @if (avatar()) {
+              <span class="sk-avatar"></span>
+            }
+            <div class="skeleton-row-info">
+              <span class="sk-line sk-line--title sk-line--50"></span>
+              <span class="sk-line sk-line--sm sk-line--70"></span>
+            </div>
+            <span class="sk-pill"></span>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

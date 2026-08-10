@@ -1,0 +1,152 @@
+/* Modal genérico (backdrop + card + header + campos + acciones) reutilizado en todas las páginas del panel de negocio. */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  animation: modal-fade 0.15s ease;
+}
+
+/*
+ * El modal es el marco (border-radius + recorte); NO hace scroll él mismo.
+ * .modal-header y .modal-actions quedan fijos arriba/abajo; solo .modal-body
+ * hace scroll en medio. Un sticky del header hecho contra .modal directamente
+ * se sale del recorte redondeado en Chrome (bug conocido de position:sticky +
+ * border-radius + overflow) — por eso el scroll vive en un hijo aparte.
+ */
+.modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  animation: modal-pop 0.18s ease;
+}
+
+.modal-wide {
+  max-width: 700px;
+}
+
+.modal-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 20px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 28px 30px 14px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.25rem;
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface-variant));
+  color: var(--color-error);
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.modal input[type='text'],
+.modal input[type='number'],
+.modal input[type='email'],
+.modal input[type='password'],
+.modal input[type='tel'],
+.modal input[type='date'],
+.modal textarea {
+  padding: 11px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal input:disabled {
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.checkbox-row,
+.radio-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 30px 26px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

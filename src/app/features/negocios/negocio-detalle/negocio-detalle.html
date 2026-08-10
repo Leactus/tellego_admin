@@ -1,0 +1,414 @@
+<a class="back-link" routerLink="/negocios">&larr; Volver a negocios</a>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="5" />
+} @else if (company(); as c) {
+  <div class="header-row">
+    <div>
+      <h1>{{ c.name }}</h1>
+      <p class="muted">
+        {{ c.owner?.name ?? ('Dueño #' + c.ownerUserId) }} ·
+        <span class="status-badge status-static" [class.status-suspended]="c.status === 'suspended'">
+          <span class="status-dot"></span>
+          {{ c.status === 'active' ? 'Activo' : 'Suspendido' }}
+        </span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'horario']">Ver horarios</a>
+      <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'menu']">Ver menú</a>
+      <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'personal']">Ver personal</a>
+      <button
+        class="btn-secondary"
+        [class.danger-text]="c.status === 'active'"
+        (click)="toggleStatus()"
+      >
+        {{ c.status === 'active' ? 'Suspender negocio' : 'Activar negocio' }}
+      </button>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Dueño del negocio</h2>
+    <div class="billing-form">
+      <label>
+        Nombre
+        <input type="text" [(ngModel)]="ownerForm.name" name="ownerName" />
+      </label>
+      <label>
+        Correo electrónico
+        <input type="email" [(ngModel)]="ownerForm.email" name="ownerEmail" [class.invalid]="isOwnerEmailInvalid()" />
+      </label>
+      <label>
+        Teléfono
+        <input type="text" [(ngModel)]="ownerForm.phone" name="ownerPhone" />
+      </label>
+    </div>
+    @if (isOwnerEmailInvalid()) {
+      <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
+    }
+    <div class="toolbar">
+      <button class="btn-secondary" [disabled]="isResettingPassword()" (click)="resetOwnerPassword()">
+        {{ isResettingPassword() ? 'Regenerando…' : 'Regenerar contraseña' }}
+      </button>
+      <button class="btn-primary" [disabled]="isSavingOwner()" (click)="saveOwner()">
+        {{ isSavingOwner() ? 'Guardando…' : 'Guardar datos del dueño' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Cobro con tarjeta (APay)</h2>
+    @if (apayCredencial(); as cred) {
+      <p class="muted">
+        Token activo terminado en <strong>{{ cred.tokenSufijo }}</strong>
+        @if (cred.apayBusinessId) { · id_business {{ cred.apayBusinessId }} }
+      </p>
+      <div class="toolbar">
+        <button class="btn-secondary danger-text" (click)="removeApay()">Quitar credencial</button>
+      </div>
+      <p class="muted">Para rotarla, carga un token nuevo abajo — se desactiva la actual automáticamente.</p>
+    } @else {
+      <p class="empty">Este negocio todavía no tiene una cuenta APay configurada; no puede cobrar con tarjeta.</p>
+    }
+    <div class="billing-form">
+      <label>
+        Token de cuenta APay
+        <input type="text" [(ngModel)]="apayForm.apayToken" name="apayToken" autocomplete="off" placeholder="Token de APay" />
+      </label>
+      <label>
+        id_business (opcional, para APay Links)
+        <input type="text" [(ngModel)]="apayForm.apayBusinessId" name="apayBusinessId" autocomplete="off" />
+      </label>
+    </div>
+    <div class="toolbar">
+      <button class="btn-primary" [disabled]="isSavingApay()" (click)="saveApay()">
+        {{ isSavingApay() ? 'Guardando…' : 'Guardar token APay' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Tipo de negocio</h2>
+    <p class="muted hint">
+      Aplica a todas sus sucursales por igual. El tipo de negocio solo se puede elegir una vez; las
+      subcategorías se pueden cambiar cuando quieras.
+    </p>
+    <div class="billing-form">
+      @if (c.businessType; as bt) {
+        <label>
+          Tipo de negocio
+          <input type="text" [value]="bt.name" disabled />
+        </label>
+      } @else {
+        <label>
+          Tipo de negocio
+          <app-select
+            [(ngModel)]="businessTypeForm.businessTypeId"
+            name="companyBusinessType"
+            (ngModelChange)="onBusinessTypeChange($event)"
+            [options]="businessTypeOptions()"
+            placeholder="Selecciona un tipo de negocio"
+          />
+        </label>
+      }
+      <label>
+        Subcategorías
+        <app-multi-select
+          [(ngModel)]="businessTypeForm.subcategoryIds"
+          [options]="subcategoryOptions()"
+          placeholder="Selecciona subcategorías"
+        />
+      </label>
+    </div>
+    @if (!c.businessType && !businessTypeForm.businessTypeId) {
+      <p class="muted hint">Elige primero un tipo de negocio para ver sus subcategorías.</p>
+    }
+    <div class="toolbar">
+      <button class="btn-primary" [disabled]="isSavingBusinessType()" (click)="saveBusinessType()">
+        {{ isSavingBusinessType() ? 'Guardando…' : 'Guardar tipo de negocio' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Sucursales</h2>
+      <button class="btn-primary" (click)="openNewStoreModal()">+ Nueva sucursal</button>
+    </div>
+    @if (!c.branches || c.branches.length === 0) {
+      <p class="empty">Sin sucursales.</p>
+    } @else {
+      <div class="list">
+        @for (branch of c.branches; track branch.id) {
+          <div class="row">
+            <app-icon name="map-pin" class="row-icon" />
+            <div class="row-info">
+              <span class="row-title">{{ branch.name }}</span>
+              <span class="muted">{{ branch.department || 'Sin región asignada' }}</span>
+            </div>
+            <span class="pill">{{ branch.status }}</span>
+            <div class="row-actions">
+              <button class="icon-btn" (click)="openEditStoreModal(branch)" aria-label="Editar sucursal">
+                <app-icon name="edit" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Facturación</h2>
+    <div class="billing-form">
+      <label>
+        Tipo de cobro
+        <app-select [(ngModel)]="billingForm.billingType" name="billingType" [options]="billingTypeOptions" />
+      </label>
+      @if (billingForm.billingType === 'fee') {
+        <label>
+          Cuota mensual (USD)
+          <input type="number" min="0" step="0.01" [(ngModel)]="billingForm.monthlyFee" name="monthlyFee" />
+        </label>
+      } @else {
+        <label>
+          Comisión (%)
+          <input type="number" min="0" max="100" step="0.01" [(ngModel)]="billingForm.commissionRate" name="commissionRate" />
+        </label>
+      }
+      <label>
+        Próxima fecha de pago
+        <input type="date" [(ngModel)]="billingForm.nextPaymentDueDate" name="nextPaymentDueDate" />
+      </label>
+      <label>
+        Facturación inicia el
+        <input type="date" [(ngModel)]="billingForm.billingStartsAt" name="billingStartsAt" />
+      </label>
+    </div>
+    <p class="muted hint">
+      "Facturación inicia el" permite dar de gracia a un cliente nuevo: no se considera moroso antes de esa fecha.
+      Cambiar el tipo de cobro o su valor aquí solo aplica hacia adelante — no toca el historial de pagos ya registrado.
+    </p>
+
+    @if (company(); as c) {
+      <div class="grace-status" [class.blocked]="c.isBlocked">
+        @if (c.isBlocked) {
+          <app-icon name="x-circle" />
+          <span>Bloqueada por mora desde el {{ formatLongDate(c.blockDate) }} — invisible en la app y sin acceso a su panel.</span>
+        } @else if (c.nextPaymentDueDate) {
+          <app-icon name="info-circle" />
+          <span>
+            Si sigue sin pagar, se bloquea automáticamente el {{ formatLongDate(c.blockDate) }} ({{ c.effectiveGracePeriodDays }}
+            día(s) de gracia{{ c.gracePeriodDays === null ? ' — general' : ' — propio de este negocio' }}).
+          </span>
+        }
+      </div>
+    }
+
+    <div class="billing-form">
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          [ngModel]="useCustomGracePeriod"
+          (ngModelChange)="onToggleCustomGracePeriod($event)"
+          name="useCustomGracePeriod"
+        />
+        Usar un periodo de gracia propio para este negocio (si no, usa el general de Configuraciones)
+      </label>
+      @if (useCustomGracePeriod) {
+        <label>
+          Días de gracia para este negocio
+          <input type="number" min="0" step="1" [(ngModel)]="billingForm.gracePeriodDays" name="gracePeriodDays" />
+        </label>
+      }
+      <label class="checkbox-row">
+        <input type="checkbox" [(ngModel)]="billingForm.penaltyEnabled" name="penaltyEnabled" />
+        Aplicar penalización automática (bloqueo) a este negocio si se pasa de la gracia
+      </label>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn-primary" (click)="saveBilling()">Guardar facturación</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>
+        Historial de pagos
+        @if (c.billingType === 'commission') {
+          <span class="muted subtitle">— comisión {{ c.commissionRate }}% sobre ventas</span>
+        }
+      </h2>
+      <button class="btn-primary" (click)="openPaymentModal()">+ Registrar pago</button>
+    </div>
+    @if (payments().length === 0) {
+      <p class="empty">Todavía no hay pagos registrados.</p>
+    } @else {
+      <div class="list">
+        @for (payment of payments(); track payment.id) {
+          <div class="row">
+            <app-icon name="credit-card" class="row-icon" />
+            <div class="row-info">
+              <span class="row-title">${{ payment.amount }} · {{ payment.method }}</span>
+              <span class="muted">
+                Periodo {{ payment.periodStart }} — {{ payment.periodEnd }}
+                @if (payment.registeredBy) {
+                  · Registrado por {{ payment.registeredBy.name }}
+                }
+              </span>
+              @if (payment.note) {
+                <span class="muted note">{{ payment.note }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <app-pager
+        [page]="paymentsPage()"
+        [totalPages]="paymentsTotalPages()"
+        [total]="paymentsTotal()"
+        [pageSize]="paymentsPageSize()"
+        (pageChange)="onPaymentsPageChange($event)"
+        (pageSizeChange)="onPaymentsPageSizeChange($event)"
+      />
+    }
+  </section>
+}
+
+<!-- Modal: registrar pago -->
+@if (paymentModalOpen()) {
+  <div class="modal-backdrop" (click)="closePaymentModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Registrar pago</h2>
+        <button class="modal-close" (click)="closePaymentModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      @if (company()?.billingType === 'commission') {
+        <div class="modal-body">
+          <label>
+            Periodo desde
+            <input type="date" [(ngModel)]="paymentForm.periodStart" name="periodStart" />
+          </label>
+          <label>
+            Periodo hasta
+            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" />
+          </label>
+          <div class="toolbar">
+            <button type="button" class="btn-secondary" [disabled]="isCalculatingSales()" (click)="calculateFromSales()">
+              {{ isCalculatingSales() ? 'Calculando…' : 'Calcular desde ventas' }}
+            </button>
+          </div>
+          @if (salesInfo(); as sales) {
+            <p class="muted hint">
+              Ventas del periodo: ${{ sales.totalSales }} · Comisión {{ sales.commissionRate }}% = ${{ sales.suggestedAmount }}
+            </p>
+          }
+          <label>
+            Monto (USD)
+            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" />
+          </label>
+          <label>
+            Método
+            <app-select [(ngModel)]="paymentForm.method" name="method" [options]="methodOptions" />
+          </label>
+          <label>
+            Nota
+            <input type="text" [(ngModel)]="paymentForm.note" name="note" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-text" (click)="closePaymentModal()">Cancelar</button>
+          <button class="btn-primary" (click)="savePayment()">Guardar</button>
+        </div>
+      } @else {
+        <div class="modal-body">
+          <p class="muted hint">
+            Cuota mensual: ${{ company()?.monthlyFee }}. Puedes registrar varios meses de una sola vez.
+          </p>
+          <label>
+            Meses a pagar
+            <input type="number" min="1" max="24" step="1" [(ngModel)]="advanceForm.months" name="months" />
+          </label>
+          <p class="muted hint">
+            Total: <strong>${{ advanceTotal().toFixed(2) }}</strong> · Próximo pago quedará para el
+            <strong>{{ formatLongDate(advanceNextDueDate()) }}</strong>
+          </p>
+          <label>
+            Método
+            <app-select [(ngModel)]="advanceForm.method" name="advanceMethod" [options]="methodOptions" />
+          </label>
+          <label>
+            Nota
+            <input type="text" [(ngModel)]="advanceForm.note" name="advanceNote" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-text" (click)="closePaymentModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="advanceForm.months < 1" (click)="saveAdvancePayment()">Guardar</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Modal: nueva/editar sucursal -->
+@if (storeModalOpen()) {
+  <div class="modal-backdrop" (click)="closeStoreModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingStore ? 'Editar sucursal' : 'Nueva sucursal' }}</h2>
+        <button class="modal-close" (click)="closeStoreModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="storeForm.name" name="storeName" placeholder="Ej. Sucursal Santa Ana" />
+        </label>
+        <label>
+          Región / departamento
+          <app-select
+            [(ngModel)]="storeForm.departmentId"
+            name="storeDepartment"
+            [options]="departmentOptions()"
+            placeholder="Selecciona un departamento"
+          />
+        </label>
+        <label>
+          Dirección
+          <input type="text" [(ngModel)]="storeForm.address" name="storeAddress" />
+        </label>
+        <app-location-field
+          [lat]="storeForm.lat"
+          [lng]="storeForm.lng"
+          (latChange)="onStoreLatChange($event)"
+          (lngChange)="onStoreLngChange($event)"
+        />
+        <label>
+          Teléfono
+          <input type="text" [(ngModel)]="storeForm.phone" name="storePhone" />
+        </label>
+        <label>
+          Descripción
+          <textarea [(ngModel)]="storeForm.description" name="storeDescription" rows="2"></textarea>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeStoreModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSavingStore() || !storeForm.name" (click)="saveStore()">
+          {{ isSavingStore() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

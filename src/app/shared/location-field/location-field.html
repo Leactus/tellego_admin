@@ -1,0 +1,56 @@
+<div class="location-field">
+  <span class="location-label">Ubicación del negocio</span>
+  <div class="location-mode-toggle">
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="locationMode() === 'coords'"
+      (click)="setLocationMode('coords')"
+    >
+      <app-icon name="locate" />
+      Sacar coordenadas
+    </button>
+    <button type="button" class="mode-btn" [class.active]="locationMode() === 'map'" (click)="setLocationMode('map')">
+      <app-icon name="map-pin" />
+      Ver mapa
+    </button>
+  </div>
+
+  @if (locationMode() === 'coords') {
+    <button type="button" class="btn-secondary" [disabled]="isLocating()" (click)="useCurrentLocation()">
+      <app-icon name="locate" />
+      {{ isLocating() ? 'Obteniendo ubicación…' : 'Usar mi ubicación actual' }}
+    </button>
+    <p class="location-warning">
+      <app-icon name="info-circle" />
+      Solo usa "Usar mi ubicación actual" si estás físicamente parado en el local — si lo haces desde otro lugar,
+      las coordenadas van a quedar mal y los clientes van a ver tu ubicación incorrecta en la app.
+    </p>
+
+    @if (mapPreviewUrl(); as previewUrl) {
+      <div class="map-preview">
+        <iframe
+          [src]="previewUrl"
+          width="100%"
+          height="220"
+          style="border: 0"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+        <span class="map-preview-hint">
+          Vista previa — solo visual. Para cambiar la ubicación, usa "Usar mi ubicación actual".
+        </span>
+      </div>
+    } @else {
+      <p class="muted map-preview-empty">Usa "Usar mi ubicación actual" para ver la vista previa del mapa.</p>
+    }
+  } @else {
+    <div class="map-coming-soon">
+      <app-icon name="map-pin" />
+      <div>
+        <strong>Selector de mapa</strong>
+        <p class="muted">Próximamente vas a poder buscar y marcar la ubicación directo en el mapa.</p>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,123 @@
+<h1>Repartidores</h1>
+<p class="muted">Aprobación y estado de los repartidores de la plataforma.</p>
+
+<div class="toolbar">
+  <button class="btn-primary" (click)="openNewModal()">+ Crear repartidor</button>
+</div>
+
+<div class="search-bar">
+  <app-icon name="search" />
+  <input
+    type="search"
+    placeholder="Buscar por nombre o teléfono..."
+    [(ngModel)]="search"
+    (ngModelChange)="onSearchChange()"
+  />
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (items().length === 0) {
+  <p class="empty">
+    {{ search ? 'No se encontraron repartidores con esos datos.' : 'Todavía no hay repartidores registrados.' }}
+  </p>
+} @else {
+  <div class="list">
+    @for (driver of items(); track driver.id) {
+      <div class="row">
+        <app-icon name="truck" class="row-icon" />
+        <div class="row-info">
+          <span class="row-title">{{ driver.User?.name || 'Repartidor #' + driver.id }}</span>
+          <span class="muted">
+            {{ driver.User?.phone || 'Sin teléfono' }} · {{ driver.vehicleType || 'Vehículo no especificado' }}
+            @if (driver.ratingCount > 0) {
+              · {{ driver.ratingAvg }}★ ({{ driver.ratingCount }})
+            }
+          </span>
+        </div>
+        <span
+          class="pill"
+          [class.pill-suspended]="driver.status === 'suspended'"
+          [class.pill-pending]="driver.status === 'pending_approval'"
+        >
+          {{
+            driver.status === 'active' ? 'Activo' : driver.status === 'suspended' ? 'Suspendido' : 'Pendiente'
+          }}
+        </span>
+        <div class="row-actions">
+          <button class="icon-btn" (click)="openEditModal(driver)" aria-label="Editar">
+            <app-icon name="edit" />
+          </button>
+          @if (driver.status !== 'active') {
+            <button class="icon-btn" (click)="approve(driver)" aria-label="Aprobar">
+              <app-icon name="check-circle" />
+            </button>
+          }
+          @if (driver.status !== 'suspended') {
+            <button class="icon-btn danger" (click)="suspend(driver)" aria-label="Suspender">
+              <app-icon name="x-circle" />
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Modal: nuevo/editar repartidor -->
+@if (formModalOpen()) {
+  <div class="modal-backdrop" (click)="closeFormModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingDriver ? 'Editar repartidor' : 'Nuevo repartidor' }}</h2>
+        <button class="modal-close" (click)="closeFormModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="form.name" name="driverName" placeholder="Ej. Luis Gómez" />
+        </label>
+        @if (!editingDriver) {
+          <label>
+            Email
+            <input type="email" [(ngModel)]="form.email" name="driverEmail" placeholder="repartidor@correo.com" />
+          </label>
+        }
+        <label>
+          Teléfono
+          <input type="text" [(ngModel)]="form.phone" name="driverPhone" placeholder="+503 7000-0000" />
+        </label>
+        <label>
+          Vehículo
+          <input type="text" [(ngModel)]="form.vehicleType" name="driverVehicle" placeholder="Ej. Moto" />
+        </label>
+        <label>
+          Placa
+          <input type="text" [(ngModel)]="form.plateNumber" name="driverPlate" placeholder="Ej. ABC-123" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeFormModal()">Cancelar</button>
+        <button
+          class="btn-primary"
+          [disabled]="isSaving() || !form.name || (!editingDriver && !form.email)"
+          (click)="saveDriver()"
+        >
+          {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

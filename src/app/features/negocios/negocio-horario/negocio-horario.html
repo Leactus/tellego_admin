@@ -1,0 +1,124 @@
+<a class="back-link" [routerLink]="['/negocios', company()?.id]">&larr; Volver al negocio</a>
+
+<h1>Horario de atención</h1>
+<p class="muted">{{ company()?.name }} — define los días y horas de cada sucursal.</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="7" [avatar]="false" />
+} @else if (storeOptions().length === 0) {
+  <p class="empty">Este negocio todavía no tiene sucursales.</p>
+} @else {
+  <label class="store-picker-label">
+    Sucursal
+    <app-select
+      class="store-picker"
+      [ngModel]="selectedStoreId()"
+      (ngModelChange)="onStoreChange($event)"
+      [options]="storeOptions()"
+    />
+  </label>
+
+  <div class="layout-row">
+    <div class="schedule-card">
+      @for (day of days(); track day.dayOfWeek) {
+        <div class="day-row" [class.closed]="day.isClosed">
+          <span class="day-label">{{ day.label }}</span>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="day.isClosed" />
+            Cerrado
+          </label>
+
+          @if (!day.isClosed) {
+            <div class="time-inputs">
+              <input type="time" [(ngModel)]="day.openTime" />
+              <span class="time-sep">a</span>
+              <input type="time" [(ngModel)]="day.closeTime" />
+            </div>
+          } @else {
+            <span class="closed-label">Sin servicio</span>
+          }
+
+          <button class="btn-text copy-btn" (click)="copyToAll(day)" title="Usar este horario todos los días">
+            Copiar a todos
+          </button>
+        </div>
+      }
+
+      <div class="toolbar">
+        <button class="btn-primary" [disabled]="isSaving()" (click)="save()">
+          {{ isSaving() ? 'Guardando…' : 'Guardar horario' }}
+        </button>
+      </div>
+    </div>
+
+    @if (allBranches().length > 1) {
+      <div class="copy-card">
+        <h2>Copiar a otras sucursales</h2>
+        <p class="muted">
+          Guarda automáticamente los cambios de esta sucursal y los copia a las sucursales que elijas —
+          reemplaza su horario actual.
+        </p>
+        @if (showBranchSearch()) {
+          <label class="branch-search">
+            <input
+              type="text"
+              [ngModel]="branchSearchQuery()"
+              (ngModelChange)="branchSearchQuery.set($event)"
+              placeholder="Buscar sucursal..."
+            />
+          </label>
+        }
+
+        @if (filteredBranches().length === 0) {
+          <p class="empty-inline">Ninguna sucursal coincide con la búsqueda.</p>
+        } @else {
+          <label class="branch-check select-all">
+            <input type="checkbox" [checked]="allFilteredSelected()" (change)="toggleSelectAll($event)" />
+            Seleccionar todas
+          </label>
+
+          @if (useVirtualScroll()) {
+            <cdk-virtual-scroll-viewport itemSize="34" class="branch-checklist branch-checklist-virtual">
+              <label
+                class="branch-check"
+                [class.is-current]="branch.id === selectedStoreId()"
+                *cdkVirtualFor="let branch of filteredBranches(); trackBy: trackByBranchId"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="isTargetSelected(branch.id)"
+                  (change)="toggleTarget(branch.id, $event)"
+                />
+                {{ branch.department ? branch.name + ' (' + branch.department + ')' : branch.name }}
+                @if (branch.id === selectedStoreId()) {
+                  <span class="current-tag">sucursal actual</span>
+                }
+              </label>
+            </cdk-virtual-scroll-viewport>
+          } @else {
+            <div class="branch-checklist">
+              @for (branch of filteredBranches(); track branch.id) {
+                <label class="branch-check" [class.is-current]="branch.id === selectedStoreId()">
+                  <input
+                    type="checkbox"
+                    [checked]="isTargetSelected(branch.id)"
+                    (change)="toggleTarget(branch.id, $event)"
+                  />
+                  {{ branch.department ? branch.name + ' (' + branch.department + ')' : branch.name }}
+                  @if (branch.id === selectedStoreId()) {
+                    <span class="current-tag">sucursal actual</span>
+                  }
+                </label>
+              }
+            </div>
+          }
+        }
+
+        <button class="btn-secondary" [disabled]="selectedTargetIds().size === 0 || isCopying()" (click)="copyToBranches()">
+          {{ isCopying() ? 'Copiando…' : 'Copiar horario' }}
+        </button>
+      </div>
+    }
+  </div>
+}
