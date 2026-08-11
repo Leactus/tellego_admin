@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { Icon } from '../icon/icon';
+import { LocationMap } from '../location-map/location-map';
 import { ToastService } from '../toast/toast.service';
 
 type LocationMode = 'coords' | 'map';
@@ -12,13 +13,13 @@ type LocationMode = 'coords' | 'map';
  *  - Coordenadas: inputs de lat/lng editables + botón de geolocalización + vista previa
  *    de Google Maps (embed público, solo visual — no se puede marcar ahí, solo cambia
  *    si editas los inputs).
- *  - Mapa: selector interactivo para buscar/marcar — todavía no implementado, muestra
- *    "Próximamente".
+ *  - Mapa: selector interactivo (Leaflet + OpenStreetMap, ver `LocationMap`) — click o
+ *    arrastrar el pin marca la ubicación exacta.
  */
 @Component({
   selector: 'app-location-field',
   standalone: true,
-  imports: [FormsModule, Icon],
+  imports: [FormsModule, Icon, LocationMap],
   templateUrl: './location-field.html',
   styleUrl: './location-field.scss',
 })
@@ -51,6 +52,11 @@ export class LocationField {
 
   onLngChange(value: number | null): void {
     this.lngChange.emit(value);
+  }
+
+  onMapLocationChange({ lat, lng }: { lat: number; lng: number }): void {
+    this.latChange.emit(lat);
+    this.lngChange.emit(lng);
   }
 
   /** Solo da una posición correcta si el dueño está físicamente en el local (ver aviso en el template). */

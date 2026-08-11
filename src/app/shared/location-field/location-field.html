@@ -45,12 +45,10 @@
       <p class="muted map-preview-empty">Usa "Usar mi ubicación actual" para ver la vista previa del mapa.</p>
     }
   } @else {
-    <div class="map-coming-soon">
-      <app-icon name="map-pin" />
-      <div>
-        <strong>Selector de mapa</strong>
-        <p class="muted">Próximamente vas a poder buscar y marcar la ubicación directo en el mapa.</p>
-      </div>
-    </div>
+    <app-location-map [lat]="lat()" [lng]="lng()" (locationChange)="onMapLocationChange($event)" />
+    <p class="location-warning">
+      <app-icon name="info-circle" />
+      Toca el mapa o arrastra el pin para marcar la ubicación exacta.
+    </p>
   }
 </div>
