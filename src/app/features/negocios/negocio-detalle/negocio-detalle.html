@@ -59,6 +59,15 @@
 
   <section class="card">
     <h2>Cobro con tarjeta (APay)</h2>
+    <div class="billing-form webhook-form">
+      <label>
+        URL de webhook (pégala en el perfil de APay del negocio, en el campo "Endpoint")
+        <div class="webhook-url-row">
+          <input type="text" [value]="apayWebhookUrl" readonly />
+          <button type="button" class="btn-secondary" (click)="copyApayWebhookUrl()">Copiar</button>
+        </div>
+      </label>
+    </div>
     @if (apayCredencial(); as cred) {
       <p class="muted">
         Token activo terminado en <strong>{{ cred.tokenSufijo }}</strong>

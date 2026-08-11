@@ -137,6 +137,24 @@
   margin: 10px 0 0;
 }
 
+.webhook-form {
+  grid-template-columns: 1fr;
+  margin-bottom: 12px;
+}
+
+.webhook-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.webhook-url-row input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-muted);
+  background: var(--color-surface-variant);
+}
+
 .billing-form input.invalid {
   border-color: var(--color-error);
   box-shadow: 0 0 0 1px var(--color-error);

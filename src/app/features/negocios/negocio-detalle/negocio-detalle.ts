@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { environment } from '../../../core/config/environment';
 import { CompaniesService } from '../../../core/services/companies.service';
 import { PaymentsService } from '../../../core/services/payments.service';
 import { StoresService } from '../../../core/services/stores.service';
@@ -68,6 +69,9 @@ export class NegocioDetalle implements OnInit {
   readonly apayCredencial = signal<ApayCredencial | null>(null);
   readonly isSavingApay = signal(false);
   apayForm = { apayToken: '', apayBusinessId: '' };
+  /** Endpoint del webhook de pagos, para pegar en el campo "Endpoint" del perfil de APay del negocio.
+   * Fijo por deploy (environment.apiUrl), no depende del negocio — igual que en delivery-pedidos-admin. */
+  readonly apayWebhookUrl = `${environment.apiUrl}/apay/webhook`;
   readonly payments = signal<PlatformPayment[]>([]);
   readonly paymentsPage = signal(1);
   readonly paymentsPageSize = signal(DEFAULT_PAGE_SIZE);
@@ -318,6 +322,15 @@ export class NegocioDetalle implements OnInit {
       this.toast.error(err?.error?.message ?? 'No se pudo guardar la credencial APay');
     } finally {
       this.isSavingApay.set(false);
+    }
+  }
+
+  async copyApayWebhookUrl(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.apayWebhookUrl);
+      this.toast.success('URL copiada');
+    } catch {
+      this.toast.error('No se pudo copiar la URL');
     }
   }
 
