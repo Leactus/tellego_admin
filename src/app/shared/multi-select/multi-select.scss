@@ -139,6 +139,14 @@
   font-weight: 600;
 }
 
+.option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .option-checkbox {
   flex-shrink: 0;
   width: 18px;

@@ -40,9 +40,10 @@ export class DriversService {
     return firstValueFrom(this.http.patch<{ data: Driver }>(`${this.base}/${id}`, input)).then((r) => r.data);
   }
 
-  updateStatus(id: number, status: DriverStatus): Promise<Driver> {
-    return firstValueFrom(this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status })).then(
-      (r) => r.data,
-    );
+  /** `suspensionDays` solo aplica con status='suspended': ausente/0 = suspensión indefinida. */
+  updateStatus(id: number, status: DriverStatus, suspensionDays?: number): Promise<Driver> {
+    return firstValueFrom(
+      this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status, suspensionDays }),
+    ).then((r) => r.data);
   }
 }

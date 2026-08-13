@@ -7,6 +7,8 @@
 
 .pager-pill {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 2px;
   padding: 6px 14px;

@@ -40,9 +40,13 @@
           [class.pill-suspended]="driver.status === 'suspended'"
           [class.pill-pending]="driver.status === 'pending_approval'"
         >
-          {{
-            driver.status === 'active' ? 'Activo' : driver.status === 'suspended' ? 'Suspendido' : 'Pendiente'
-          }}
+          @if (driver.status === 'active') {
+            Activo
+          } @else if (driver.status === 'suspended') {
+            {{ driver.suspendedUntil ? 'Suspendido hasta ' + (driver.suspendedUntil | date: 'd/M/yy') : 'Suspendido' }}
+          } @else {
+            Pendiente
+          }
         </span>
         <div class="row-actions">
           <button class="icon-btn" (click)="openEditModal(driver)" aria-label="Editar">
@@ -54,7 +58,7 @@
             </button>
           }
           @if (driver.status !== 'suspended') {
-            <button class="icon-btn danger" (click)="suspend(driver)" aria-label="Suspender">
+            <button class="icon-btn danger" (click)="openSuspendModal(driver)" aria-label="Suspender">
               <app-icon name="x-circle" />
             </button>
           }
@@ -125,6 +129,41 @@
           (click)="saveDriver()"
         >
           {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: suspender repartidor -->
+@if (suspendModalOpen()) {
+  <div class="modal-backdrop" (click)="closeSuspendModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Suspender repartidor</h2>
+        <button class="modal-close" (click)="closeSuspendModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>{{ suspendingDriver?.User?.name || 'Este repartidor' }} no podrá tomar más pedidos.</p>
+        <label>
+          Días de suspensión
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="suspendDays"
+            name="suspendDays"
+            placeholder="Vacío = indefinida"
+          />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeSuspendModal()">Cancelar</button>
+        <button class="btn-primary danger" [disabled]="isSuspending()" (click)="confirmSuspend()">
+          {{ isSuspending() ? 'Suspendiendo…' : 'Suspender' }}
         </button>
       </div>
     </div>

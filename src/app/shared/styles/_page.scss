@@ -70,6 +70,14 @@ h1 {
   cursor: not-allowed;
 }
 
+.btn-primary.danger {
+  background: var(--color-error);
+}
+
+.btn-primary.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 85%, black);
+}
+
 .btn-secondary {
   padding: 10px 18px;
   border: 1px solid var(--color-border);

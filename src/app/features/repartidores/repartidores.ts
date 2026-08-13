@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -11,20 +12,18 @@ import { Icon } from '../../shared/icon/icon';
 import { Pager } from '../../shared/pager/pager';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
-import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-password-modal.service';
 
 @Component({
   selector: 'app-repartidores',
   standalone: true,
-  imports: [FormsModule, Icon, Pager, Skeleton],
+  imports: [DatePipe, FormsModule, Icon, Pager, Skeleton],
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })
 export class Repartidores implements OnInit {
   private readonly drivers = inject(DriversService);
   private readonly toast = inject(ToastService);
-  private readonly confirm = inject(ConfirmService);
   private readonly tempPasswordModal = inject(TempPasswordModalService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -40,6 +39,12 @@ export class Repartidores implements OnInit {
   readonly isSaving = signal(false);
   editingDriver: Driver | null = null;
   form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
+
+  readonly suspendModalOpen = signal(false);
+  readonly isSuspending = signal(false);
+  suspendingDriver: Driver | null = null;
+  /** Días de suspensión desde ahora; vacío = indefinida (ver DriverSuspension.service.ts en el backend). */
+  suspendDays: number | null = null;
 
   search = '';
   private readonly debouncedSearch = debounce(() => {
@@ -164,21 +169,30 @@ export class Repartidores implements OnInit {
     }
   }
 
-  async suspend(driver: Driver): Promise<void> {
-    const ok = await this.confirm.confirm({
-      title: 'Suspender repartidor',
-      message: `${driver.User?.name ?? 'Este repartidor'} no podrá tomar más pedidos. ¿Confirmas?`,
-      variant: 'danger',
-      confirmLabel: 'Suspender',
-    });
-    if (!ok) return;
+  openSuspendModal(driver: Driver): void {
+    this.suspendingDriver = driver;
+    this.suspendDays = null;
+    this.suspendModalOpen.set(true);
+  }
 
+  closeSuspendModal(): void {
+    this.suspendModalOpen.set(false);
+  }
+
+  async confirmSuspend(): Promise<void> {
+    const driver = this.suspendingDriver;
+    if (!driver) return;
+
+    this.isSuspending.set(true);
     try {
-      const updated = await this.drivers.updateStatus(driver.id, 'suspended');
+      const updated = await this.drivers.updateStatus(driver.id, 'suspended', this.suspendDays ?? undefined);
       this.items.update((list) => list.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
       this.toast.success('Repartidor suspendido');
+      this.closeSuspendModal();
     } catch {
       this.toast.error('No se pudo suspender el repartidor');
+    } finally {
+      this.isSuspending.set(false);
     }
   }
 }

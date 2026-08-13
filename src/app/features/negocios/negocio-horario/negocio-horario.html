@@ -90,7 +90,7 @@
                   [checked]="isTargetSelected(branch.id)"
                   (change)="toggleTarget(branch.id, $event)"
                 />
-                {{ branch.department ? branch.name + ' (' + branch.department + ')' : branch.name }}
+                <span class="branch-check-label">{{ branch.department ? branch.name + ' (' + branch.department + ')' : branch.name }}</span>
                 @if (branch.id === selectedStoreId()) {
                   <span class="current-tag">sucursal actual</span>
                 }

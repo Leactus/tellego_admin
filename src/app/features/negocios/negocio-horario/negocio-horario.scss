@@ -197,6 +197,16 @@
   color: var(--color-text-muted);
 }
 
+.branch-checklist-virtual .branch-check-label {
+  /* trunca en vez de envolver: la altura fija itemSize="34" del virtual-scroll
+     se rompería y solaparía con la fila siguiente si el texto pasa a 2 líneas. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .current-tag {
   font-size: 0.75rem;
   font-style: italic;
