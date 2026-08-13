@@ -38,6 +38,8 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type Tab = 'info' | 'cobro' | 'sucursales' | 'facturacion' | 'pagos';
+
 @Component({
   selector: 'app-negocio-detalle',
   standalone: true,
@@ -47,6 +49,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 })
 export class NegocioDetalle implements OnInit {
   readonly formatLongDate = formatLongDate;
+
+  readonly activeTab = signal<Tab>('info');
+  setTab(tab: Tab): void {
+    this.activeTab.set(tab);
+  }
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

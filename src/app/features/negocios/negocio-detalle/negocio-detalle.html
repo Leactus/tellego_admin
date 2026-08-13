@@ -28,6 +28,23 @@
     </div>
   </div>
 
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'info'" (click)="setTab('info')">Información básica</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'cobro'" (click)="setTab('cobro')">
+      Cobro con pasarela de pago (APay)
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'sucursales'" (click)="setTab('sucursales')">
+      Sucursales
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'facturacion'" (click)="setTab('facturacion')">
+      Facturación
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'pagos'" (click)="setTab('pagos')">
+      Historial de pagos
+    </button>
+  </div>
+
+  @if (activeTab() === 'info') {
   <section class="card">
     <h2>Dueño del negocio</h2>
     <div class="billing-form">
@@ -56,9 +73,11 @@
       </button>
     </div>
   </section>
+  }
 
+  @if (activeTab() === 'cobro') {
   <section class="card">
-    <h2>Cobro con tarjeta (APay)</h2>
+    <h2>Cobro con pasarela de pago (APay)</h2>
     <div class="billing-form webhook-form">
       <label>
         URL de webhook (pégala en el perfil de APay del negocio, en el campo "Endpoint")
@@ -96,7 +115,9 @@
       </button>
     </div>
   </section>
+  }
 
+  @if (activeTab() === 'info') {
   <section class="card">
     <h2>Tipo de negocio</h2>
     <p class="muted hint">
@@ -139,7 +160,9 @@
       </button>
     </div>
   </section>
+  }
 
+  @if (activeTab() === 'sucursales') {
   <section class="card">
     <div class="card-header">
       <h2>Sucursales</h2>
@@ -167,7 +190,9 @@
       </div>
     }
   </section>
+  }
 
+  @if (activeTab() === 'facturacion') {
   <section class="card">
     <h2>Facturación</h2>
     <div class="billing-form">
@@ -241,7 +266,9 @@
       <button class="btn-primary" (click)="saveBilling()">Guardar facturación</button>
     </div>
   </section>
+  }
 
+  @if (activeTab() === 'pagos') {
   <section class="card">
     <div class="card-header">
       <h2>
@@ -284,6 +311,7 @@
       />
     }
   </section>
+  }
 }
 
 <!-- Modal: registrar pago -->

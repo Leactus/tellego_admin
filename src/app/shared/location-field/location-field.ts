@@ -13,7 +13,7 @@ type LocationMode = 'coords' | 'map';
  *  - Coordenadas: inputs de lat/lng editables + botón de geolocalización + vista previa
  *    de Google Maps (embed público, solo visual — no se puede marcar ahí, solo cambia
  *    si editas los inputs).
- *  - Mapa: selector interactivo (Leaflet + OpenStreetMap, ver `LocationMap`) — click o
+ *  - Mapa: selector interactivo (Google Maps, ver `LocationMap`) — click o
  *    arrastrar el pin marca la ubicación exacta.
  */
 @Component({

@@ -7,4 +7,11 @@
   height: 320px;
   border-radius: var(--radius-md);
   overflow: hidden;
+  background: var(--color-surface-variant);
+}
+
+.location-map-error {
+  margin: 8px 0 0;
+  color: var(--color-error);
+  font-size: 0.85rem;
 }

@@ -5,6 +5,7 @@ export interface Driver {
   userId: number;
   vehicleType: string | null;
   plateNumber: string | null;
+  licenseNumber: string | null;
   isOnline: boolean;
   isAvailable: boolean;
   ratingAvg: string;

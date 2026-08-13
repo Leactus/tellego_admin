@@ -39,7 +39,7 @@ export class Repartidores implements OnInit {
   readonly formModalOpen = signal(false);
   readonly isSaving = signal(false);
   editingDriver: Driver | null = null;
-  form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '' };
+  form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
 
   search = '';
   private readonly debouncedSearch = debounce(() => {
@@ -94,7 +94,7 @@ export class Repartidores implements OnInit {
 
   openNewModal(): void {
     this.editingDriver = null;
-    this.form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '' };
+    this.form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
     this.formModalOpen.set(true);
   }
 
@@ -106,6 +106,7 @@ export class Repartidores implements OnInit {
       phone: driver.User?.phone ?? '',
       vehicleType: driver.vehicleType ?? '',
       plateNumber: driver.plateNumber ?? '',
+      licenseNumber: driver.licenseNumber ?? '',
     };
     this.formModalOpen.set(true);
   }
@@ -126,6 +127,7 @@ export class Repartidores implements OnInit {
           phone: this.form.phone.trim(),
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
+          licenseNumber: this.form.licenseNumber.trim(),
         });
         this.closeFormModal();
         this.toast.success('Repartidor actualizado');
@@ -138,6 +140,7 @@ export class Repartidores implements OnInit {
           phone: this.form.phone.trim(),
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
+          licenseNumber: this.form.licenseNumber.trim(),
         });
         this.closeFormModal();
         this.tempPasswordModal.show({ title: 'Repartidor creado', email, password: tempPassword });

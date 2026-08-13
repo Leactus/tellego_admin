@@ -12,6 +12,7 @@ interface CreateDriverInput {
   phone?: string;
   vehicleType?: string;
   plateNumber?: string;
+  licenseNumber?: string;
 }
 
 interface UpdateDriverInput {
@@ -19,6 +20,7 @@ interface UpdateDriverInput {
   phone?: string;
   vehicleType?: string;
   plateNumber?: string;
+  licenseNumber?: string;
 }
 
 @Injectable({ providedIn: 'root' })

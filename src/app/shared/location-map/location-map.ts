@@ -1,23 +1,19 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import * as L from 'leaflet';
-
-// Los íconos default de Leaflet apuntan a rutas relativas que el bundler no resuelve — se
-// reemplazan por las mismas imágenes servidas desde el CDN de unpkg (mismo truco de siempre).
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, signal, ViewChild } from '@angular/core';
+import { loadGoogleMaps } from '../google-maps-loader';
 
 /** Centro por defecto (San Salvador) cuando todavía no hay coordenadas — único país con cobertura hoy. */
-const DEFAULT_CENTER: L.LatLngTuple = [13.6929, -89.2182];
+const DEFAULT_CENTER: google.maps.LatLngLiteral = { lat: 13.6929, lng: -89.2182 };
 
 /** Mapa clic-para-marcar reutilizable — un click o arrastrar el pin emite la nueva posición. */
 @Component({
   selector: 'app-location-map',
   standalone: true,
-  template: `<div #mapEl class="location-map"></div>`,
+  template: `
+    <div #mapEl class="location-map"></div>
+    @if (loadError()) {
+      <p class="location-map-error">No se pudo cargar Google Maps. Revisa la consola del navegador (F12).</p>
+    }
+  `,
   styleUrl: './location-map.scss',
 })
 export class LocationMap implements AfterViewInit, OnDestroy {
@@ -27,42 +23,60 @@ export class LocationMap implements AfterViewInit, OnDestroy {
 
   @ViewChild('mapEl', { static: true }) private readonly mapEl!: ElementRef<HTMLDivElement>;
 
-  private map?: L.Map;
-  private marker?: L.Marker;
+  private map?: google.maps.Map;
+  private marker?: google.maps.Marker;
+  private destroyed = false;
+  readonly loadError = signal(false);
 
-  ngAfterViewInit(): void {
+  async ngAfterViewInit(): Promise<void> {
+    try {
+      await loadGoogleMaps();
+    } catch (err) {
+      console.error('No se pudo cargar Google Maps:', err);
+      this.loadError.set(true);
+      return;
+    }
+    if (this.destroyed) return;
+
     const hasInitialPoint = this.lat != null && this.lng != null;
-    const center: L.LatLngTuple = hasInitialPoint ? [this.lat!, this.lng!] : DEFAULT_CENTER;
+    const center: google.maps.LatLngLiteral = hasInitialPoint ? { lat: this.lat!, lng: this.lng! } : DEFAULT_CENTER;
 
-    this.map = L.map(this.mapEl.nativeElement).setView(center, hasInitialPoint ? 16 : 12);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(this.map);
+    this.map = new google.maps.Map(this.mapEl.nativeElement, {
+      center,
+      zoom: hasInitialPoint ? 16 : 12,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: false,
+    });
 
     if (hasInitialPoint) {
       this.placeMarker(this.lat!, this.lng!, false);
     }
 
-    this.map.on('click', (event: L.LeafletMouseEvent) => {
-      this.placeMarker(event.latlng.lat, event.latlng.lng, true);
+    this.map.addListener('click', (event: google.maps.MapMouseEvent) => {
+      if (!event.latLng) return;
+      this.placeMarker(event.latLng.lat(), event.latLng.lng(), true);
     });
 
-    // El contenedor puede montarse con ancho/alto 0 (ej. dentro de un tab recién mostrado) — recalcula tamaño ya en pantalla.
-    setTimeout(() => this.map?.invalidateSize(), 0);
+    // El contenedor puede montarse con ancho/alto 0 (ej. dentro de un modal recién mostrado) — recalcula tamaño ya en pantalla.
+    setTimeout(() => {
+      if (!this.map) return;
+      google.maps.event.trigger(this.map, 'resize');
+      this.map.setCenter(center);
+    }, 0);
   }
 
   private placeMarker(lat: number, lng: number, emit: boolean): void {
     if (!this.map) return;
+    const position: google.maps.LatLngLiteral = { lat, lng };
 
     if (this.marker) {
-      this.marker.setLatLng([lat, lng]);
+      this.marker.setPosition(position);
     } else {
-      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
-      this.marker.on('dragend', () => {
-        const pos = this.marker!.getLatLng();
-        this.locationChange.emit({ lat: pos.lat, lng: pos.lng });
+      this.marker = new google.maps.Marker({ position, map: this.map, draggable: true });
+      this.marker.addListener('dragend', () => {
+        const pos = this.marker!.getPosition();
+        if (pos) this.locationChange.emit({ lat: pos.lat(), lng: pos.lng() });
       });
     }
 
@@ -70,6 +84,6 @@ export class LocationMap implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.map?.remove();
+    this.destroyed = true;
   }
 }
