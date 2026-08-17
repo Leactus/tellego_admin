@@ -75,6 +75,8 @@ export class NegocioDetalle implements OnInit {
   ownerForm = { name: '', email: '', phone: '' };
   readonly apayCredencial = signal<ApayCredencial | null>(null);
   readonly isSavingApay = signal(false);
+  readonly revealedApay = signal<{ apayToken: string; apayBusinessId: string | null } | null>(null);
+  readonly isRevealingApay = signal(false);
   apayForm = { apayToken: '', apayBusinessId: '' };
   /** Endpoint del webhook de pagos, para pegar en el campo "Endpoint" del perfil de APay del negocio.
    * Fijo por deploy (environment.apiUrl), no depende del negocio — igual que en delivery-pedidos-admin. */
@@ -323,12 +325,31 @@ export class NegocioDetalle implements OnInit {
         apayBusinessId: this.apayForm.apayBusinessId.trim() || undefined,
       });
       this.apayCredencial.set(credencial);
+      this.revealedApay.set(null);
       this.apayForm = { apayToken: '', apayBusinessId: '' };
       this.toast.success('Credencial APay guardada');
     } catch (err: any) {
       this.toast.error(err?.error?.message ?? 'No se pudo guardar la credencial APay');
     } finally {
       this.isSavingApay.set(false);
+    }
+  }
+
+  /** Alterna entre mostrar el token/id_business completos (consulta explícita al backend) y volver a ocultarlos. */
+  async toggleRevealApay(): Promise<void> {
+    if (this.revealedApay()) {
+      this.revealedApay.set(null);
+      return;
+    }
+
+    this.isRevealingApay.set(true);
+    try {
+      const data = await this.companiesService.revealApayCredencial(this.companyId);
+      this.revealedApay.set(data);
+    } catch {
+      this.toast.error('No se pudo revelar la credencial APay');
+    } finally {
+      this.isRevealingApay.set(false);
     }
   }
 
@@ -356,6 +377,7 @@ export class NegocioDetalle implements OnInit {
     try {
       await this.companiesService.deleteApayCredencial(this.companyId, credencial.id);
       this.apayCredencial.set(null);
+      this.revealedApay.set(null);
       this.toast.success('Credencial APay desactivada');
     } catch {
       this.toast.error('No se pudo desactivar la credencial APay');

@@ -1,5 +1,5 @@
 export const environment = {
-   apiUrl: 'http://localhost:3500',
-   //apiUrl: 'https://backend-te-llego-35546230649.northamerica-south1.run.app', // producción (GCP)
+   //apiUrl: 'http://localhost:3500',
+   apiUrl: 'https://backend-te-llego-35546230649.northamerica-south1.run.app', // producción (GCP)
   googleMapsApiKey: 'AIzaSyCBYXG8gEkGHPV1vPzo229tZfNQdr4b_t8', // maps-web-te-llego
 };

@@ -125,6 +125,15 @@ export class CompaniesService {
     return firstValueFrom(this.http.delete<void>(`${this.base}/${id}/apay-credenciales/${credencialId}`));
   }
 
+  /** Consulta explícita del token/id_business completos — para el botón "Revelar", nunca se cargan junto al resto. */
+  revealApayCredencial(id: number): Promise<{ apayToken: string; apayBusinessId: string | null }> {
+    return firstValueFrom(
+      this.http.get<{ data: { apayToken: string; apayBusinessId: string | null } }>(
+        `${this.base}/${id}/apay-credenciales/revelar`,
+      ),
+    ).then((r) => r.data);
+  }
+
   /** Países disponibles en la plataforma — para el select de país al crear un negocio. */
   listCountries(): Promise<Country[]> {
     return firstValueFrom(

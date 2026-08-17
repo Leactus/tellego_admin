@@ -88,14 +88,38 @@
       </label>
     </div>
     @if (apayCredencial(); as cred) {
-      <p class="muted">
-        Token activo terminado en <strong>{{ cred.tokenSufijo }}</strong>
-        @if (cred.tieneBusinessId) { · id_business terminado en <strong>{{ cred.businessIdSufijo }}</strong> }
-      </p>
-      <div class="toolbar">
+      <div class="apay-status">
+        <div class="apay-status-icon">
+          <app-icon name="credit-card" />
+        </div>
+        <div class="apay-status-body">
+          <div class="apay-status-title">
+            Cuenta APay conectada
+            <span class="status-badge status-static"><span class="status-dot"></span>Activa</span>
+          </div>
+          <div class="apay-status-pills">
+            @if (revealedApay(); as full) {
+              <span class="pill pill-revealed">Token {{ full.apayToken }}</span>
+              @if (full.apayBusinessId) { <span class="pill pill-revealed">id_business {{ full.apayBusinessId }}</span> }
+            } @else {
+              <span class="pill">Token •••• {{ cred.tokenSufijo }}</span>
+              @if (cred.tieneBusinessId) { <span class="pill">id_business •••• {{ cred.businessIdSufijo }}</span> }
+            }
+            <button
+              type="button"
+              class="icon-btn"
+              [disabled]="isRevealingApay()"
+              (click)="toggleRevealApay()"
+              [attr.aria-label]="revealedApay() ? 'Ocultar credencial' : 'Revelar credencial'"
+              [title]="revealedApay() ? 'Ocultar' : 'Revelar'"
+            >
+              <app-icon [name]="revealedApay() ? 'eye-off' : 'eye'" />
+            </button>
+          </div>
+        </div>
         <button class="btn-secondary danger-text" (click)="removeApay()">Quitar credencial</button>
       </div>
-      <p class="muted">Para rotarla, carga un token nuevo abajo — se desactiva la actual automáticamente.</p>
+      <p class="muted hint">Para rotarla, carga un token nuevo abajo — se desactiva la actual automáticamente.</p>
     } @else {
       <p class="empty">Este negocio todavía no tiene una cuenta APay configurada; no puede cobrar con tarjeta.</p>
     }
