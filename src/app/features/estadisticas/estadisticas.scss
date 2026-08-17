@@ -92,16 +92,54 @@
 .mini-stat {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.mini-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-lg);
+}
+
+.mini-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
   font-size: 1.2rem;
+}
+
+.mini-icon.primary {
+  background: color-mix(in srgb, var(--color-primary) 14%, white);
+  color: var(--color-primary);
+}
+
+.mini-icon.lime {
+  background: color-mix(in srgb, var(--color-accent-lime) 30%, white);
+  color: color-mix(in srgb, var(--color-accent-lime) 45%, black);
+}
+
+.mini-icon.coral {
+  background: color-mix(in srgb, var(--color-accent-coral) 18%, white);
+  color: color-mix(in srgb, var(--color-accent-coral) 65%, black);
+}
+
+.mini-icon.neutral {
+  background: var(--color-surface-variant);
   color: var(--color-text-muted);
 }
 
-.mini-stat.warn {
+.mini-stat.warn .mini-icon.neutral {
+  background: color-mix(in srgb, var(--color-warning) 16%, white);
   color: var(--color-warning);
 }
 
@@ -145,9 +183,17 @@
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-lg);
 }
 
 .stat-icon {
@@ -210,7 +256,7 @@
 
 .panel {
   background: var(--color-surface);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 20px;
   margin-bottom: 20px;
@@ -244,41 +290,106 @@
   margin-bottom: 0;
 }
 
-// --- Gráfico de barras (CSS puro, sin librerías) ---
+// --- Gráfico de ingresos por día (SVG puro, sin librerías) ---
 
-.bar-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 180px;
-  overflow-x: auto;
-  padding-top: 8px;
-}
-
-.bar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  min-width: 26px;
-  height: 100%;
-  flex: 1 0 auto;
-}
-
-.bar {
+.chart-wrap {
   width: 100%;
-  max-width: 22px;
-  border-radius: 4px 4px 0 0;
-  background: var(--color-primary);
-  transition: height 0.25s ease;
-  min-height: 3px;
+  height: 180px;
 }
 
-.bar-label {
+.line-chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.chart-stop-start {
+  stop-color: var(--color-primary);
+  stop-opacity: 0.3;
+}
+
+.chart-stop-end {
+  stop-color: var(--color-primary);
+  stop-opacity: 0;
+}
+
+.chart-area {
+  fill: url(#chartFill);
+  stroke: none;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-dot {
+  fill: var(--color-surface);
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+  transition: r 0.15s ease;
+}
+
+.chart-dot:hover {
+  r: 6;
+}
+
+.chart-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 6px;
+  overflow-x: auto;
+}
+
+.chart-labels span {
   font-size: 0.65rem;
   color: var(--color-text-muted);
   white-space: nowrap;
+  flex: 1;
+  text-align: center;
+}
+
+.single-day {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 4px 6px;
+}
+
+.single-day-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 14%, white);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+}
+
+.single-day-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.single-day-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.single-day-sub {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
 // --- Listas de top negocios/sucursales/repartidores ---

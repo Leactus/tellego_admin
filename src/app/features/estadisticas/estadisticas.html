@@ -35,28 +35,28 @@
 } @else if (data(); as stats) {
   <div class="platform-grid">
     <div class="mini-stat">
-      <app-icon name="store" />
+      <span class="mini-icon primary"><app-icon name="store" /></span>
       <div>
         <span class="mini-value">{{ stats.platform.activeCompanies }}</span>
         <span class="mini-label">Negocios activos ({{ stats.platform.totalCompanies }} en total)</span>
       </div>
     </div>
     <div class="mini-stat">
-      <app-icon name="map-pin" />
+      <span class="mini-icon lime"><app-icon name="map-pin" /></span>
       <div>
         <span class="mini-value">{{ stats.platform.totalStores }}</span>
         <span class="mini-label">Sucursales registradas</span>
       </div>
     </div>
     <div class="mini-stat">
-      <app-icon name="truck" />
+      <span class="mini-icon coral"><app-icon name="truck" /></span>
       <div>
         <span class="mini-value">{{ stats.platform.activeDrivers }}</span>
         <span class="mini-label">Repartidores activos ({{ stats.platform.totalDrivers }} en total)</span>
       </div>
     </div>
     <div class="mini-stat" [class.warn]="stats.platform.companiesOverdue > 0">
-      <app-icon name="credit-card" />
+      <span class="mini-icon neutral"><app-icon name="credit-card" /></span>
       <div>
         <span class="mini-value">{{ stats.platform.companiesOverdue }}</span>
         <span class="mini-label">Negocios con pago vencido</span>
@@ -109,14 +109,45 @@
     </div>
     @if (stats.revenueByDay.length === 0) {
       <p class="empty">No hubo ventas entregadas en este rango.</p>
-    } @else {
-      <div class="bar-chart">
+    } @else if (hasTrendData()) {
+      <div class="chart-wrap">
+        <svg
+          class="line-chart"
+          [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" class="chart-stop-start" />
+              <stop offset="100%" class="chart-stop-end" />
+            </linearGradient>
+          </defs>
+          <path class="chart-area" [attr.d]="chartAreaPath()"></path>
+          <path class="chart-line" [attr.d]="chartLinePath()"></path>
+          @for (point of chartPoints(); track point.day.date) {
+            <circle class="chart-dot" [attr.cx]="point.x" [attr.cy]="point.y" r="4">
+              <title>
+                {{ dayLabel(point.day.date) }} · ${{ point.day.revenue | number: '1.2-2' }} ·
+                {{ point.day.orders }} pedido(s)
+              </title>
+            </circle>
+          }
+        </svg>
+      </div>
+      <div class="chart-labels">
         @for (day of stats.revenueByDay; track day.date) {
-          <div class="bar-col" [title]="'$' + day.revenue.toFixed(2) + ' · ' + day.orders + ' pedido(s) · ' + day.date">
-            <div class="bar" [style.height.%]="barHeight(day.revenue)"></div>
-            <span class="bar-label">{{ dayLabel(day.date) }}</span>
-          </div>
+          <span>{{ dayLabel(day.date) }}</span>
         }
+      </div>
+    } @else {
+      <div class="single-day">
+        <span class="single-day-icon"><app-icon name="trending-up" /></span>
+        <div class="single-day-text">
+          <span class="single-day-value">${{ stats.revenueByDay[0].revenue | number: '1.2-2' }}</span>
+          <span class="single-day-sub">
+            {{ dayLabel(stats.revenueByDay[0].date) }} · {{ stats.revenueByDay[0].orders }} pedido(s)
+          </span>
+        </div>
       </div>
     }
   </div>

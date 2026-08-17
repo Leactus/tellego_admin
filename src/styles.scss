@@ -17,6 +17,11 @@
   --color-error: #b3261e;
   --color-info: #0288d1;
 
+  /* Acentos decorativos de marca — mismos valores que lib/theme/app_colors.dart en las apps Flutter. */
+  --color-accent-lime: #a9d968;
+  --color-accent-cream: #ffe1a3;
+  --color-accent-coral: #ff7667;
+
   --color-surface: #ffffff;
   --color-surface-variant: #f5f5f5;
   --color-text: #1b1b1b;
@@ -24,7 +29,9 @@
   --color-border: #e0e0e0;
 
   --radius-md: 12px;
+  --radius-lg: 20px;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-card-lg: 0 8px 24px rgba(12, 53, 51, 0.1);
 }
 
 * {

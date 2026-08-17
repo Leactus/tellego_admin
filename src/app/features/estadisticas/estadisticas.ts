@@ -18,7 +18,8 @@ interface RangePreset {
 
 const PRESETS: RangePreset[] = [
   { key: '7', label: '7 días', days: 7 },
-  { key: '30', label: '30 días', days: 30 },
+  // No es una ventana móvil de 30 días — es el mes calendario actual (día 1 al último día). Ver applyPreset.
+  { key: '30', label: 'Mes', days: null },
   { key: '90', label: '90 días', days: 90 },
   { key: 'custom', label: 'Personalizado', days: null },
 ];
@@ -49,6 +50,14 @@ function toDateInputValue(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Del día 1 al último día del mes calendario en curso (no una ventana móvil de 30 días). */
+function currentMonthRange(): { from: string; to: string } {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return { from: toDateInputValue(from), to: toDateInputValue(to) };
+}
+
 /** Dashboard de estadísticas de TODA la plataforma (todos los negocios/sucursales/repartidores) — landing del panel super-admin. */
 @Component({
   selector: 'app-estadisticas',
@@ -70,13 +79,61 @@ export class Estadisticas implements OnInit {
   readonly isLoading = signal(true);
   readonly data = signal<PlatformStats | null>(null);
   activePreset: RangePreset['key'] = '30';
-  from = toDateInputValue(new Date(Date.now() - 29 * 86400000));
-  to = toDateInputValue(new Date());
+  from = currentMonthRange().from;
+  to = currentMonthRange().to;
 
   readonly maxDayRevenue = computed(() => {
     const days = this.data()?.revenueByDay ?? [];
     return days.reduce((max, d) => Math.max(max, d.revenue), 0);
   });
+
+  readonly chartWidth = 600;
+  readonly chartHeight = 200;
+  private readonly chartPadding = 16;
+
+  /** Puntos del gráfico en coordenadas del viewBox, listos para dibujar la curva y los círculos de hover. */
+  readonly chartPoints = computed(() => {
+    const days = this.data()?.revenueByDay ?? [];
+    const max = this.maxDayRevenue();
+    const n = days.length;
+    if (n === 0) return [];
+    const w = this.chartWidth - this.chartPadding * 2;
+    const h = this.chartHeight - this.chartPadding * 2;
+    return days.map((day, i) => {
+      const x = this.chartPadding + (n === 1 ? w / 2 : (i / (n - 1)) * w);
+      const ratio = max > 0 ? day.revenue / max : 0;
+      const y = this.chartPadding + h - ratio * h;
+      return { x, y, day };
+    });
+  });
+
+  /** Con un solo día de datos no hay tendencia que trazar — la curva degenera en un punto suelto sin contexto, así que ese caso se muestra como una tarjeta de resumen en vez de un gráfico vacío. */
+  readonly hasTrendData = computed(() => this.chartPoints().length >= 2);
+
+  readonly chartLinePath = computed(() => this.smoothPath(this.chartPoints()));
+
+  readonly chartAreaPath = computed(() => {
+    const points = this.chartPoints();
+    if (points.length === 0) return '';
+    const bottom = this.chartHeight - this.chartPadding;
+    const first = points[0];
+    const last = points[points.length - 1];
+    return `${this.smoothPath(points)} L ${last.x},${bottom} L ${first.x},${bottom} Z`;
+  });
+
+  /** Curva suave entre puntos usando bezier cúbica con control points a mitad de camino en X — evita depender de una librería de gráficos. */
+  private smoothPath(points: { x: number; y: number }[]): string {
+    if (points.length === 0) return '';
+    if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const midX = (prev.x + curr.x) / 2;
+      d += ` C ${midX},${prev.y} ${midX},${curr.y} ${curr.x},${curr.y}`;
+    }
+    return d;
+  }
 
   async ngOnInit(): Promise<void> {
     const qpFrom = getQueryParam(this.route, 'from');
@@ -96,10 +153,16 @@ export class Estadisticas implements OnInit {
 
   applyPreset(key: RangePreset['key'], reload = true): void {
     this.activePreset = key;
-    const preset = PRESETS.find((p) => p.key === key);
-    if (preset?.days) {
-      this.to = toDateInputValue(new Date());
-      this.from = toDateInputValue(new Date(Date.now() - (preset.days - 1) * 86400000));
+    if (key === '30') {
+      const range = currentMonthRange();
+      this.from = range.from;
+      this.to = range.to;
+    } else {
+      const preset = PRESETS.find((p) => p.key === key);
+      if (preset?.days) {
+        this.to = toDateInputValue(new Date());
+        this.from = toDateInputValue(new Date(Date.now() - (preset.days - 1) * 86400000));
+      }
     }
     if (reload) this.reload();
   }
@@ -124,12 +187,6 @@ export class Estadisticas implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
-  }
-
-  barHeight(revenue: number): number {
-    const max = this.maxDayRevenue();
-    if (max <= 0) return 2;
-    return Math.max(4, Math.round((revenue / max) * 100));
   }
 
   dayLabel(dateStr: string): string {
