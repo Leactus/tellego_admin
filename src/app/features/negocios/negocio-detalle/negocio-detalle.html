@@ -90,7 +90,7 @@
     @if (apayCredencial(); as cred) {
       <p class="muted">
         Token activo terminado en <strong>{{ cred.tokenSufijo }}</strong>
-        @if (cred.apayBusinessId) { · id_business {{ cred.apayBusinessId }} }
+        @if (cred.tieneBusinessId) { · id_business terminado en <strong>{{ cred.businessIdSufijo }}</strong> }
       </p>
       <div class="toolbar">
         <button class="btn-secondary danger-text" (click)="removeApay()">Quitar credencial</button>

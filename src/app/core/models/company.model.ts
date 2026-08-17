@@ -73,15 +73,16 @@ export interface CompanySales {
   suggestedAmount: number;
 }
 
-/** El token real nunca viaja al frontend — solo tokenSufijo (últimos 4 caracteres) para poder identificarlo. */
+/** Ni el token ni el id_business viajan completos al frontend — solo los últimos 4 caracteres de cada uno, para poder identificarlos. */
 export interface ApayCredencial {
   id: number;
   companyId: number;
-  apayBusinessId: string | null;
   apayAmbiente: number;
   activo: boolean;
   tieneToken: true;
   tokenSufijo: string;
+  tieneBusinessId: boolean;
+  businessIdSufijo: string | null;
 }
 
 export interface PlatformPayment {
