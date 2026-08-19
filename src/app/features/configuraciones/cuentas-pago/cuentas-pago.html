@@ -1,0 +1,211 @@
+<h1>Cuentas de pago</h1>
+<p class="muted">
+  Cuentas bancarias y credencial APay de la <strong>empresa madre</strong> — lo que los negocios ven en
+  su panel de Pagos para pagarle la cuota/comisión a la plataforma.
+</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="6" />
+} @else {
+  <section class="card">
+    <div class="card-header">
+      <h2>Cuentas bancarias</h2>
+      <button class="btn-primary" (click)="openNewAccount()">+ Nueva cuenta</button>
+    </div>
+    <p class="muted hint">Se muestran a los negocios como forma de pago por transferencia. Desactiva una en vez de borrarla si ya no aplica.</p>
+
+    @if (accounts().length === 0) {
+      <p class="empty">Todavía no hay cuentas bancarias registradas.</p>
+    } @else {
+      <div class="list">
+        @for (account of accounts(); track account.id) {
+          <div class="row">
+            <app-icon name="credit-card" class="row-icon" />
+            <div class="row-info">
+              <span class="row-title">{{ account.bankName }} · {{ accountTypeLabel(account.accountType) }}</span>
+              <span class="muted">{{ account.accountNumber }} — {{ account.accountHolder }}</span>
+            </div>
+            <button
+              type="button"
+              class="status-badge"
+              [class.status-suspended]="account.status === 'inactive'"
+              [disabled]="busy.isPending('toggle-account-' + account.id)"
+              (click)="toggleAccountStatus(account)"
+            >
+              <span class="status-dot"></span>
+              {{ account.status === 'active' ? 'Activa' : 'Inactiva' }}
+            </button>
+            <div class="row-actions">
+              <button class="icon-btn" (click)="openEditAccount(account)" title="Editar">
+                <app-icon name="edit" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Credencial APay de la plataforma</h2>
+    <p class="muted hint">
+      Para que los negocios puedan pagar la cuota/comisión con tarjeta desde su panel de Pagos. No
+      confundir con la cuenta APay de cada negocio (esa cobra a SUS clientes, no a la plataforma).
+    </p>
+
+    <div class="billing-form webhook-form">
+      <label>
+        URL de webhook (pégala en el perfil de APay de esta cuenta, en el campo "Endpoint")
+        <div class="webhook-url-row">
+          <input type="text" [value]="apayWebhookUrl" readonly />
+          <button type="button" class="btn-secondary" (click)="copyApayWebhookUrl()">Copiar</button>
+        </div>
+      </label>
+    </div>
+
+    @if (apayCredencial(); as cred) {
+      <div class="apay-status">
+        <div class="apay-status-icon">
+          <app-icon name="credit-card" />
+        </div>
+        <div class="apay-status-body">
+          <div class="apay-status-title">
+            Cuenta APay conectada
+            <span class="status-badge status-static"><span class="status-dot"></span>Activa</span>
+          </div>
+          <div class="apay-status-pills">
+            @if (revealedApay(); as full) {
+              <span class="pill pill-revealed">Token {{ full.apayToken }}</span>
+              @if (full.apayBusinessId) { <span class="pill pill-revealed">id_business {{ full.apayBusinessId }}</span> }
+            } @else {
+              <span class="pill">Token •••• {{ cred.tokenSufijo }}</span>
+              @if (cred.tieneBusinessId) { <span class="pill">id_business •••• {{ cred.businessIdSufijo }}</span> }
+            }
+            <button
+              type="button"
+              class="icon-btn"
+              [disabled]="isRevealingApay()"
+              (click)="toggleRevealApay()"
+              [attr.aria-label]="revealedApay() ? 'Ocultar credencial' : 'Revelar credencial'"
+              [title]="revealedApay() ? 'Ocultar' : 'Revelar'"
+            >
+              <app-icon [name]="revealedApay() ? 'eye-off' : 'eye'" />
+            </button>
+          </div>
+        </div>
+        <button class="btn-secondary danger-text" (click)="removeApay()">Quitar credencial</button>
+      </div>
+      <div class="toolbar">
+        <button type="button" class="btn-secondary" (click)="openApayModal()">Cambiar token APay</button>
+      </div>
+    } @else {
+      <p class="empty">
+        La plataforma todavía no tiene una cuenta APay configurada; los negocios solo pueden pagar por
+        transferencia hasta que se cargue una aquí.
+      </p>
+      <div class="toolbar">
+        <button type="button" class="btn-primary" (click)="openApayModal()">Conectar cuenta APay</button>
+      </div>
+    }
+  </section>
+}
+
+<!-- Modal: credencial APay de la plataforma -->
+@if (apayModalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ apayCredencial() ? 'Cambiar token APay' : 'Conectar cuenta APay' }}</h2>
+        <button class="modal-close" (click)="closeApayModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (apayCredencial()) {
+          <p class="muted hint">Al guardar, se desactiva el token actual automáticamente.</p>
+        }
+        <label>
+          Token de cuenta APay
+          <input
+            type="text"
+            [(ngModel)]="apayForm.apayToken"
+            name="apayToken"
+            [class.invalid]="isApayTokenInvalid()"
+            autocomplete="off"
+            placeholder="Token de APay"
+          />
+        </label>
+        @if (isApayTokenInvalid()) {
+          <span class="invalid-hint">Ingresa el token de la cuenta APay</span>
+        }
+        <label>
+          id_business (para el Transactor de APay)
+          <input type="text" [(ngModel)]="apayForm.apayBusinessId" name="apayBusinessId" autocomplete="off" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeApayModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSavingApay()" (click)="saveApay()">
+          {{ isSavingApay() ? 'Guardando…' : 'Guardar token APay' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: cuenta bancaria -->
+@if (accountModalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingAccount ? 'Editar cuenta' : 'Nueva cuenta bancaria' }}</h2>
+        <button class="modal-close" (click)="closeAccountModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label>
+          Banco
+          <app-select [(ngModel)]="accountForm.bankName" name="bankName" [options]="bankOptions" />
+        </label>
+        <label>
+          Tipo de cuenta
+          <app-select [(ngModel)]="accountForm.accountType" name="accountType" [options]="accountTypeOptions" />
+        </label>
+        <label>
+          Número de cuenta
+          <input
+            type="text"
+            [(ngModel)]="accountForm.accountNumber"
+            name="accountNumber"
+            [class.invalid]="isAccountNumberInvalid()"
+          />
+        </label>
+        @if (isAccountNumberInvalid()) {
+          <span class="invalid-hint">Ingresa el número de cuenta</span>
+        }
+        <label>
+          Titular de la cuenta
+          <input
+            type="text"
+            [(ngModel)]="accountForm.accountHolder"
+            name="accountHolder"
+            placeholder="Razón social de la empresa madre"
+            [class.invalid]="isAccountHolderInvalid()"
+          />
+        </label>
+        @if (isAccountHolderInvalid()) {
+          <span class="invalid-hint">Ingresa el titular de la cuenta</span>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeAccountModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSavingAccount()" (click)="saveAccount()">
+          {{ isSavingAccount() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

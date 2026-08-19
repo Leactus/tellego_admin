@@ -1,6 +1,7 @@
+import { Location } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { CompaniesService } from '../../../core/services/companies.service';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -19,7 +20,7 @@ type Tab = 'categorias' | 'productos';
 @Component({
   selector: 'app-negocio-menu',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, Select, Skeleton],
   templateUrl: './negocio-menu.html',
   styleUrl: './negocio-menu.scss',
 })
@@ -30,8 +31,15 @@ export class NegocioMenu implements OnInit {
   private readonly confirmService = inject(ConfirmService);
   private readonly toast = inject(ToastService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly location = inject(Location);
 
   private companyId!: number;
+
+  /** Vuelve a la página/pestaña exacta de la que se vino (respeta filtros/paginación) en vez de una
+   * ruta fija — ver el mismo criterio en query-param-state.ts. */
+  goBack(): void {
+    this.location.back();
+  }
 
   readonly isLoading = signal(true);
   readonly activeTab = signal<Tab>('categorias');

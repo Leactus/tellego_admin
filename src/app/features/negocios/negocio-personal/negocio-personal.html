@@ -1,88 +1,82 @@
-<a class="back-link" [routerLink]="['/negocios', company()?.id]">&larr; Volver al negocio</a>
+<button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
 
 <h1>Personal</h1>
 <p class="muted">{{ company()?.name }} — administra quién trabaja en cada sucursal.</p>
 
-@if (isLoading()) {
+<div class="toolbar">
+  <button class="btn-primary" [disabled]="branchOptions().length === 0" (click)="openNewStaff()">
+    + Nuevo empleado
+  </button>
+</div>
+
+<div class="search-bar">
+  <app-icon name="search" />
+  <input
+    type="search"
+    [(ngModel)]="searchQuery"
+    (ngModelChange)="onSearchChange()"
+    placeholder="Buscar personal por nombre o correo..."
+    spellcheck="false"
+  />
+</div>
+
+@if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="4" />
+} @else if (branchOptions().length === 0) {
+  <p class="empty">Este negocio todavía no tiene sucursales.</p>
+} @else if (staff().length === 0) {
+  <p class="empty">{{ searchQuery ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay personal asignado.' }}</p>
 } @else {
-  <div class="toolbar">
-    <button class="btn-primary" [disabled]="branchOptions().length === 0" (click)="openNewStaff()">
-      + Nuevo empleado
-    </button>
-  </div>
-
-  @if (branchOptions().length === 0) {
-    <p class="empty">Este negocio todavía no tiene sucursales.</p>
-  } @else {
-    <div class="search-bar">
-      <app-icon name="search" />
-      <input
-        type="search"
-        [(ngModel)]="searchQuery"
-        (ngModelChange)="onSearchChange()"
-        placeholder="Buscar personal por nombre o correo..."
-        spellcheck="false"
-      />
-    </div>
-
-    @if (isRefreshing()) {
-      <app-skeleton variant="list" [rows]="4" />
-    } @else if (staff().length === 0) {
-      <p class="empty">{{ searchQuery ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay personal asignado.' }}</p>
-    } @else {
-      <div class="list">
-        @for (member of staff(); track member.id) {
-          <div class="row staff-row">
-            <div class="staff-info">
-              <span class="row-title">{{ member.user?.name }}</span>
-              <span class="muted">{{ member.user?.email }}</span>
-            </div>
-            <span class="pill">{{ branchLabel(member.storeId) }}</span>
-            @if (member.position) {
-              <span class="pill pill-position">{{ member.position }}</span>
-            }
-            <span class="status-pill" [class.active]="member.status === 'active'" [class.suspended]="member.status !== 'active'">
-              <app-icon [name]="member.status === 'active' ? 'check-circle' : 'x-circle'" />
-              {{ member.status === 'active' ? 'Activo' : 'Suspendido' }}
-            </span>
-            <div class="row-actions">
-              <button class="icon-btn" (click)="openEditStaff(member)" title="Editar">
-                <app-icon name="edit" />
-              </button>
-              <button
-                class="icon-btn"
-                [disabled]="busy.isPending('toggle-staff-' + member.id)"
-                (click)="toggleStaffStatus(member)"
-                [title]="member.status === 'active' ? 'Suspender' : 'Activar'"
-              >
-                <app-icon [name]="member.status === 'active' ? 'x-circle' : 'check-circle'" />
-              </button>
-              <button
-                class="icon-btn danger"
-                [disabled]="busy.isPending('delete-staff-' + member.id)"
-                (click)="deleteStaff(member)"
-                title="Quitar"
-              >
-                <app-icon name="trash" />
-              </button>
-            </div>
-          </div>
+  <div class="list">
+    @for (member of staff(); track member.id) {
+      <div class="row staff-row">
+        <div class="staff-info">
+          <span class="row-title">{{ member.user?.name }}</span>
+          <span class="muted">{{ member.user?.email }}</span>
+        </div>
+        <span class="pill">{{ branchLabel(member.storeId) }}</span>
+        @if (member.position) {
+          <span class="pill pill-position">{{ member.position }}</span>
         }
+        <span class="status-pill" [class.active]="member.status === 'active'" [class.suspended]="member.status !== 'active'">
+          <app-icon [name]="member.status === 'active' ? 'check-circle' : 'x-circle'" />
+          {{ member.status === 'active' ? 'Activo' : 'Suspendido' }}
+        </span>
+        <div class="row-actions">
+          <button class="icon-btn" (click)="openEditStaff(member)" title="Editar">
+            <app-icon name="edit" />
+          </button>
+          <button
+            class="icon-btn"
+            [disabled]="busy.isPending('toggle-staff-' + member.id)"
+            (click)="toggleStaffStatus(member)"
+            [title]="member.status === 'active' ? 'Suspender' : 'Activar'"
+          >
+            <app-icon [name]="member.status === 'active' ? 'x-circle' : 'check-circle'" />
+          </button>
+          <button
+            class="icon-btn danger"
+            [disabled]="busy.isPending('delete-staff-' + member.id)"
+            (click)="deleteStaff(member)"
+            title="Quitar"
+          >
+            <app-icon name="trash" />
+          </button>
+        </div>
       </div>
     }
+  </div>
+}
 
-    @if (total() > 0) {
-      <app-pager
-        [page]="page()"
-        [totalPages]="totalPages()"
-        [total]="total()"
-        [pageSize]="pageSize()"
-        (pageChange)="onPageChange($event)"
-        (pageSizeChange)="onPageSizeChange($event)"
-      />
-    }
-  }
+@if (total() > 0) {
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
 }
 
 <!-- Modal: personal -->

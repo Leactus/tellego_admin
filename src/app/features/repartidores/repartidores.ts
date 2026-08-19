@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,7 +24,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })
-export class Repartidores implements OnInit {
+export class Repartidores implements OnInit, OnDestroy {
   private readonly drivers = inject(DriversService);
   private readonly toast = inject(ToastService);
   private readonly tempPasswordModal = inject(TempPasswordModalService);
@@ -77,6 +77,12 @@ export class Repartidores implements OnInit {
     this.pageSize.set(getQueryParamNumber(this.route, 'pageSize', DEFAULT_PAGE_SIZE));
     this.search = getQueryParam(this.route, 'search') ?? '';
     await this.reload();
+  }
+
+  /** Cancela el debounce pendiente al salir de la pantalla — ver el comentario de `debounce()` en
+   * core/utils/debounce.ts. */
+  ngOnDestroy(): void {
+    this.debouncedSearch.cancel();
   }
 
   onSearchChange(): void {

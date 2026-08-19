@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -33,7 +33,7 @@ const METHOD_OPTIONS: SelectOption[] = [
   templateUrl: './pagos.html',
   styleUrl: './pagos.scss',
 })
-export class Pagos implements OnInit {
+export class Pagos implements OnInit, OnDestroy {
   private readonly companies = inject(CompaniesService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly notificationsService = inject(NotificationsService);
@@ -102,6 +102,12 @@ export class Pagos implements OnInit {
     this.page.set(1);
     this.reload();
   }, 300);
+
+  /** Cancela el debounce pendiente al salir de la pantalla — ver el comentario de `debounce()` en
+   * core/utils/debounce.ts. */
+  ngOnDestroy(): void {
+    this.debouncedSearch.cancel();
+  }
 
   async ngOnInit(): Promise<void> {
     // Restaura página/tamaño/búsqueda/pestaña desde la URL — así un refresh (F5) no reinicia la vista a página 1.
@@ -177,12 +183,22 @@ export class Pagos implements OnInit {
     this.salesInfo.set(null);
     const today = new Date().toISOString().slice(0, 10);
     if (company.billingType === 'commission') {
+      // Mismo periodo por defecto que ya se armaba antes (billingStartsAt/hoy) — lo único que cambia
+      // es que ahora, con el periodo ya armado, se sugiere el monto de una vez (ver negocio-detalle.ts,
+      // mismo criterio) en vez de obligar a darle a "Calcular desde ventas" antes de poder guardar.
       this.paymentForm = { amount: 0, method: 'cash', periodStart: company.billingStartsAt ?? today, periodEnd: today, note: '' };
+      this.calculateFromSales();
     } else {
       this.advanceForm = { months: 1, method: 'cash', note: '' };
     }
     this.paymentSubmitted.set(false);
     this.paymentModalOpen.set(true);
+  }
+
+  /** Recalcula automáticamente al tocar cualquiera de las dos fechas del periodo — el admin ya no
+   * tiene que darle a "Calcular desde ventas" de nuevo cada vez que ajusta el rango. */
+  onPaymentPeriodChange(): void {
+    this.calculateFromSales();
   }
 
   /** Punto de partida de los meses a adelantar: el próximo pago pendiente de la empresa (o hoy si nunca ha pagado). */

@@ -39,6 +39,13 @@
   font-family: inherit;
 }
 
+/* Para secciones con un solo campo (periodo de gracia, hora de corte): el grid de 2 columnas de
+   arriba lo encoge a la mitad si no hay nada más que lo acompañe. */
+.billing-form.single-column {
+  grid-template-columns: 1fr;
+  max-width: 320px;
+}
+
 @media (max-width: 720px) {
   .billing-form {
     grid-template-columns: 1fr;

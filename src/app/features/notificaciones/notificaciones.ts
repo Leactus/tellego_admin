@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -31,7 +31,7 @@ const TYPE_OPTIONS: SelectOption[] = [
   templateUrl: './notificaciones.html',
   styleUrl: './notificaciones.scss',
 })
-export class Notificaciones implements OnInit {
+export class Notificaciones implements OnInit, OnDestroy {
   private readonly companiesService = inject(CompaniesService);
   private readonly notificationsService = inject(NotificationsService);
   private readonly toast = inject(ToastService);
@@ -72,6 +72,12 @@ export class Notificaciones implements OnInit {
     this.page.set(1);
     this.loadHistory();
   }, 300);
+
+  /** Cancela el debounce pendiente al salir de la pantalla — ver el comentario de `debounce()` en
+   * core/utils/debounce.ts. */
+  ngOnDestroy(): void {
+    this.debouncedHistorySearch.cancel();
+  }
 
   async ngOnInit(): Promise<void> {
     this.page.set(getQueryParamNumber(this.route, 'page', 1));

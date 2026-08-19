@@ -29,7 +29,7 @@
       aparecer en la app y pierde acceso a su panel. Aplica a todos los negocios que no tengan su propio
       override (editable por negocio, desde su página de Facturación).
     </p>
-    <div class="billing-form">
+    <div class="billing-form single-column">
       <label>
         Días de gracia (0 = bloquea el mismo día que vence)
         <input
@@ -38,6 +38,48 @@
           step="1"
           [(ngModel)]="form.defaultGracePeriodDays"
           name="defaultGracePeriodDays"
+        />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Hora de corte para ventas por comisión</h2>
+    <p class="muted">
+      A qué hora "cierra" un día al calcular las ventas de un periodo (botón "Calcular desde ventas" al
+      registrar un pago). Por ejemplo, con corte a las 12:00, el periodo del 19 al 20 de agosto cuenta los
+      pedidos entregados entre el 19 a las 12:00 y el 20 a las 12:00 — no de medianoche a medianoche.
+      00:00 = día calendario completo (como funcionaba antes de este ajuste).
+    </p>
+    <div class="billing-form single-column">
+      <label>
+        Hora de corte
+        <app-select
+          [(ngModel)]="form.defaultSalesCutoffHour"
+          name="defaultSalesCutoffHour"
+          [options]="cutoffHourOptions"
+        />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Vencimiento del pago de comisión</h2>
+    <p class="muted">
+      Días después del cierre del periodo (no de cuándo se registra el pago) en que ese negocio empieza a
+      considerarse vencido. Por ejemplo, si el periodo corta el 19 y esto está en 1, el pago de ese periodo
+      vence el 20 — a partir de ahí corre el periodo de gracia general de arriba. Solo aplica a negocios con
+      comisión sobre ventas; los de cuota fija siguen venciendo un mes después de cada pago.
+    </p>
+    <div class="billing-form single-column">
+      <label>
+        Días después del corte
+        <input
+          type="number"
+          min="0"
+          step="1"
+          [(ngModel)]="form.defaultCommissionPaymentDueDays"
+          name="defaultCommissionPaymentDueDays"
         />
       </label>
     </div>

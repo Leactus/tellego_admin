@@ -1,6 +1,7 @@
-import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
+import { Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { CompaniesService } from '../../../core/services/companies.service';
 import { StaffService } from '../../../core/services/staff.service';
@@ -34,15 +35,22 @@ const POSITION_OPTIONS: SelectOption<string>[] = [
 @Component({
   selector: 'app-negocio-personal',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, Pager, Select, Skeleton],
+  imports: [FormsModule, Icon, Pager, Select, Skeleton],
   templateUrl: './negocio-personal.html',
   styleUrl: './negocio-personal.scss',
 })
-export class NegocioPersonal implements OnInit {
+export class NegocioPersonal implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly companiesService = inject(CompaniesService);
   private readonly staffService = inject(StaffService);
+
+  /** Vuelve a la página/pestaña exacta de la que se vino (respeta filtros/paginación) en vez de una
+   * ruta fija — ver el mismo criterio en query-param-state.ts. */
+  goBack(): void {
+    this.location.back();
+  }
   private readonly confirmService = inject(ConfirmService);
   private readonly toast = inject(ToastService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
@@ -65,6 +73,12 @@ export class NegocioPersonal implements OnInit {
     this.page.set(1);
     this.reload();
   }, 300);
+
+  /** Cancela el debounce pendiente al salir de la pantalla — ver el comentario de `debounce()` en
+   * core/utils/debounce.ts. */
+  ngOnDestroy(): void {
+    this.debouncedSearch.cancel();
+  }
 
   /** Evita doble-click en guardar/borrar/activar. */
   readonly busy = new PendingActions();

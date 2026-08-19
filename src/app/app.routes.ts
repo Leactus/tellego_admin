@@ -74,6 +74,11 @@ export const routes: Routes = [
         path: 'configuraciones/tipo-pago',
         loadComponent: () => import('./features/configuraciones/tipo-pago/tipo-pago').then((m) => m.TipoPago),
       },
+      {
+        path: 'configuraciones/cuentas-pago',
+        loadComponent: () =>
+          import('./features/configuraciones/cuentas-pago/cuentas-pago').then((m) => m.CuentasPago),
+      },
     ],
   },
   { path: '**', redirectTo: 'login' },

@@ -1,0 +1,213 @@
+@use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  color: var(--color-text);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-header h2 {
+  margin: 0;
+}
+
+.hint {
+  font-size: 0.82rem;
+  margin: -6px 0 14px;
+}
+
+.row-icon {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+}
+
+.billing-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.billing-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.billing-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-family: inherit;
+}
+
+.billing-form input.invalid {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+
+.invalid-hint {
+  display: block;
+  margin: -8px 0 14px;
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .billing-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.webhook-form {
+  grid-template-columns: 1fr;
+  margin-bottom: 12px;
+}
+
+.webhook-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.webhook-url-row input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-muted);
+  background: var(--color-surface-variant);
+}
+
+.danger-text {
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 40%, var(--color-border));
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-success) 12%, white);
+  color: var(--color-success);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.status-badge:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-success) 20%, white);
+  transform: scale(1.03);
+}
+
+.status-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.status-badge.status-static {
+  cursor: default;
+  vertical-align: middle;
+}
+
+.status-badge.status-static:hover {
+  transform: none;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-suspended {
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+  color: var(--color-error);
+}
+
+.status-suspended:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 20%, white);
+}
+
+.apay-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-variant);
+}
+
+.apay-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.apay-status-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apay-status-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.apay-status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.apay-status-pills .pill {
+  background: var(--color-surface);
+}
+
+.apay-status-pills .pill-revealed {
+  font-family: monospace;
+  background: var(--color-primary-container);
+  color: var(--color-text);
+}

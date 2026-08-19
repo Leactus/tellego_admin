@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -31,7 +31,7 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
   templateUrl: './negocios-lista.html',
   styleUrl: './negocios-lista.scss',
 })
-export class NegociosLista implements OnInit {
+export class NegociosLista implements OnInit, OnDestroy {
   private readonly companies = inject(CompaniesService);
   private readonly billingSettings = inject(BillingSettingsService);
   private readonly toast = inject(ToastService);
@@ -88,6 +88,12 @@ export class NegociosLista implements OnInit {
     this.pageSize.set(getQueryParamNumber(this.route, 'pageSize', DEFAULT_PAGE_SIZE));
     this.search = getQueryParam(this.route, 'search') ?? '';
     await Promise.all([this.reload(), this.loadCountries()]);
+  }
+
+  /** Cancela el debounce pendiente al salir de la pantalla (p.ej. al abrir el detalle de un negocio) —
+   * ver el comentario de `debounce()` en core/utils/debounce.ts. */
+  ngOnDestroy(): void {
+    this.debouncedSearch.cancel();
   }
 
   async loadCountries(): Promise<void> {

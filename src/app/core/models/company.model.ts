@@ -65,6 +65,10 @@ export interface PlatformSettings {
   defaultCommissionRate: string;
   /** Días de gracia después de nextPaymentDueDate antes de bloquear una empresa vencida (ver Company.gracePeriodDays para el override). */
   defaultGracePeriodDays: number;
+  /** Hora (0-23, hora del servidor) en que "cierra" un día para el cálculo de ventas por comisión — ver billing.service.ts#computeCommissionSales en el backend. */
+  defaultSalesCutoffHour: number;
+  /** Solo billing_type='commission': días después de periodEnd de un pago en que queda nextPaymentDueDate. No aplica a 'fee'. */
+  defaultCommissionPaymentDueDays: number;
 }
 
 export interface CompanySales {
@@ -95,4 +99,40 @@ export interface PlatformPayment {
   note: string | null;
   paidAt: string;
   registeredBy?: { id: number; name: string };
+}
+
+/** Catálogo fijo de bancos de El Salvador — mismo orden que PLATFORM_BANK_NAMES en el backend. */
+export const PLATFORM_BANK_NAMES = [
+  'Banco Agrícola',
+  'BAC Credomatic',
+  'Banco Cuscatlán',
+  'Banco Davivienda Salvadoreño',
+  'Banco Promerica',
+  'Banco G&T Continental',
+  'Banco Azul',
+  'Banco Hipotecario',
+  'Banco de Fomento Agropecuario (BFA)',
+  'Banco Industrial El Salvador',
+] as const;
+export type PlatformBankName = (typeof PLATFORM_BANK_NAMES)[number];
+
+/** Cuenta bancaria de la EMPRESA MADRE — se muestra a los negocios en /negocio/pagos como forma de pago por transferencia. */
+export interface PlatformBankAccount {
+  id: number;
+  bankName: PlatformBankName;
+  accountType: 'checking' | 'savings';
+  accountNumber: string;
+  accountHolder: string;
+  status: 'active' | 'inactive';
+}
+
+/** Igual que ApayCredencial, pero de la cuenta APay de la plataforma (sin companyId: una sola para toda la plataforma). */
+export interface PlatformApayCredencial {
+  id: number;
+  apayAmbiente: number;
+  activo: boolean;
+  tieneToken: true;
+  tokenSufijo: string;
+  tieneBusinessId: boolean;
+  businessIdSufijo: string | null;
 }

@@ -1,107 +1,107 @@
-<a class="back-link" [routerLink]="['/negocios', company()?.id]">&larr; Volver al negocio</a>
+<button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
 
 <h1>Menú</h1>
 <p class="muted">{{ company()?.name }} — categorías y productos, compartidos por todas sus sucursales.</p>
 
-@if (isLoading()) {
-  <app-skeleton variant="list" [rows]="4" />
-} @else {
-  <div class="tabs">
-    <button class="tab-btn" [class.active]="activeTab() === 'categorias'" (click)="setTab('categorias')">
-      Categorías
-    </button>
-    <button class="tab-btn" [class.active]="activeTab() === 'productos'" (click)="setTab('productos')">
-      Productos
-    </button>
+<div class="tabs">
+  <button class="tab-btn" [class.active]="activeTab() === 'categorias'" (click)="setTab('categorias')">
+    Categorías
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'productos'" (click)="setTab('productos')">
+    Productos
+  </button>
+</div>
+
+@if (activeTab() === 'categorias') {
+  <div class="toolbar">
+    <button class="btn-primary" (click)="openNewCategory()">+ Nueva categoría</button>
   </div>
 
-  @if (activeTab() === 'categorias') {
-    <div class="toolbar">
-      <button class="btn-primary" (click)="openNewCategory()">+ Nueva categoría</button>
+  @if (isLoading()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (categories().length === 0) {
+    <p class="empty">Todavía no hay categorías.</p>
+  } @else {
+    <div class="list">
+      @for (category of categories(); track category.id) {
+        <div class="row">
+          <span class="row-title">{{ category.name }}</span>
+          <div class="row-actions">
+            <button class="icon-btn" (click)="openEditCategory(category)" aria-label="Editar">
+              <app-icon name="edit" />
+            </button>
+            <button class="icon-btn danger" (click)="deleteCategory(category)" aria-label="Borrar">
+              <app-icon name="trash" />
+            </button>
+          </div>
+        </div>
+      }
     </div>
+  }
+}
 
-    @if (categories().length === 0) {
-      <p class="empty">Todavía no hay categorías.</p>
-    } @else {
-      <div class="list">
-        @for (category of categories(); track category.id) {
-          <div class="row">
-            <span class="row-title">{{ category.name }}</span>
+@if (activeTab() === 'productos') {
+  <div class="toolbar">
+    <button class="btn-primary" (click)="openNewProduct()">+ Nuevo producto</button>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (products().length === 0) {
+    <p class="empty">Todavía no hay productos.</p>
+  } @else {
+    <div class="list">
+      @for (product of products(); track product.id) {
+        <div class="product-card">
+          <div class="product-main">
+            @if (product.imageUrl) {
+              <img [src]="product.imageUrl" class="product-thumb" alt="" />
+            } @else {
+              <div class="product-thumb product-thumb-empty">
+                <app-icon name="camera" />
+              </div>
+            }
+            <div class="row-info">
+              <span class="row-title">{{ product.name }}</span>
+              <span class="muted">
+                ${{ product.price }}
+                @if (product.salePrice) {
+                  · Oferta ${{ product.salePrice }}
+                }
+                @if (product.category) {
+                  · {{ product.category.name }}
+                }
+              </span>
+            </div>
             <div class="row-actions">
-              <button class="icon-btn" (click)="openEditCategory(category)" aria-label="Editar">
+              <button class="btn-text" (click)="openOptions(product)">Opciones</button>
+              <button class="icon-btn" (click)="openEditProduct(product)" aria-label="Editar">
                 <app-icon name="edit" />
               </button>
-              <button class="icon-btn danger" (click)="deleteCategory(category)" aria-label="Borrar">
+              <button class="icon-btn danger" (click)="deleteProduct(product)" aria-label="Borrar">
                 <app-icon name="trash" />
               </button>
             </div>
           </div>
-        }
-      </div>
-    }
-  }
 
-  @if (activeTab() === 'productos') {
-    <div class="toolbar">
-      <button class="btn-primary" (click)="openNewProduct()">+ Nuevo producto</button>
-    </div>
-
-    @if (products().length === 0) {
-      <p class="empty">Todavía no hay productos.</p>
-    } @else {
-      <div class="list">
-        @for (product of products(); track product.id) {
-          <div class="product-card">
-            <div class="product-main">
-              @if (product.imageUrl) {
-                <img [src]="product.imageUrl" class="product-thumb" alt="" />
-              } @else {
-                <div class="product-thumb product-thumb-empty">
-                  <app-icon name="camera" />
-                </div>
+          @if (branches().length > 0) {
+            <div class="availability-row">
+              <span class="muted small">Disponible en:</span>
+              @for (branch of branches(); track branch.id) {
+                <label class="availability-check">
+                  <input
+                    type="checkbox"
+                    [checked]="isAvailableInStore(product, branch.id)"
+                    (change)="toggleStoreAvailability(product, branch.id, $event)"
+                  />
+                  {{ branch.name }}
+                </label>
               }
-              <div class="row-info">
-                <span class="row-title">{{ product.name }}</span>
-                <span class="muted">
-                  ${{ product.price }}
-                  @if (product.salePrice) {
-                    · Oferta ${{ product.salePrice }}
-                  }
-                  @if (product.category) {
-                    · {{ product.category.name }}
-                  }
-                </span>
-              </div>
-              <div class="row-actions">
-                <button class="btn-text" (click)="openOptions(product)">Opciones</button>
-                <button class="icon-btn" (click)="openEditProduct(product)" aria-label="Editar">
-                  <app-icon name="edit" />
-                </button>
-                <button class="icon-btn danger" (click)="deleteProduct(product)" aria-label="Borrar">
-                  <app-icon name="trash" />
-                </button>
-              </div>
             </div>
-
-            @if (branches().length > 0) {
-              <div class="availability-row">
-                <span class="muted small">Disponible en:</span>
-                @for (branch of branches(); track branch.id) {
-                  <label class="availability-check">
-                    <input
-                      type="checkbox"
-                      [checked]="isAvailableInStore(product, branch.id)"
-                      (change)="toggleStoreAvailability(product, branch.id, $event)"
-                    />
-                    {{ branch.name }}
-                  </label>
-                }
-              </div>
-            }
-          </div>
-        }
-      </div>
-    }
+          }
+        </div>
+      }
+    </div>
   }
 }
 

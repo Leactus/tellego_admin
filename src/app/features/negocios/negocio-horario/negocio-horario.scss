@@ -3,9 +3,14 @@
 .back-link {
   display: inline-block;
   margin-bottom: 16px;
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--color-text-muted);
+  font-family: inherit;
   text-decoration: none;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .back-link:hover {

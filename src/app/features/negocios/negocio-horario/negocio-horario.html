@@ -1,4 +1,4 @@
-<a class="back-link" [routerLink]="['/negocios', company()?.id]">&larr; Volver al negocio</a>
+<button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
 
 <h1>Horario de atención</h1>
 <p class="muted">{{ company()?.name }} — define los días y horas de cada sucursal.</p>

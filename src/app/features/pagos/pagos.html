@@ -117,6 +117,7 @@
               [(ngModel)]="paymentForm.periodStart"
               name="periodStart"
               [class.invalid]="isPeriodStartInvalid()"
+              (change)="onPaymentPeriodChange()"
             />
           </label>
           @if (isPeriodStartInvalid()) {
@@ -124,7 +125,13 @@
           }
           <label>
             Periodo hasta
-            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" [class.invalid]="isPeriodEndInvalid()" />
+            <input
+              type="date"
+              [(ngModel)]="paymentForm.periodEnd"
+              name="periodEnd"
+              [class.invalid]="isPeriodEndInvalid()"
+              (change)="onPaymentPeriodChange()"
+            />
           </label>
           @if (isPeriodEndInvalid()) {
             <span class="invalid-hint">Selecciona el fin del periodo</span>

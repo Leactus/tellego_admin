@@ -19,6 +19,8 @@ export class BillingSettingsService {
     defaultMonthlyFee?: number;
     defaultCommissionRate?: number;
     defaultGracePeriodDays?: number;
+    defaultSalesCutoffHour?: number;
+    defaultCommissionPaymentDueDays?: number;
   }): Promise<PlatformSettings> {
     return firstValueFrom(this.http.patch<{ data: PlatformSettings }>(this.base, payload)).then((r) => r.data);
   }

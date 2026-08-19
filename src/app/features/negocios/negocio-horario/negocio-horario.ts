@@ -1,6 +1,7 @@
+import { Location } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 
 import { CompaniesService } from '../../../core/services/companies.service';
@@ -42,7 +43,7 @@ function toInputTime(value: string | null): string {
 @Component({
   selector: 'app-negocio-horario',
   standalone: true,
-  imports: [FormsModule, RouterLink, ScrollingModule, Select, Skeleton],
+  imports: [FormsModule, ScrollingModule, Select, Skeleton],
   templateUrl: './negocio-horario.html',
   styleUrl: './negocio-horario.scss',
 })
@@ -52,6 +53,13 @@ export class NegocioHorario implements OnInit {
   private readonly scheduleService = inject(ScheduleService);
   private readonly confirmService = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  private readonly location = inject(Location);
+
+  /** Vuelve a la página/pestaña exacta de la que se vino (respeta filtros/paginación) en vez de una
+   * ruta fija — ver el mismo criterio en query-param-state.ts. */
+  goBack(): void {
+    this.location.back();
+  }
 
   readonly isLoading = signal(true);
   readonly isSaving = signal(false);

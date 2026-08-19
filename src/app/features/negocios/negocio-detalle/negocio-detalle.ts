@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -56,8 +57,15 @@ export class NegocioDetalle implements OnInit {
     this.activeTab.set(tab);
   }
 
+  /** Vuelve a la página/búsqueda exacta de la que se vino (respeta filtros) en vez de una ruta fija —
+   * ver el mismo criterio en query-param-state.ts. */
+  goBack(): void {
+    this.location.back();
+  }
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly companiesService = inject(CompaniesService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly storesService = inject(StoresService);
@@ -82,6 +90,14 @@ export class NegocioDetalle implements OnInit {
   readonly revealedApay = signal<{ apayToken: string; apayBusinessId: string | null } | null>(null);
   readonly isRevealingApay = signal(false);
   apayForm = { apayToken: '', apayBusinessId: '' };
+  readonly apayModalOpen = signal(false);
+  /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
+  readonly apaySubmitted = signal(false);
+
+  isApayTokenInvalid(): boolean {
+    return this.apaySubmitted() && !this.apayForm.apayToken.trim();
+  }
+
   /** Endpoint del webhook de pagos, para pegar en el campo "Endpoint" del perfil de APay del negocio.
    * Fijo por deploy (environment.apiUrl), no depende del negocio — igual que en delivery-pedidos-admin. */
   readonly apayWebhookUrl = `${environment.apiUrl}/apay/webhook`;
@@ -323,13 +339,21 @@ export class NegocioDetalle implements OnInit {
     }
   }
 
+  openApayModal(): void {
+    this.apayForm = { apayToken: '', apayBusinessId: '' };
+    this.apaySubmitted.set(false);
+    this.apayModalOpen.set(true);
+  }
+
+  closeApayModal(): void {
+    this.apayModalOpen.set(false);
+  }
+
   /** Guarda un token nuevo (rota el anterior si había uno activo). El ambiente (pruebas/producción) es fijo en el backend, no se pide aquí. */
   async saveApay(): Promise<void> {
+    this.apaySubmitted.set(true);
     const apayToken = this.apayForm.apayToken.trim();
-    if (!apayToken) {
-      this.toast.error('Ingresa el token de la cuenta APay');
-      return;
-    }
+    if (!apayToken) return;
 
     this.isSavingApay.set(true);
     try {
@@ -339,7 +363,7 @@ export class NegocioDetalle implements OnInit {
       });
       this.apayCredencial.set(credencial);
       this.revealedApay.set(null);
-      this.apayForm = { apayToken: '', apayBusinessId: '' };
+      this.closeApayModal();
       this.toast.success('Credencial APay guardada');
     } catch (err: any) {
       this.toast.error(err?.error?.message ?? 'No se pudo guardar la credencial APay');
@@ -555,11 +579,20 @@ export class NegocioDetalle implements OnInit {
       // la facturación si no hay pagos aún) hasta hoy — el admin puede ajustarlo.
       const periodStart = this.payments()[0]?.periodEnd ?? company.billingStartsAt ?? today;
       this.paymentForm = { amount: 0, method: 'cash', periodStart, periodEnd: today, note: '' };
+      // Con el periodo por defecto ya calculado, se sugiere el monto de una vez — el admin no
+      // tiene que acordarse de darle a "Calcular desde ventas" antes de poder guardar.
+      this.calculateFromSales();
     } else {
       this.advanceForm = { months: 1, method: 'cash', note: '' };
     }
     this.paymentSubmitted.set(false);
     this.paymentModalOpen.set(true);
+  }
+
+  /** Recalcula automáticamente al tocar cualquiera de las dos fechas del periodo — el admin ya no
+   * tiene que darle a "Calcular desde ventas" de nuevo cada vez que ajusta el rango. */
+  onPaymentPeriodChange(): void {
+    this.calculateFromSales();
   }
 
   closePaymentModal(): void {
