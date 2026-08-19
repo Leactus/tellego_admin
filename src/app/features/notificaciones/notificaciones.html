@@ -18,10 +18,11 @@
       placeholder="Buscar por título o mensaje..."
       [(ngModel)]="historySearch"
       (ngModelChange)="onHistorySearchChange()"
+      spellcheck="false"
     />
   </div>
 
-  @if (isLoadingHistory()) {
+  @if (isLoadingHistory() || isRefreshingHistory()) {
     <app-skeleton variant="list" [rows]="4" />
   } @else if (history().length === 0) {
     <p class="empty">
@@ -50,6 +51,9 @@
         </div>
       }
     </div>
+  }
+
+  @if (total() > 0) {
     <app-pager
       [page]="page()"
       [totalPages]="totalPages()"
@@ -63,7 +67,7 @@
 
 <!-- Modal: nueva notificación -->
 @if (composeModalOpen()) {
-  <div class="modal-backdrop" (click)="closeComposeModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Nueva notificación</h2>
@@ -75,12 +79,30 @@
       <div class="modal-body">
         <label>
           Título
-          <input type="text" [(ngModel)]="form.title" name="title" placeholder="Ej. Recordatorio de pago" />
+          <input
+            type="text"
+            [(ngModel)]="form.title"
+            name="title"
+            placeholder="Ej. Recordatorio de pago"
+            [class.invalid]="isTitleInvalid()"
+          />
         </label>
+        @if (isTitleInvalid()) {
+          <span class="invalid-hint">El título es obligatorio</span>
+        }
         <label>
           Mensaje
-          <textarea [(ngModel)]="form.body" name="body" rows="3" placeholder="Escribe el contenido del mensaje"></textarea>
+          <textarea
+            [(ngModel)]="form.body"
+            name="body"
+            rows="3"
+            placeholder="Escribe el contenido del mensaje"
+            [class.invalid]="isBodyInvalid()"
+          ></textarea>
         </label>
+        @if (isBodyInvalid()) {
+          <span class="invalid-hint">El mensaje es obligatorio</span>
+        }
         <div class="form-row">
           <label>
             Tipo
@@ -102,8 +124,12 @@
               [remote]="true"
               [loading]="isSearchingCompanies()"
               (searchChange)="loadCompanies($event)"
+              [invalid]="isCompanyIdsInvalid()"
             />
           </label>
+          @if (isCompanyIdsInvalid()) {
+            <span class="invalid-hint">Elegí al menos un negocio o marcá "Enviar a todos"</span>
+          }
         }
         @if (isBroadcastPagoFiltered) {
           <p class="muted hint">

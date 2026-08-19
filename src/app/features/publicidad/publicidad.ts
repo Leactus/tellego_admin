@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -11,6 +11,7 @@ import { Product } from '../../core/models/catalog.model';
 import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
 import { formatShortDate } from '../../core/utils/format-date';
+import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { Icon } from '../../shared/icon/icon';
 import { Pager } from '../../shared/pager/pager';
 import { Select, SelectOption } from '../../shared/select/select';
@@ -44,6 +45,7 @@ export class Publicidad implements OnInit {
   private readonly companies = inject(CompaniesService);
   private readonly catalog = inject(CatalogService);
   private readonly toast = inject(ToastService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly mode: Mode = (this.route.snapshot.data['mode'] as Mode) ?? 'store';
   readonly isProductMode = this.mode === 'product';
@@ -52,7 +54,10 @@ export class Publicidad implements OnInit {
     ? 'Productos puntuales destacados en la app, pedidos por negocios o creados directamente por ti.'
     : 'Negocios que quieren aparecer en la sección de destacados de la app, pedidos por ellos o creados directamente por ti.';
 
+  /** Solo true antes de la primerísima carga — de ahí en adelante nunca vuelve a taparlo todo (filtros incluidos). */
   readonly isLoading = signal(true);
+  /** true durante un refresco por paginación/pestaña — solo tapa la lista con esqueleto, filtros y pager se quedan montados. */
+  readonly isRefreshing = signal(false);
   readonly items = signal<Advertisement[]>([]);
   readonly page = signal(1);
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
@@ -90,11 +95,37 @@ export class Publicidad implements OnInit {
     if (this.isProductMode && !this.createForm.productId) return false;
     return true;
   });
+  readonly createSubmitted = signal(false);
+
+  isStoreInvalid(): boolean {
+    return this.createSubmitted() && !this.createForm.storeId;
+  }
+
+  isProductInvalid(): boolean {
+    return this.createSubmitted() && this.isProductMode && !this.createForm.productId;
+  }
+
+  isDurationInvalid(): boolean {
+    return this.createSubmitted() && this.createForm.durationDays <= 0;
+  }
+
+  isCostInvalid(): boolean {
+    return this.createSubmitted() && this.createForm.cost < 0;
+  }
 
   // --- Modal: aprobar solicitud pendiente ---
   readonly approveModalTarget = signal<Advertisement | null>(null);
   readonly isApproving = signal(false);
+  readonly approveSubmitted = signal(false);
   approveForm: { durationDays: number; cost: number } = { durationDays: 30, cost: 0 };
+
+  isApproveDurationInvalid(): boolean {
+    return this.approveSubmitted() && this.approveForm.durationDays <= 0;
+  }
+
+  isApproveCostInvalid(): boolean {
+    return this.approveSubmitted() && this.approveForm.cost < 0;
+  }
 
   // --- Modal: rechazar solicitud pendiente ---
   readonly rejectModalTarget = signal<Advertisement | null>(null);
@@ -127,13 +158,14 @@ export class Publicidad implements OnInit {
     this.reload();
   }
 
-  async reload(): Promise<void> {
+  /** `silent`: true para refrescos que no deben mostrar ningún esqueleto (tras crear/aprobar/rechazar); el resto pasa por `isRefreshing`. */
+  async reload(silent = false): Promise<void> {
     syncQueryParams(this.router, this.route, {
       page: this.page() > 1 ? this.page() : null,
       pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
       tab: this.tab() !== 'pending' ? this.tab() : null,
     });
-    this.isLoading.set(true);
+    if (!silent) this.isRefreshing.set(true);
     try {
       const tab = this.tab();
       const { data, meta } = await this.advertisements.list({
@@ -148,6 +180,7 @@ export class Publicidad implements OnInit {
     } catch {
       this.toast.error('No se pudieron cargar las solicitudes de publicidad');
     } finally {
+      if (!silent) this.isRefreshing.set(false);
       this.isLoading.set(false);
     }
   }
@@ -164,6 +197,7 @@ export class Publicidad implements OnInit {
     this.storeOptions.set([]);
     this.productOptions.set([]);
     this.companiesById.clear();
+    this.createSubmitted.set(false);
     this.createModalOpen.set(true);
     await this.searchCompanies('');
   }
@@ -229,7 +263,11 @@ export class Publicidad implements OnInit {
   }
 
   async confirmCreate(): Promise<void> {
-    if (!this.canSubmitCreate()) return;
+    this.createSubmitted.set(true);
+    if (!this.canSubmitCreate()) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isCreating.set(true);
     try {
@@ -254,6 +292,7 @@ export class Publicidad implements OnInit {
   // --- Aprobar ---
   openApproveModal(ad: Advertisement): void {
     this.approveForm = { durationDays: 30, cost: 0 };
+    this.approveSubmitted.set(false);
     this.approveModalTarget.set(ad);
   }
 
@@ -262,8 +301,12 @@ export class Publicidad implements OnInit {
   }
 
   async confirmApprove(): Promise<void> {
+    this.approveSubmitted.set(true);
     const target = this.approveModalTarget();
-    if (!target || this.approveForm.durationDays <= 0 || this.approveForm.cost < 0) return;
+    if (!target || this.approveForm.durationDays <= 0 || this.approveForm.cost < 0) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isApproving.set(true);
     try {

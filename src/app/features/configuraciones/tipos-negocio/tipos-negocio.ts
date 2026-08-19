@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 
@@ -9,6 +9,7 @@ import { BusinessType } from '../../../core/models/businessType.model';
 import { SubcategoryAvailability } from '../../../core/models/subcategory.model';
 import { Country } from '../../../core/models/company.model';
 import { Icon } from '../../../shared/icon/icon';
+import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -34,12 +35,14 @@ export class TiposNegocio implements OnInit {
   private readonly companiesService = inject(CompaniesService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly isLoadingTypes = signal(true);
   readonly types = signal<BusinessType[]>([]);
   readonly selectedType = signal<BusinessType | null>(null);
 
   readonly typeModalOpen = signal(false);
+  readonly typeSubmitted = signal(false);
   readonly isSavingType = signal(false);
   editingType: BusinessType | null = null;
   typeName = '';
@@ -53,6 +56,7 @@ export class TiposNegocio implements OnInit {
   selectedCountryId: number | null = null;
 
   readonly subcategoryModalOpen = signal(false);
+  readonly subcategorySubmitted = signal(false);
   readonly isSavingSubcategory = signal(false);
   editingSubcategory: SubcategoryAvailability | null = null;
   subcategoryName = '';
@@ -110,11 +114,16 @@ export class TiposNegocio implements OnInit {
 
   // --- Tipos de negocio ---
 
+  isTypeNameInvalid(): boolean {
+    return this.typeSubmitted() && !this.typeName.trim();
+  }
+
   openNewTypeModal(): void {
     this.editingType = null;
     this.typeName = '';
     this.selectedTypeImageFile = null;
     this.setTypePreview(null);
+    this.typeSubmitted.set(false);
     this.typeModalOpen.set(true);
   }
 
@@ -123,6 +132,7 @@ export class TiposNegocio implements OnInit {
     this.typeName = type.name;
     this.selectedTypeImageFile = null;
     this.setTypePreview(type.imageUrl);
+    this.typeSubmitted.set(false);
     this.typeModalOpen.set(true);
   }
 
@@ -150,8 +160,12 @@ export class TiposNegocio implements OnInit {
   }
 
   async saveType(): Promise<void> {
+    this.typeSubmitted.set(true);
     const name = this.typeName.trim();
-    if (!name) return;
+    if (!name) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSavingType.set(true);
     try {
@@ -206,11 +220,16 @@ export class TiposNegocio implements OnInit {
 
   // --- Subcategorías del tipo seleccionado ---
 
+  isSubcategoryNameInvalid(): boolean {
+    return this.subcategorySubmitted() && !this.subcategoryName.trim();
+  }
+
   openNewSubcategoryModal(): void {
     this.editingSubcategory = null;
     this.subcategoryName = '';
     this.selectedSubcategoryImageFile = null;
     this.setSubcategoryPreview(null);
+    this.subcategorySubmitted.set(false);
     this.subcategoryModalOpen.set(true);
   }
 
@@ -219,6 +238,7 @@ export class TiposNegocio implements OnInit {
     this.subcategoryName = subcategory.name;
     this.selectedSubcategoryImageFile = null;
     this.setSubcategoryPreview(subcategory.imageUrl);
+    this.subcategorySubmitted.set(false);
     this.subcategoryModalOpen.set(true);
   }
 
@@ -246,9 +266,14 @@ export class TiposNegocio implements OnInit {
   }
 
   async saveSubcategory(): Promise<void> {
+    this.subcategorySubmitted.set(true);
     const type = this.selectedType();
     const name = this.subcategoryName.trim();
-    if (!type || !name) return;
+    if (!type) return;
+    if (!name) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSavingSubcategory.set(true);
     try {

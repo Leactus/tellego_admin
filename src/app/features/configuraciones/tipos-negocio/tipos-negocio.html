@@ -96,7 +96,7 @@
 
 <!-- Modal: nuevo/editar tipo de negocio -->
 @if (typeModalOpen()) {
-  <div class="modal-backdrop" (click)="closeTypeModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingType ? 'Editar tipo de negocio' : 'Nuevo tipo de negocio' }}</h2>
@@ -108,8 +108,17 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="typeName" name="typeName" placeholder="Ej. Restaurante" />
+          <input
+            type="text"
+            [(ngModel)]="typeName"
+            name="typeName"
+            placeholder="Ej. Restaurante"
+            [class.invalid]="isTypeNameInvalid()"
+          />
         </label>
+        @if (isTypeNameInvalid()) {
+          <span class="invalid-hint">El nombre es obligatorio</span>
+        }
 
         <div class="image-field">
           <div class="image-preview">
@@ -143,7 +152,7 @@
 
 <!-- Modal: nueva/editar subcategoría -->
 @if (subcategoryModalOpen()) {
-  <div class="modal-backdrop" (click)="closeSubcategoryModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingSubcategory ? 'Editar subcategoría' : 'Nueva subcategoría' }}</h2>
@@ -155,8 +164,17 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="subcategoryName" name="subcategoryName" placeholder="Ej. Pizzas" />
+          <input
+            type="text"
+            [(ngModel)]="subcategoryName"
+            name="subcategoryName"
+            placeholder="Ej. Pizzas"
+            [class.invalid]="isSubcategoryNameInvalid()"
+          />
         </label>
+        @if (isSubcategoryNameInvalid()) {
+          <span class="invalid-hint">El nombre es obligatorio</span>
+        }
 
         <div class="image-field">
           <div class="image-preview">

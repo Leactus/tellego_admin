@@ -78,6 +78,11 @@
   color: var(--color-text);
   font-family: inherit;
   font-size: 0.85rem;
+  /* type="date" trae su propio look nativo (borde/relleno propio del selector de fecha del
+     navegador) que se monta encima de este border — mismo "2 tonos" que en los buscadores.
+     appearance:none lo apaga y deja este border como el único visible. */
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 // --- Foto rápida de la plataforma ---

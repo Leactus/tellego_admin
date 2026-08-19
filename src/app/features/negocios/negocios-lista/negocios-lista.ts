@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -10,11 +10,14 @@ import { debounce } from '../../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../../core/utils/query-param-state';
 import { Icon } from '../../../shared/icon/icon';
 import { Pager } from '../../../shared/pager/pager';
+import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { TempPasswordModalService } from '../../../shared/temp-password-modal/temp-password-modal.service';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
   { value: 'commission', label: 'Comisión sobre ventas' },
@@ -36,10 +39,14 @@ export class NegociosLista implements OnInit {
   private readonly tempPasswordModal = inject(TempPasswordModalService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly billingTypeOptions = BILLING_TYPE_OPTIONS;
 
+  /** Solo true antes de la primerísima carga — de ahí en adelante nunca vuelve a taparlo todo (filtros incluidos). */
   readonly isLoading = signal(true);
+  /** true durante un refresco por búsqueda/filtro/paginación — solo tapa la lista con esqueleto, filtros y pager se quedan montados. */
+  readonly isRefreshing = signal(false);
   readonly items = signal<Company[]>([]);
   readonly page = signal(1);
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
@@ -47,6 +54,7 @@ export class NegociosLista implements OnInit {
   readonly total = signal(0);
 
   readonly createModalOpen = signal(false);
+  readonly createSubmitted = signal(false);
   readonly isCreating = signal(false);
   readonly countryOptions = signal<SelectOption<number>[]>([]);
   createForm: {
@@ -106,13 +114,14 @@ export class NegociosLista implements OnInit {
     this.reload();
   }
 
-  async reload(): Promise<void> {
+  /** `silent`: true para refrescos que no deben mostrar ningún esqueleto (tras crear); el resto pasa por `isRefreshing`. */
+  async reload(silent = false): Promise<void> {
     syncQueryParams(this.router, this.route, {
       page: this.page() > 1 ? this.page() : null,
       pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
       search: this.search.trim() || null,
     });
-    this.isLoading.set(true);
+    if (!silent) this.isRefreshing.set(true);
     try {
       const { data, meta } = await this.companies.list({
         page: this.page(),
@@ -125,8 +134,22 @@ export class NegociosLista implements OnInit {
     } catch {
       this.toast.error('No se pudieron cargar los negocios');
     } finally {
+      if (!silent) this.isRefreshing.set(false);
       this.isLoading.set(false);
     }
+  }
+
+  isCompanyNameInvalid(): boolean {
+    return this.createSubmitted() && !this.createForm.companyName.trim();
+  }
+
+  isOwnerNameInvalid(): boolean {
+    return this.createSubmitted() && !this.createForm.ownerName.trim();
+  }
+
+  isOwnerEmailInvalid(): boolean {
+    const email = this.createForm.ownerEmail.trim();
+    return this.createSubmitted() && (!email || !EMAIL_PATTERN.test(email));
   }
 
   async openCreateModal(): Promise<void> {
@@ -154,6 +177,7 @@ export class NegociosLista implements OnInit {
       monthlyFee: defaultMonthlyFee,
       commissionRate: defaultCommissionRate,
     };
+    this.createSubmitted.set(false);
     this.createModalOpen.set(true);
   }
 
@@ -162,8 +186,12 @@ export class NegociosLista implements OnInit {
   }
 
   async createCompany(): Promise<void> {
+    this.createSubmitted.set(true);
     const { companyName, ownerName, ownerEmail, ownerPhone, countryId, billingType, monthlyFee, commissionRate } = this.createForm;
-    if (!companyName.trim() || !ownerName.trim() || !ownerEmail.trim()) return;
+    if (!companyName.trim() || !ownerName.trim() || !ownerEmail.trim() || !EMAIL_PATTERN.test(ownerEmail.trim())) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isCreating.set(true);
     try {

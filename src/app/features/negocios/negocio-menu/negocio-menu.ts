@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -12,6 +12,7 @@ import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
+import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 
 type Tab = 'categorias' | 'productos';
 
@@ -28,6 +29,7 @@ export class NegocioMenu implements OnInit {
   private readonly catalog = inject(CatalogService);
   private readonly confirmService = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   private companyId!: number;
 
@@ -50,6 +52,12 @@ export class NegocioMenu implements OnInit {
   readonly categoryModalOpen = signal(false);
   editingCategory: ProductCategory | null = null;
   categoryName = '';
+  /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
+  readonly categorySubmitted = signal(false);
+
+  isCategoryNameInvalid(): boolean {
+    return this.categorySubmitted() && !this.categoryName.trim();
+  }
 
   // --- Modal: producto ---
   readonly productModalOpen = signal(false);
@@ -65,6 +73,20 @@ export class NegocioMenu implements OnInit {
     storeId: null as number | null,
   };
   selectedImageFile: File | null = null;
+  /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
+  readonly productSubmitted = signal(false);
+
+  isProductNameInvalid(): boolean {
+    return this.productSubmitted() && !this.productForm.name.trim();
+  }
+
+  isProductPriceInvalid(): boolean {
+    return this.productSubmitted() && this.productForm.price <= 0;
+  }
+
+  isProductStoreInvalid(): boolean {
+    return this.productSubmitted() && !this.editingProduct && !this.productForm.storeId;
+  }
 
   // --- Modal: opciones ---
   readonly optionsModalOpen = signal(false);
@@ -73,6 +95,18 @@ export class NegocioMenu implements OnInit {
   newGroupRequireOne = false;
   newItemNameByGroup: Record<number, string> = {};
   newItemPriceByGroup: Record<number, number> = {};
+  /** true recién después de un intento fallido de "+ Nuevo grupo" — antes de eso no se marca nada en rojo. */
+  readonly newGroupSubmitted = signal(false);
+  /** Grupos donde ya se intentó "+ Agregar" sin llenar el nombre de la opción — llave = group.id. */
+  private readonly itemAddAttemptedGroups = new Set<number>();
+
+  isNewGroupNameInvalid(): boolean {
+    return this.newGroupSubmitted() && !this.newGroupName.trim();
+  }
+
+  isNewItemNameInvalid(groupId: number): boolean {
+    return this.itemAddAttemptedGroups.has(groupId) && !(this.newItemNameByGroup[groupId] ?? '').trim();
+  }
 
   async ngOnInit(): Promise<void> {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));
@@ -109,12 +143,14 @@ export class NegocioMenu implements OnInit {
   openNewCategory(): void {
     this.editingCategory = null;
     this.categoryName = '';
+    this.categorySubmitted.set(false);
     this.categoryModalOpen.set(true);
   }
 
   openEditCategory(category: ProductCategory): void {
     this.editingCategory = category;
     this.categoryName = category.name;
+    this.categorySubmitted.set(false);
     this.categoryModalOpen.set(true);
   }
 
@@ -123,8 +159,12 @@ export class NegocioMenu implements OnInit {
   }
 
   async saveCategory(): Promise<void> {
+    this.categorySubmitted.set(true);
     const name = this.categoryName.trim();
-    if (!name) return;
+    if (!name) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     try {
       if (this.editingCategory) {
@@ -172,6 +212,7 @@ export class NegocioMenu implements OnInit {
       storeId: this.branches()[0]?.id ?? null,
     };
     this.selectedImageFile = null;
+    this.productSubmitted.set(false);
     this.productModalOpen.set(true);
   }
 
@@ -187,6 +228,7 @@ export class NegocioMenu implements OnInit {
       storeId: null,
     };
     this.selectedImageFile = null;
+    this.productSubmitted.set(false);
     this.productModalOpen.set(true);
   }
 
@@ -200,14 +242,14 @@ export class NegocioMenu implements OnInit {
   }
 
   async saveProduct(): Promise<void> {
+    this.productSubmitted.set(true);
     const name = this.productForm.name.trim();
-    if (!name || this.productForm.price <= 0) return;
-    if (this.productForm.hasSale && this.productForm.salePrice >= this.productForm.price) {
-      this.toast.error('El precio de oferta debe ser menor al precio normal');
+    if (!name || this.productForm.price <= 0 || (!this.editingProduct && !this.productForm.storeId)) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
-    if (!this.editingProduct && !this.productForm.storeId) {
-      this.toast.error('Elige la sucursal donde se activa primero');
+    if (this.productForm.hasSale && this.productForm.salePrice >= this.productForm.price) {
+      this.toast.error('El precio de oferta debe ser menor al precio normal');
       return;
     }
 
@@ -287,6 +329,8 @@ export class NegocioMenu implements OnInit {
     this.optionsProduct = product;
     this.newGroupName = '';
     this.newGroupRequireOne = false;
+    this.newGroupSubmitted.set(false);
+    this.itemAddAttemptedGroups.clear();
     this.optionsModalOpen.set(true);
   }
 
@@ -296,8 +340,12 @@ export class NegocioMenu implements OnInit {
   }
 
   async addGroup(): Promise<void> {
+    this.newGroupSubmitted.set(true);
     const name = this.newGroupName.trim();
-    if (!name || !this.optionsProduct) return;
+    if (!name || !this.optionsProduct) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     try {
       await this.catalog.createOptionGroup(this.optionsProduct.id, {
@@ -308,6 +356,7 @@ export class NegocioMenu implements OnInit {
       });
       this.newGroupName = '';
       this.newGroupRequireOne = false;
+      this.newGroupSubmitted.set(false);
       await this.reload();
       this.toast.success('Grupo creado');
     } catch {
@@ -334,14 +383,19 @@ export class NegocioMenu implements OnInit {
   }
 
   async addItem(group: OptionGroup): Promise<void> {
+    this.itemAddAttemptedGroups.add(group.id);
     const name = (this.newItemNameByGroup[group.id] ?? '').trim();
-    if (!name) return;
+    if (!name) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
     const extraPrice = this.newItemPriceByGroup[group.id] ?? 0;
 
     try {
       await this.catalog.createOptionItem(group.id, { name, extraPrice });
       this.newItemNameByGroup[group.id] = '';
       this.newItemPriceByGroup[group.id] = 0;
+      this.itemAddAttemptedGroups.delete(group.id);
       await this.reload();
     } catch {
       this.toast.error('No se pudo agregar la opción');

@@ -107,7 +107,7 @@
 
 <!-- Modal: categoría -->
 @if (categoryModalOpen()) {
-  <div class="modal-backdrop" (click)="closeCategoryModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingCategory ? 'Editar categoría' : 'Nueva categoría' }}</h2>
@@ -119,13 +119,22 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="categoryName" name="categoryName" placeholder="Ej. Bebidas" />
+          <input
+            type="text"
+            [(ngModel)]="categoryName"
+            name="categoryName"
+            [class.invalid]="isCategoryNameInvalid()"
+            placeholder="Ej. Bebidas"
+          />
         </label>
+        @if (isCategoryNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre para la categoría</span>
+        }
       </div>
 
       <div class="modal-actions">
         <button class="btn-text" (click)="closeCategoryModal()">Cancelar</button>
-        <button class="btn-primary" [disabled]="!categoryName.trim()" (click)="saveCategory()">Guardar</button>
+        <button class="btn-primary" (click)="saveCategory()">Guardar</button>
       </div>
     </div>
   </div>
@@ -133,7 +142,7 @@
 
 <!-- Modal: producto -->
 @if (productModalOpen()) {
-  <div class="modal-backdrop" (click)="closeProductModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingProduct ? 'Editar producto' : 'Nuevo producto' }}</h2>
@@ -145,8 +154,17 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="productForm.name" name="productName" placeholder="Ej. Pizza Pepperoni" />
+          <input
+            type="text"
+            [(ngModel)]="productForm.name"
+            name="productName"
+            [class.invalid]="isProductNameInvalid()"
+            placeholder="Ej. Pizza Pepperoni"
+          />
         </label>
+        @if (isProductNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre para el producto</span>
+        }
         <label>
           Descripción
           <textarea [(ngModel)]="productForm.description" name="productDescription" rows="2"></textarea>
@@ -154,13 +172,23 @@
         <div class="form-row">
           <label>
             Precio (USD)
-            <input type="number" min="0" step="0.01" [(ngModel)]="productForm.price" name="productPrice" />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="productForm.price"
+              name="productPrice"
+              [class.invalid]="isProductPriceInvalid()"
+            />
           </label>
           <label>
             Categoría
             <app-select [(ngModel)]="productForm.categoryId" name="productCategory" [options]="categoryOptions()" />
           </label>
         </div>
+        @if (isProductPriceInvalid()) {
+          <span class="invalid-hint">Ingresa un precio mayor a $0.00</span>
+        }
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="productForm.hasSale" name="hasSale" />
           Tiene precio de oferta
@@ -174,8 +202,16 @@
         @if (!editingProduct) {
           <label>
             Sucursal donde se activa primero
-            <app-select [(ngModel)]="productForm.storeId" name="productStore" [options]="storeOptions()" />
+            <app-select
+              [(ngModel)]="productForm.storeId"
+              name="productStore"
+              [options]="storeOptions()"
+              [invalid]="isProductStoreInvalid()"
+            />
           </label>
+          @if (isProductStoreInvalid()) {
+            <span class="invalid-hint">Elige la sucursal donde se activa primero</span>
+          }
         }
         <label>
           Foto
@@ -185,11 +221,7 @@
 
       <div class="modal-actions">
         <button class="btn-text" (click)="closeProductModal()">Cancelar</button>
-        <button
-          class="btn-primary"
-          [disabled]="isSavingProduct() || !productForm.name || productForm.price <= 0"
-          (click)="saveProduct()"
-        >
+        <button class="btn-primary" [disabled]="isSavingProduct()" (click)="saveProduct()">
           {{ isSavingProduct() ? 'Guardando…' : 'Guardar' }}
         </button>
       </div>
@@ -199,7 +231,7 @@
 
 <!-- Modal: opciones (ingredientes/extras) -->
 @if (optionsModalOpen() && optionsProduct) {
-  <div class="modal-backdrop" (click)="closeOptionsModal()">
+  <div class="modal-backdrop">
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Opciones — {{ optionsProduct.name }}</h2>
@@ -244,6 +276,7 @@
                 placeholder="Nueva opción (ej. Extra queso)"
                 [(ngModel)]="newItemNameByGroup[group.id]"
                 [name]="'itemName' + group.id"
+                [class.invalid]="isNewItemNameInvalid(group.id)"
               />
               <input
                 type="number"
@@ -255,17 +288,29 @@
               />
               <button class="btn-text" (click)="addItem(group)">+ Agregar</button>
             </div>
+            @if (isNewItemNameInvalid(group.id)) {
+              <span class="invalid-hint">Ingresa un nombre para la opción</span>
+            }
           </div>
         }
       }
 
       <div class="add-group-row">
-        <input type="text" placeholder="Nombre del grupo (ej. Tamaño)" [(ngModel)]="newGroupName" name="newGroupName" />
+        <input
+          type="text"
+          placeholder="Nombre del grupo (ej. Tamaño)"
+          [(ngModel)]="newGroupName"
+          name="newGroupName"
+          [class.invalid]="isNewGroupNameInvalid()"
+        />
+        @if (isNewGroupNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre para el grupo</span>
+        }
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="newGroupRequireOne" name="newGroupRequireOne" />
           Obligatorio (elige 1)
         </label>
-        <button class="btn-primary" [disabled]="!newGroupName.trim()" (click)="addGroup()">+ Nuevo grupo</button>
+        <button class="btn-primary" (click)="addGroup()">+ Nuevo grupo</button>
       </div>
     </div>
   </div>

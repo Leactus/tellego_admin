@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -11,6 +11,7 @@ import { debounce } from '../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
 import { formatLongDate } from '../../core/utils/format-date';
 import { addMonthsToDateOnly } from '../../core/utils/billing';
+import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { Icon } from '../../shared/icon/icon';
 import { Pager } from '../../shared/pager/pager';
 import { Select, SelectOption } from '../../shared/select/select';
@@ -39,8 +40,12 @@ export class Pagos implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
+  /** Solo true antes de la primerísima carga — de ahí en adelante nunca vuelve a taparlo todo (filtros incluidos). */
   readonly isLoading = signal(true);
+  /** true durante un refresco por búsqueda/filtro/paginación/pestaña — solo tapa la lista con esqueleto, filtros y pager se quedan montados. */
+  readonly isRefreshing = signal(false);
   readonly items = signal<Company[]>([]);
   readonly page = signal(1);
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
@@ -57,14 +62,40 @@ export class Pagos implements OnInit {
   readonly isCalculatingSales = signal(false);
   readonly salesInfo = signal<CompanySales | null>(null);
   readonly paymentModalCompany = signal<Company | null>(null);
+  readonly paymentSubmitted = signal(false);
   paymentForm = { amount: 0, method: 'cash' as 'cash' | 'transfer' | 'card', periodStart: '', periodEnd: '', note: '' };
   /** Solo para cuota fija — con comisión no existe "adelantar", el monto depende de ventas que todavía no pasaron. */
   advanceForm = { months: 1, method: 'cash' as 'cash' | 'transfer' | 'card', note: '' };
 
+  isAmountInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.amount;
+  }
+
+  isPeriodStartInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.periodStart;
+  }
+
+  isPeriodEndInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.periodEnd;
+  }
+
+  isMonthsInvalid(): boolean {
+    return this.paymentSubmitted() && (!this.advanceForm.months || this.advanceForm.months < 1);
+  }
+
   readonly reminderModalOpen = signal(false);
   readonly isSendingReminder = signal(false);
+  readonly reminderSubmitted = signal(false);
   private reminderCompany: Company | null = null;
   reminderForm = { title: '', body: '' };
+
+  isReminderTitleInvalid(): boolean {
+    return this.reminderSubmitted() && !this.reminderForm.title.trim();
+  }
+
+  isReminderBodyInvalid(): boolean {
+    return this.reminderSubmitted() && !this.reminderForm.body.trim();
+  }
 
   search = '';
   private readonly debouncedSearch = debounce(() => {
@@ -105,7 +136,8 @@ export class Pagos implements OnInit {
     this.reload();
   }
 
-  async reload(): Promise<void> {
+  /** `silent`: true para refrescos que no deben mostrar ningún esqueleto (tras registrar pago); el resto pasa por `isRefreshing`. */
+  async reload(silent = false): Promise<void> {
     const tab = this.paymentTab();
     syncQueryParams(this.router, this.route, {
       page: this.page() > 1 ? this.page() : null,
@@ -113,7 +145,7 @@ export class Pagos implements OnInit {
       search: this.search.trim() || null,
       paymentTab: tab !== 'all' ? tab : null,
     });
-    this.isLoading.set(true);
+    if (!silent) this.isRefreshing.set(true);
     try {
       const { data, meta, paymentCounts } = await this.companies.list({
         page: this.page(),
@@ -128,6 +160,7 @@ export class Pagos implements OnInit {
     } catch {
       this.toast.error('No se pudieron cargar los pagos');
     } finally {
+      if (!silent) this.isRefreshing.set(false);
       this.isLoading.set(false);
     }
   }
@@ -148,6 +181,7 @@ export class Pagos implements OnInit {
     } else {
       this.advanceForm = { months: 1, method: 'cash', note: '' };
     }
+    this.paymentSubmitted.set(false);
     this.paymentModalOpen.set(true);
   }
 
@@ -198,8 +232,12 @@ export class Pagos implements OnInit {
   }
 
   async savePayment(): Promise<void> {
+    this.paymentSubmitted.set(true);
     const company = this.paymentModalCompany();
-    if (!company || !this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) return;
+    if (!company || !this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSavingPayment.set(true);
     try {
@@ -217,8 +255,12 @@ export class Pagos implements OnInit {
   }
 
   async saveAdvancePayment(): Promise<void> {
+    this.paymentSubmitted.set(true);
     const company = this.paymentModalCompany();
-    if (!company || !this.advanceForm.months || this.advanceForm.months < 1) return;
+    if (!company || !this.advanceForm.months || this.advanceForm.months < 1) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSavingPayment.set(true);
     try {
@@ -251,6 +293,7 @@ export class Pagos implements OnInit {
       title: 'Pago pendiente',
       body: `${greeting}, ${debtDescription} está vencida desde el ${dueDate}. Por favor ponte al día lo antes posible para evitar la suspensión de tu cuenta.`,
     };
+    this.reminderSubmitted.set(false);
     this.reminderModalOpen.set(true);
   }
 
@@ -260,10 +303,14 @@ export class Pagos implements OnInit {
   }
 
   async sendReminder(): Promise<void> {
+    this.reminderSubmitted.set(true);
     const company = this.reminderCompany;
     const title = this.reminderForm.title.trim();
     const body = this.reminderForm.body.trim();
-    if (!company || !title || !body) return;
+    if (!company || !title || !body) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSendingReminder.set(true);
     try {

@@ -12,10 +12,11 @@
     placeholder="Buscar por nombre de negocio..."
     [(ngModel)]="search"
     (ngModelChange)="onSearchChange()"
+    spellcheck="false"
   />
 </div>
 
-@if (isLoading()) {
+@if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
   <p class="empty">
@@ -51,6 +52,9 @@
       </div>
     }
   </div>
+}
+
+@if (total() > 0) {
   <app-pager
     [page]="page()"
     [totalPages]="totalPages()"
@@ -63,7 +67,7 @@
 
 <!-- Modal: crear negocio -->
 @if (createModalOpen()) {
-  <div class="modal-backdrop" (click)="closeCreateModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Crear negocio</h2>
@@ -75,16 +79,43 @@
       <div class="modal-body">
         <label>
           Nombre del negocio
-          <input type="text" [(ngModel)]="createForm.companyName" name="companyName" placeholder="Ej. Sushi Kobe" />
+          <input
+            type="text"
+            [(ngModel)]="createForm.companyName"
+            name="companyName"
+            placeholder="Ej. Sushi Kobe"
+            [class.invalid]="isCompanyNameInvalid()"
+          />
         </label>
+        @if (isCompanyNameInvalid()) {
+          <span class="invalid-hint">El nombre del negocio es obligatorio</span>
+        }
         <label>
           Nombre del dueño
-          <input type="text" [(ngModel)]="createForm.ownerName" name="ownerName" placeholder="Ej. José Martínez" />
+          <input
+            type="text"
+            [(ngModel)]="createForm.ownerName"
+            name="ownerName"
+            placeholder="Ej. José Martínez"
+            [class.invalid]="isOwnerNameInvalid()"
+          />
         </label>
+        @if (isOwnerNameInvalid()) {
+          <span class="invalid-hint">El nombre del dueño es obligatorio</span>
+        }
         <label>
           Email del dueño
-          <input type="email" [(ngModel)]="createForm.ownerEmail" name="ownerEmail" placeholder="dueno@correo.com" />
+          <input
+            type="email"
+            [(ngModel)]="createForm.ownerEmail"
+            name="ownerEmail"
+            placeholder="dueno@correo.com"
+            [class.invalid]="isOwnerEmailInvalid()"
+          />
         </label>
+        @if (isOwnerEmailInvalid()) {
+          <span class="invalid-hint">Ingresa un correo electrónico válido</span>
+        }
         <label>
           Teléfono del dueño
           <input type="text" [(ngModel)]="createForm.ownerPhone" name="ownerPhone" placeholder="Ej. +503 7000-0000" />

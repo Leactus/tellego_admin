@@ -1,5 +1,5 @@
 @if (confirmService.current(); as state) {
-  <div class="confirm-backdrop" (click)="confirmService.respond(false)">
+  <div class="confirm-backdrop">
     <div class="confirm-card" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="confirm-icon" [class.danger]="state.variant === 'danger'">
         <app-icon [name]="state.icon ?? (state.variant === 'danger' ? 'trash' : 'info-circle')" />

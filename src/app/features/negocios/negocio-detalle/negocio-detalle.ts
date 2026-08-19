@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -24,6 +24,7 @@ import { MultiSelect } from '../../../shared/multi-select/multi-select';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { TempPasswordModalService } from '../../../shared/temp-password-modal/temp-password-modal.service';
+import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 
 const METHOD_OPTIONS: SelectOption[] = [
   { value: 'cash', label: 'Efectivo' },
@@ -65,6 +66,7 @@ export class NegocioDetalle implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   private readonly tempPasswordModal = inject(TempPasswordModalService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly methodOptions = METHOD_OPTIONS;
   readonly billingTypeOptions = BILLING_TYPE_OPTIONS;
@@ -73,6 +75,8 @@ export class NegocioDetalle implements OnInit {
   readonly isSavingOwner = signal(false);
   readonly isResettingPassword = signal(false);
   ownerForm = { name: '', email: '', phone: '' };
+  /** true recién después de un intento de "Guardar datos del dueño" fallido — antes de eso no se marca nada en rojo. */
+  readonly ownerSubmitted = signal(false);
   readonly apayCredencial = signal<ApayCredencial | null>(null);
   readonly isSavingApay = signal(false);
   readonly revealedApay = signal<{ apayToken: string; apayBusinessId: string | null } | null>(null);
@@ -107,6 +111,8 @@ export class NegocioDetalle implements OnInit {
   paymentForm = { amount: 0, method: 'cash' as 'cash' | 'transfer' | 'card', periodStart: '', periodEnd: '', note: '' };
   /** Solo para cuota fija — con comisión no existe "adelantar", el monto depende de ventas que todavía no pasaron. */
   advanceForm = { months: 1, method: 'cash' as 'cash' | 'transfer' | 'card', note: '' };
+  /** true recién después de un intento de "Guardar" fallido en el modal de pago (cualquiera de los dos modos). */
+  readonly paymentSubmitted = signal(false);
 
   readonly storeModalOpen = signal(false);
   readonly isSavingStore = signal(false);
@@ -129,12 +135,16 @@ export class NegocioDetalle implements OnInit {
     lat: null,
     lng: null,
   };
+  /** true recién después de un intento de "Guardar" fallido en el modal de sucursal. */
+  readonly storeSubmitted = signal(false);
 
   // --- Tipo de negocio y subcategorías: GLOBALES para toda la empresa (companies.businessTypeId),
   // compartidos por todas sus sucursales. Se editan aparte del modal de sucursal (ver template).
   readonly isSavingBusinessType = signal(false);
   readonly businessTypeOptions = signal<SelectOption<number>[]>([]);
   readonly subcategoryOptions = signal<SelectOption<number>[]>([]);
+  /** true recién después de un intento de "Guardar tipo de negocio" fallido — antes de eso no se marca nada en rojo. */
+  readonly businessTypeSubmitted = signal(false);
   businessTypeForm: { businessTypeId: number | null; subcategoryIds: number[] } = {
     businessTypeId: null,
     subcategoryIds: [],
@@ -192,6 +202,7 @@ export class NegocioDetalle implements OnInit {
         email: company.owner?.email ?? '',
         phone: company.owner?.phone ?? '',
       };
+      this.ownerSubmitted.set(false);
     } catch {
       this.toast.error('No se pudo cargar el negocio');
     } finally {
@@ -253,19 +264,21 @@ export class NegocioDetalle implements OnInit {
     }
   }
 
+  isOwnerNameInvalid(): boolean {
+    return this.ownerSubmitted() && !this.ownerForm.name.trim();
+  }
+
   isOwnerEmailInvalid(): boolean {
+    if (!this.ownerSubmitted()) return false;
     const email = this.ownerForm.email.trim();
-    return email.length > 0 && !EMAIL_PATTERN.test(email);
+    return !email || !EMAIL_PATTERN.test(email);
   }
 
   async saveOwner(): Promise<void> {
+    this.ownerSubmitted.set(true);
     const name = this.ownerForm.name.trim();
     const email = this.ownerForm.email.trim();
-    if (!name || !email) return;
-    if (!EMAIL_PATTERN.test(email)) {
-      this.toast.error('Ingresa un correo electrónico válido');
-      return;
-    }
+    if (!name || !email || !EMAIL_PATTERN.test(email)) return;
 
     this.isSavingOwner.set(true);
     try {
@@ -427,8 +440,9 @@ export class NegocioDetalle implements OnInit {
   async saveBusinessType(): Promise<void> {
     const company = this.company();
     if (!company) return;
+    this.businessTypeSubmitted.set(true);
     if (!this.businessTypeForm.businessTypeId) {
-      this.toast.error('Elige un tipo de negocio');
+      scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
 
@@ -455,6 +469,10 @@ export class NegocioDetalle implements OnInit {
     this.storeForm.lng = lng;
   }
 
+  isStoreNameInvalid(): boolean {
+    return this.storeSubmitted() && !this.storeForm.name.trim();
+  }
+
   openNewStoreModal(): void {
     this.editingStore = null;
     this.storeForm = {
@@ -466,6 +484,7 @@ export class NegocioDetalle implements OnInit {
       lat: null,
       lng: null,
     };
+    this.storeSubmitted.set(false);
     this.storeModalOpen.set(true);
   }
 
@@ -480,6 +499,7 @@ export class NegocioDetalle implements OnInit {
       lat: store.lat,
       lng: store.lng,
     };
+    this.storeSubmitted.set(false);
     this.storeModalOpen.set(true);
   }
 
@@ -488,8 +508,12 @@ export class NegocioDetalle implements OnInit {
   }
 
   async saveStore(): Promise<void> {
+    this.storeSubmitted.set(true);
     const name = this.storeForm.name.trim();
-    if (!name) return;
+    if (!name) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
     if ((this.storeForm.lat === null) !== (this.storeForm.lng === null)) {
       this.toast.error('Debes completar tanto la latitud como la longitud');
       return;
@@ -534,6 +558,7 @@ export class NegocioDetalle implements OnInit {
     } else {
       this.advanceForm = { months: 1, method: 'cash', note: '' };
     }
+    this.paymentSubmitted.set(false);
     this.paymentModalOpen.set(true);
   }
 
@@ -581,8 +606,28 @@ export class NegocioDetalle implements OnInit {
     }
   }
 
+  isPaymentAmountInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.amount;
+  }
+
+  isPaymentPeriodStartInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.periodStart;
+  }
+
+  isPaymentPeriodEndInvalid(): boolean {
+    return this.paymentSubmitted() && !this.paymentForm.periodEnd;
+  }
+
+  isAdvanceMonthsInvalid(): boolean {
+    return this.paymentSubmitted() && (!this.advanceForm.months || this.advanceForm.months < 1);
+  }
+
   async savePayment(): Promise<void> {
-    if (!this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) return;
+    this.paymentSubmitted.set(true);
+    if (!this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     try {
       const { company } = await this.paymentsService.create(this.companyId, this.paymentForm);
@@ -597,7 +642,11 @@ export class NegocioDetalle implements OnInit {
   }
 
   async saveAdvancePayment(): Promise<void> {
-    if (!this.advanceForm.months || this.advanceForm.months < 1) return;
+    this.paymentSubmitted.set(true);
+    if (!this.advanceForm.months || this.advanceForm.months < 1) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     try {
       const { company, totalAmount } = await this.paymentsService.createAdvance(this.companyId, this.advanceForm);

@@ -22,10 +22,11 @@
     placeholder="Buscar por nombre de negocio..."
     [(ngModel)]="search"
     (ngModelChange)="onSearchChange()"
+    spellcheck="false"
   />
 </div>
 
-@if (isLoading()) {
+@if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
   <p class="empty">
@@ -83,6 +84,9 @@
       </div>
     }
   </div>
+}
+
+@if (total() > 0) {
   <app-pager
     [page]="page()"
     [totalPages]="totalPages()"
@@ -95,7 +99,7 @@
 
 <!-- Modal: registrar pago -->
 @if (paymentModalOpen()) {
-  <div class="modal-backdrop" (click)="closePaymentModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Registrar pago</h2>
@@ -108,12 +112,23 @@
         <div class="modal-body">
           <label>
             Periodo desde
-            <input type="date" [(ngModel)]="paymentForm.periodStart" name="periodStart" />
+            <input
+              type="date"
+              [(ngModel)]="paymentForm.periodStart"
+              name="periodStart"
+              [class.invalid]="isPeriodStartInvalid()"
+            />
           </label>
+          @if (isPeriodStartInvalid()) {
+            <span class="invalid-hint">Selecciona el inicio del periodo</span>
+          }
           <label>
             Periodo hasta
-            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" />
+            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" [class.invalid]="isPeriodEndInvalid()" />
           </label>
+          @if (isPeriodEndInvalid()) {
+            <span class="invalid-hint">Selecciona el fin del periodo</span>
+          }
           <div class="toolbar">
             <button type="button" class="btn-secondary" [disabled]="isCalculatingSales()" (click)="calculateFromSales()">
               {{ isCalculatingSales() ? 'Calculando…' : 'Calcular desde ventas' }}
@@ -126,8 +141,11 @@
           }
           <label>
             Monto (USD)
-            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" />
+            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" [class.invalid]="isAmountInvalid()" />
           </label>
+          @if (isAmountInvalid()) {
+            <span class="invalid-hint">Ingresa un monto mayor a 0</span>
+          }
           <label>
             Método
             <app-select [(ngModel)]="paymentForm.method" name="method" [options]="methodOptions" />
@@ -151,8 +169,19 @@
           </p>
           <label>
             Meses a pagar
-            <input type="number" min="1" max="24" step="1" [(ngModel)]="advanceForm.months" name="months" />
+            <input
+              type="number"
+              min="1"
+              max="24"
+              step="1"
+              [(ngModel)]="advanceForm.months"
+              name="months"
+              [class.invalid]="isMonthsInvalid()"
+            />
           </label>
+          @if (isMonthsInvalid()) {
+            <span class="invalid-hint">Ingresa al menos 1 mes</span>
+          }
           <p class="muted hint">
             Total: <strong>${{ advanceTotal().toFixed(2) }}</strong> · Próximo pago quedará para el
             <strong>{{ formatDate(advanceNextDueDate()) }}</strong>
@@ -180,7 +209,7 @@
 
 <!-- Modal: enviar recordatorio de pago -->
 @if (reminderModalOpen()) {
-  <div class="modal-backdrop" (click)="closeReminderModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Enviar recordatorio</h2>
@@ -195,12 +224,18 @@
         </p>
         <label>
           Título
-          <input type="text" [(ngModel)]="reminderForm.title" name="reminderTitle" />
+          <input type="text" [(ngModel)]="reminderForm.title" name="reminderTitle" [class.invalid]="isReminderTitleInvalid()" />
         </label>
+        @if (isReminderTitleInvalid()) {
+          <span class="invalid-hint">Ingresa un título</span>
+        }
         <label>
           Mensaje
-          <textarea rows="4" [(ngModel)]="reminderForm.body" name="reminderBody"></textarea>
+          <textarea rows="4" [(ngModel)]="reminderForm.body" name="reminderBody" [class.invalid]="isReminderBodyInvalid()"></textarea>
         </label>
+        @if (isReminderBodyInvalid()) {
+          <span class="invalid-hint">Ingresa un mensaje</span>
+        }
       </div>
 
       <div class="modal-actions">

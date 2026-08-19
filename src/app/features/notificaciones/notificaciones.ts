@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -12,6 +12,7 @@ import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/
 import { Icon } from '../../shared/icon/icon';
 import { MultiSelect } from '../../shared/multi-select/multi-select';
 import { Pager } from '../../shared/pager/pager';
+import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { Select, SelectOption } from '../../shared/select/select';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
@@ -36,11 +37,16 @@ export class Notificaciones implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly typeOptions = TYPE_OPTIONS;
   readonly isSending = signal(false);
+  /** Solo true antes de la primerísima carga del historial — de ahí en adelante nunca vuelve a taparlo todo (filtros incluidos). */
   readonly isLoadingHistory = signal(true);
+  /** true durante un refresco por búsqueda/paginación — solo tapa la lista con esqueleto, filtros y pager se quedan montados. */
+  readonly isRefreshingHistory = signal(false);
   readonly composeModalOpen = signal(false);
+  readonly composeSubmitted = signal(false);
   readonly companies = signal<Company[]>([]);
   readonly isSearchingCompanies = signal(false);
   readonly history = signal<AdminNotification[]>([]);
@@ -94,7 +100,20 @@ export class Notificaciones implements OnInit {
     return this.form.type === 'pago' && this.form.sendToAll;
   }
 
+  isTitleInvalid(): boolean {
+    return this.composeSubmitted() && !this.form.title.trim();
+  }
+
+  isBodyInvalid(): boolean {
+    return this.composeSubmitted() && !this.form.body.trim();
+  }
+
+  isCompanyIdsInvalid(): boolean {
+    return this.composeSubmitted() && !this.form.sendToAll && this.form.companyIds.length === 0;
+  }
+
   openComposeModal(): void {
+    this.composeSubmitted.set(false);
     this.composeModalOpen.set(true);
   }
 
@@ -115,13 +134,14 @@ export class Notificaciones implements OnInit {
     }
   }
 
-  async loadHistory(): Promise<void> {
+  /** `silent`: true para refrescos que no deben mostrar ningún esqueleto (tras enviar); el resto pasa por `isRefreshingHistory`. */
+  async loadHistory(silent = false): Promise<void> {
     syncQueryParams(this.router, this.route, {
       page: this.page() > 1 ? this.page() : null,
       pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
       search: this.historySearch.trim() || null,
     });
-    this.isLoadingHistory.set(true);
+    if (!silent) this.isRefreshingHistory.set(true);
     try {
       const { data, meta } = await this.notificationsService.listSent({
         page: this.page(),
@@ -134,16 +154,21 @@ export class Notificaciones implements OnInit {
     } catch {
       this.toast.error('No se pudo cargar el historial de notificaciones');
     } finally {
+      if (!silent) this.isRefreshingHistory.set(false);
       this.isLoadingHistory.set(false);
     }
   }
 
   async send(): Promise<void> {
+    this.composeSubmitted.set(true);
     const title = this.form.title.trim();
     const body = this.form.body.trim();
-    if (!title || !body) return;
+    if (!title || !body) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
     if (!this.form.sendToAll && this.form.companyIds.length === 0) {
-      this.toast.error('Elegí al menos un negocio o marcá "Enviar a todos"');
+      scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
 

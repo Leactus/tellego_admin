@@ -49,6 +49,16 @@ h1 {
   font-family: inherit;
   color: var(--color-text);
   background: transparent;
+  /* type="search" trae su propio look nativo del navegador (borde/relleno redondeado propio) que
+     se monta encima del borde de .search-bar — se ve como "2 tonos" / un borde cortado en vez de
+     uno solo continuo. appearance:none lo apaga y deja que .search-bar sea el único borde visible. */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.search-bar input::-webkit-search-cancel-button,
+.search-bar input::-webkit-search-decoration {
+  display: none;
 }
 
 .btn-primary {
