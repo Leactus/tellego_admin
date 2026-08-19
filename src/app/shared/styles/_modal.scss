@@ -114,6 +114,19 @@
   cursor: not-allowed;
 }
 
+.modal input.invalid,
+.modal textarea.invalid {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+
+.invalid-hint {
+  display: block;
+  margin: -10px 0 14px;
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
+
 .checkbox-row,
 .radio-row {
   flex-direction: row !important;

@@ -81,7 +81,7 @@
 
 <!-- Modal: crear publicidad directamente -->
 @if (createModalOpen()) {
-  <div class="modal-backdrop" (click)="closeCreateModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Crear publicidad{{ isProductMode ? ' de producto' : ' de negocio' }}</h2>
@@ -115,8 +115,12 @@
             [options]="storeOptions()"
             (ngModelChange)="onStoreChange($event)"
             placeholder="Selecciona una sucursal"
+            [invalid]="isStoreInvalid()"
           />
         </label>
+        @if (isStoreInvalid()) {
+          <span class="invalid-hint">Selecciona una sucursal</span>
+        }
 
         @if (isProductMode) {
           <label>
@@ -126,8 +130,12 @@
               name="productId"
               [options]="productOptions()"
               placeholder="Selecciona un producto"
+              [invalid]="isProductInvalid()"
             />
           </label>
+          @if (isProductInvalid()) {
+            <span class="invalid-hint">Selecciona un producto</span>
+          }
           @if (createForm.storeId && productOptions().length === 0) {
             <p class="muted hint">Esta sucursal no tiene productos disponibles para anunciar.</p>
           }
@@ -135,12 +143,18 @@
 
         <label>
           Duración (días desde hoy)
-          <input type="number" min="1" [(ngModel)]="createForm.durationDays" name="durationDays" />
+          <input type="number" min="1" [(ngModel)]="createForm.durationDays" name="durationDays" [class.invalid]="isDurationInvalid()" />
         </label>
+        @if (isDurationInvalid()) {
+          <span class="invalid-hint">La duración debe ser mayor a 0</span>
+        }
         <label>
           Costo (0 = cortesía)
-          <input type="number" min="0" step="0.01" [(ngModel)]="createForm.cost" name="cost" />
+          <input type="number" min="0" step="0.01" [(ngModel)]="createForm.cost" name="cost" [class.invalid]="isCostInvalid()" />
         </label>
+        @if (isCostInvalid()) {
+          <span class="invalid-hint">El costo no puede ser negativo</span>
+        }
       </div>
 
       <div class="modal-actions">
@@ -155,7 +169,7 @@
 
 <!-- Modal: aprobar -->
 @if (approveModalTarget(); as target) {
-  <div class="modal-backdrop" (click)="closeApproveModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Aprobar publicidad</h2>
@@ -169,12 +183,31 @@
 
         <label>
           Duración (días desde hoy)
-          <input type="number" min="1" [(ngModel)]="approveForm.durationDays" name="approveDurationDays" />
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="approveForm.durationDays"
+            name="approveDurationDays"
+            [class.invalid]="isApproveDurationInvalid()"
+          />
         </label>
+        @if (isApproveDurationInvalid()) {
+          <span class="invalid-hint">La duración debe ser mayor a 0</span>
+        }
         <label>
           Costo (0 = cortesía)
-          <input type="number" min="0" step="0.01" [(ngModel)]="approveForm.cost" name="approveCost" />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="approveForm.cost"
+            name="approveCost"
+            [class.invalid]="isApproveCostInvalid()"
+          />
         </label>
+        @if (isApproveCostInvalid()) {
+          <span class="invalid-hint">El costo no puede ser negativo</span>
+        }
       </div>
 
       <div class="modal-actions">
@@ -193,7 +226,7 @@
 
 <!-- Modal: rechazar -->
 @if (rejectModalTarget(); as target) {
-  <div class="modal-backdrop" (click)="closeRejectModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Rechazar publicidad</h2>

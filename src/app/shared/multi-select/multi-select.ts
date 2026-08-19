@@ -49,6 +49,7 @@ export class MultiSelect implements ControlValueAccessor {
   }
 
   @Input() placeholder = 'Selecciona opciones';
+  @Input() invalid = false;
   /** Modo remoto: no filtra localmente — `options` ya viene filtrado por quien lo use, en respuesta a `searchChange` (buscador contra el backend). */
   @Input() remote = false;
   /** Mientras el padre está resolviendo una búsqueda remota, para no mostrar "Sin resultados" de más. */

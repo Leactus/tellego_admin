@@ -49,6 +49,7 @@ export class Select implements ControlValueAccessor {
 
   @Input() options: SelectOption[] = [];
   @Input() placeholder = 'Selecciona una opción';
+  @Input() invalid = false;
   /** Modo remoto: no filtra localmente — `options` ya viene filtrado por quien lo use, en respuesta a `searchChange` (buscador contra el backend, ej. listas de negocios/sucursales que no caben en una sola página). */
   @Input() remote = false;
   /** Mientras el padre está resolviendo una búsqueda remota, para no mostrar "Sin resultados" de más. */
