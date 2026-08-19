@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -16,6 +16,7 @@ import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { PendingActions } from '../../../shared/pending-actions';
+import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,6 +45,7 @@ export class NegocioPersonal implements OnInit {
   private readonly staffService = inject(StaffService);
   private readonly confirmService = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   private companyId!: number;
 
@@ -78,6 +80,8 @@ export class NegocioPersonal implements OnInit {
     position: '',
     storeId: null as number | null,
   };
+  /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
+  readonly submitted = signal(false);
 
   async ngOnInit(): Promise<void> {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));
@@ -151,9 +155,24 @@ export class NegocioPersonal implements OnInit {
     return POSITION_OPTIONS;
   }
 
+  isNameInvalid(): boolean {
+    return this.submitted() && !this.staffForm.name.trim();
+  }
+
+  isStoreInvalid(): boolean {
+    return this.submitted() && !this.staffForm.storeId;
+  }
+
+  /** true si el correo está vacío o con formato inválido — aplica tanto al crear como al editar. */
   isEmailInvalid(): boolean {
+    if (!this.submitted()) return false;
     const email = this.staffForm.email.trim();
-    return email.length > 0 && !EMAIL_PATTERN.test(email);
+    return !email || !EMAIL_PATTERN.test(email);
+  }
+
+  /** La contraseña solo es obligatoria al crear — al editar el campo ni siquiera se muestra. */
+  isPasswordInvalid(): boolean {
+    return this.submitted() && !this.editingStaff && this.staffForm.password.length < 6;
   }
 
   openNewStaff(): void {
@@ -166,6 +185,7 @@ export class NegocioPersonal implements OnInit {
       position: '',
       storeId: this.company()?.branches?.[0]?.id ?? null,
     };
+    this.submitted.set(false);
     this.staffModalOpen.set(true);
   }
 
@@ -179,6 +199,7 @@ export class NegocioPersonal implements OnInit {
       position: member.position ?? '',
       storeId: member.storeId,
     };
+    this.submitted.set(false);
     this.staffModalOpen.set(true);
   }
 
@@ -187,14 +208,13 @@ export class NegocioPersonal implements OnInit {
   }
 
   async saveStaff(): Promise<void> {
+    this.submitted.set(true);
     const name = this.staffForm.name.trim();
     const email = this.staffForm.email.trim();
     const storeId = this.staffForm.storeId;
-    if (!name || !storeId) return;
-
-    if (!email) return;
-    if (!EMAIL_PATTERN.test(email)) {
-      this.toast.error('Ingresa un correo electrónico válido');
+    const passwordInvalid = !this.editingStaff && this.staffForm.password.length < 6;
+    if (!name || !storeId || !email || !EMAIL_PATTERN.test(email) || passwordInvalid) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
 
@@ -210,10 +230,6 @@ export class NegocioPersonal implements OnInit {
           });
           this.toast.success('Personal actualizado');
         } else {
-          if (this.staffForm.password.length < 6) {
-            this.toast.error('La contraseña debe tener al menos 6 caracteres');
-            return;
-          }
           await this.staffService.create(this.companyId, {
             name,
             email,

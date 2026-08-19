@@ -81,7 +81,7 @@
 
 <!-- Modal: personal -->
 @if (staffModalOpen()) {
-  <div class="modal-backdrop" (click)="closeStaffModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingStaff ? 'Editar personal' : 'Nuevo empleado' }}</h2>
@@ -93,12 +93,23 @@
       <div class="modal-body">
       <label>
         Sucursal
-        <app-select [(ngModel)]="staffForm.storeId" [options]="branchOptions()" placeholder="Selecciona una sucursal" />
+        <app-select
+          [(ngModel)]="staffForm.storeId"
+          [options]="branchOptions()"
+          [invalid]="isStoreInvalid()"
+          placeholder="Selecciona una sucursal"
+        />
       </label>
+      @if (isStoreInvalid()) {
+        <span class="invalid-hint">Selecciona una sucursal</span>
+      }
       <label>
         Nombre
-        <input type="text" [(ngModel)]="staffForm.name" />
+        <input type="text" [(ngModel)]="staffForm.name" [class.invalid]="isNameInvalid()" />
       </label>
+      @if (isNameInvalid()) {
+        <span class="invalid-hint">Ingresa un nombre</span>
+      }
       <label>
         Correo electrónico
         <input type="email" [(ngModel)]="staffForm.email" [class.invalid]="isEmailInvalid()" />
@@ -109,8 +120,16 @@
       @if (!editingStaff) {
         <label>
           Contraseña
-          <input type="password" [(ngModel)]="staffForm.password" placeholder="Mínimo 6 caracteres" />
+          <input
+            type="password"
+            [(ngModel)]="staffForm.password"
+            [class.invalid]="isPasswordInvalid()"
+            placeholder="Mínimo 6 caracteres"
+          />
         </label>
+        @if (isPasswordInvalid()) {
+          <span class="invalid-hint">La contraseña debe tener al menos 6 caracteres</span>
+        }
       }
       <label>
         Teléfono

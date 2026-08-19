@@ -39,6 +39,11 @@
   cursor: not-allowed;
 }
 
+.select-trigger.invalid {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+
 .select-value {
   overflow: hidden;
   text-overflow: ellipsis;

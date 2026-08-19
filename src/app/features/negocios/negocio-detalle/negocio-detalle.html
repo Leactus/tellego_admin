@@ -50,7 +50,7 @@
     <div class="billing-form">
       <label>
         Nombre
-        <input type="text" [(ngModel)]="ownerForm.name" name="ownerName" />
+        <input type="text" [(ngModel)]="ownerForm.name" name="ownerName" [class.invalid]="isOwnerNameInvalid()" />
       </label>
       <label>
         Correo electrónico
@@ -61,6 +61,9 @@
         <input type="text" [(ngModel)]="ownerForm.phone" name="ownerPhone" />
       </label>
     </div>
+    @if (isOwnerNameInvalid()) {
+      <span class="invalid-hint">Ingresa un nombre</span>
+    }
     @if (isOwnerEmailInvalid()) {
       <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
     }
@@ -162,6 +165,7 @@
             name="companyBusinessType"
             (ngModelChange)="onBusinessTypeChange($event)"
             [options]="businessTypeOptions()"
+            [invalid]="!businessTypeForm.businessTypeId"
             placeholder="Selecciona un tipo de negocio"
           />
         </label>
@@ -340,7 +344,7 @@
 
 <!-- Modal: registrar pago -->
 @if (paymentModalOpen()) {
-  <div class="modal-backdrop" (click)="closePaymentModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Registrar pago</h2>
@@ -353,12 +357,28 @@
         <div class="modal-body">
           <label>
             Periodo desde
-            <input type="date" [(ngModel)]="paymentForm.periodStart" name="periodStart" />
+            <input
+              type="date"
+              [(ngModel)]="paymentForm.periodStart"
+              name="periodStart"
+              [class.invalid]="isPaymentPeriodStartInvalid()"
+            />
           </label>
+          @if (isPaymentPeriodStartInvalid()) {
+            <span class="invalid-hint">Selecciona la fecha de inicio del periodo</span>
+          }
           <label>
             Periodo hasta
-            <input type="date" [(ngModel)]="paymentForm.periodEnd" name="periodEnd" />
+            <input
+              type="date"
+              [(ngModel)]="paymentForm.periodEnd"
+              name="periodEnd"
+              [class.invalid]="isPaymentPeriodEndInvalid()"
+            />
           </label>
+          @if (isPaymentPeriodEndInvalid()) {
+            <span class="invalid-hint">Selecciona la fecha de fin del periodo</span>
+          }
           <div class="toolbar">
             <button type="button" class="btn-secondary" [disabled]="isCalculatingSales()" (click)="calculateFromSales()">
               {{ isCalculatingSales() ? 'Calculando…' : 'Calcular desde ventas' }}
@@ -371,8 +391,11 @@
           }
           <label>
             Monto (USD)
-            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" />
+            <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" [class.invalid]="isPaymentAmountInvalid()" />
           </label>
+          @if (isPaymentAmountInvalid()) {
+            <span class="invalid-hint">Ingresa un monto mayor a 0</span>
+          }
           <label>
             Método
             <app-select [(ngModel)]="paymentForm.method" name="method" [options]="methodOptions" />
@@ -394,8 +417,19 @@
           </p>
           <label>
             Meses a pagar
-            <input type="number" min="1" max="24" step="1" [(ngModel)]="advanceForm.months" name="months" />
+            <input
+              type="number"
+              min="1"
+              max="24"
+              step="1"
+              [(ngModel)]="advanceForm.months"
+              name="months"
+              [class.invalid]="isAdvanceMonthsInvalid()"
+            />
           </label>
+          @if (isAdvanceMonthsInvalid()) {
+            <span class="invalid-hint">Ingresa al menos 1 mes</span>
+          }
           <p class="muted hint">
             Total: <strong>${{ advanceTotal().toFixed(2) }}</strong> · Próximo pago quedará para el
             <strong>{{ formatLongDate(advanceNextDueDate()) }}</strong>
@@ -412,7 +446,7 @@
 
         <div class="modal-actions">
           <button class="btn-text" (click)="closePaymentModal()">Cancelar</button>
-          <button class="btn-primary" [disabled]="advanceForm.months < 1" (click)="saveAdvancePayment()">Guardar</button>
+          <button class="btn-primary" (click)="saveAdvancePayment()">Guardar</button>
         </div>
       }
     </div>
@@ -421,7 +455,7 @@
 
 <!-- Modal: nueva/editar sucursal -->
 @if (storeModalOpen()) {
-  <div class="modal-backdrop" (click)="closeStoreModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingStore ? 'Editar sucursal' : 'Nueva sucursal' }}</h2>
@@ -433,8 +467,17 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="storeForm.name" name="storeName" placeholder="Ej. Sucursal Santa Ana" />
+          <input
+            type="text"
+            [(ngModel)]="storeForm.name"
+            name="storeName"
+            placeholder="Ej. Sucursal Santa Ana"
+            [class.invalid]="isStoreNameInvalid()"
+          />
         </label>
+        @if (isStoreNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre</span>
+        }
         <label>
           Región / departamento
           <app-select
@@ -466,7 +509,7 @@
 
       <div class="modal-actions">
         <button class="btn-text" (click)="closeStoreModal()">Cancelar</button>
-        <button class="btn-primary" [disabled]="isSavingStore() || !storeForm.name" (click)="saveStore()">
+        <button class="btn-primary" [disabled]="isSavingStore()" (click)="saveStore()">
           {{ isSavingStore() ? 'Guardando…' : 'Guardar' }}
         </button>
       </div>
