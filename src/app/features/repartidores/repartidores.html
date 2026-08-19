@@ -78,7 +78,7 @@
 
 <!-- Modal: nuevo/editar repartidor -->
 @if (formModalOpen()) {
-  <div class="modal-backdrop" (click)="closeFormModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingDriver ? 'Editar repartidor' : 'Nuevo repartidor' }}</h2>
@@ -90,13 +90,31 @@
       <div class="modal-body">
         <label>
           Nombre
-          <input type="text" [(ngModel)]="form.name" name="driverName" placeholder="Ej. Luis Gómez" />
+          <input
+            type="text"
+            [(ngModel)]="form.name"
+            name="driverName"
+            [class.invalid]="isNameInvalid()"
+            placeholder="Ej. Luis Gómez"
+          />
         </label>
+        @if (isNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre</span>
+        }
         @if (!editingDriver) {
           <label>
             Email
-            <input type="email" [(ngModel)]="form.email" name="driverEmail" placeholder="repartidor@correo.com" />
+            <input
+              type="email"
+              [(ngModel)]="form.email"
+              name="driverEmail"
+              [class.invalid]="isEmailInvalid()"
+              placeholder="repartidor@correo.com"
+            />
           </label>
+          @if (isEmailInvalid()) {
+            <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
+          }
         }
         <label>
           Teléfono
@@ -123,11 +141,7 @@
 
       <div class="modal-actions">
         <button class="btn-text" (click)="closeFormModal()">Cancelar</button>
-        <button
-          class="btn-primary"
-          [disabled]="isSaving() || !form.name || (!editingDriver && !form.email)"
-          (click)="saveDriver()"
-        >
+        <button class="btn-primary" [disabled]="isSaving()" (click)="saveDriver()">
           {{ isSaving() ? 'Guardando…' : 'Guardar' }}
         </button>
       </div>
@@ -137,7 +151,7 @@
 
 <!-- Modal: suspender repartidor -->
 @if (suspendModalOpen()) {
-  <div class="modal-backdrop" (click)="closeSuspendModal()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Suspender repartidor</h2>

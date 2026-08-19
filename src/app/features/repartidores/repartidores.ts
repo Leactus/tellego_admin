@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,6 +13,9 @@ import { Pager } from '../../shared/pager/pager';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
 import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-password-modal.service';
+import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-repartidores',
@@ -27,6 +30,7 @@ export class Repartidores implements OnInit {
   private readonly tempPasswordModal = inject(TempPasswordModalService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly isLoading = signal(true);
   readonly items = signal<Driver[]>([]);
@@ -39,6 +43,19 @@ export class Repartidores implements OnInit {
   readonly isSaving = signal(false);
   editingDriver: Driver | null = null;
   form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
+  /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
+  readonly formSubmitted = signal(false);
+
+  isNameInvalid(): boolean {
+    return this.formSubmitted() && !this.form.name.trim();
+  }
+
+  /** El correo solo es obligatorio al crear — al editar el campo ni siquiera se muestra. */
+  isEmailInvalid(): boolean {
+    if (!this.formSubmitted() || this.editingDriver) return false;
+    const email = this.form.email.trim();
+    return !email || !EMAIL_PATTERN.test(email);
+  }
 
   readonly suspendModalOpen = signal(false);
   readonly isSuspending = signal(false);
@@ -100,6 +117,7 @@ export class Repartidores implements OnInit {
   openNewModal(): void {
     this.editingDriver = null;
     this.form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
+    this.formSubmitted.set(false);
     this.formModalOpen.set(true);
   }
 
@@ -113,6 +131,7 @@ export class Repartidores implements OnInit {
       plateNumber: driver.plateNumber ?? '',
       licenseNumber: driver.licenseNumber ?? '',
     };
+    this.formSubmitted.set(false);
     this.formModalOpen.set(true);
   }
 
@@ -121,8 +140,13 @@ export class Repartidores implements OnInit {
   }
 
   async saveDriver(): Promise<void> {
+    this.formSubmitted.set(true);
     const name = this.form.name.trim();
-    if (!name) return;
+    const email = this.form.email.trim();
+    if (!name || (!this.editingDriver && (!email || !EMAIL_PATTERN.test(email)))) {
+      scrollToFirstInvalid(this.elementRef.nativeElement);
+      return;
+    }
 
     this.isSaving.set(true);
     try {
@@ -137,8 +161,6 @@ export class Repartidores implements OnInit {
         this.closeFormModal();
         this.toast.success('Repartidor actualizado');
       } else {
-        const email = this.form.email.trim();
-        if (!email) return;
         const { tempPassword } = await this.drivers.create({
           name,
           email,

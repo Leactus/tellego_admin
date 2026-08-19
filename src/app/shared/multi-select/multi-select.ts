@@ -49,6 +49,8 @@ export class MultiSelect implements ControlValueAccessor {
   }
 
   @Input() placeholder = 'Selecciona opciones';
+  /** Borde/foco en rojo — mismo lenguaje visual que `.invalid` en inputs de texto (ver shared/styles/_modal.scss), para cuando el padre valida un intento de guardado fallido. */
+  @Input() invalid = false;
   /** Modo remoto: no filtra localmente — `options` ya viene filtrado por quien lo use, en respuesta a `searchChange` (buscador contra el backend). */
   @Input() remote = false;
   /** Mientras el padre está resolviendo una búsqueda remota, para no mostrar "Sin resultados" de más. */

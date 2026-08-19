@@ -2,6 +2,7 @@
   <button
     type="button"
     class="select-trigger"
+    [class.invalid]="invalid"
     [disabled]="disabled"
     [attr.aria-expanded]="isOpen()"
     aria-haspopup="listbox"
