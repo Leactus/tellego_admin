@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../config/environment';
-import { Store, StoreInput } from '../models/store.model';
+import { Store, StoreInput, StoreStatus } from '../models/store.model';
 
 @Injectable({ providedIn: 'root' })
 export class StoresService {
@@ -20,5 +20,12 @@ export class StoresService {
     return firstValueFrom(this.http.patch<{ data: Store }>(`${this.base}/admin/stores/${storeId}`, input)).then(
       (r) => r.data,
     );
+  }
+
+  /** Aprueba ('pending_approval' -> 'active') o suspende una sucursal auto-registrada por su dueño. */
+  updateStatus(storeId: number, status: StoreStatus): Promise<Store> {
+    return firstValueFrom(
+      this.http.patch<{ data: Store }>(`${this.base}/admin/stores/${storeId}/status`, { status }),
+    ).then((r) => r.data);
   }
 }

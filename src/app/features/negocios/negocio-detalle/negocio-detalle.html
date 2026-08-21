@@ -197,11 +197,33 @@
               <span class="row-title">{{ branch.name }}</span>
               <span class="muted">{{ branch.department || 'Sin región asignada' }}</span>
             </div>
-            <span class="pill">{{ branch.status }}</span>
+            <span
+              class="pill"
+              [class.pill-suspended]="branch.status === 'suspended'"
+              [class.pill-pending]="branch.status === 'pending_approval'"
+            >
+              @if (branch.status === 'active') {
+                Activa
+              } @else if (branch.status === 'suspended') {
+                Suspendida
+              } @else {
+                Pendiente
+              }
+            </span>
             <div class="row-actions">
               <button class="icon-btn" (click)="openEditStoreModal(branch)" aria-label="Editar sucursal">
                 <app-icon name="edit" />
               </button>
+              @if (branch.status !== 'active') {
+                <button class="icon-btn" (click)="approveStore(branch)" aria-label="Aprobar sucursal">
+                  <app-icon name="check-circle" />
+                </button>
+              }
+              @if (branch.status !== 'pending_approval') {
+                <button class="icon-btn danger" (click)="toggleStoreStatus(branch)" [attr.aria-label]="branch.status === 'active' ? 'Suspender sucursal' : 'Activar sucursal'">
+                  <app-icon [name]="branch.status === 'active' ? 'x-circle' : 'check-circle'" />
+                </button>
+              }
             </div>
           </div>
         }

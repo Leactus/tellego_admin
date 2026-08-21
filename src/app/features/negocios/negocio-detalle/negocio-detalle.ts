@@ -445,6 +445,48 @@ export class NegocioDetalle implements OnInit {
     }
   }
 
+  /** Aprueba una sucursal 'pending_approval' (auto-registrada por su dueño) sin diálogo de confirmación — mismo patrón sin fricción que repartidores.ts#approve. */
+  async approveStore(branch: Store): Promise<void> {
+    try {
+      const updated = await this.storesService.updateStatus(branch.id, 'active');
+      this.patchBranch(updated);
+      this.toast.success('Sucursal aprobada');
+    } catch {
+      this.toast.error('No se pudo aprobar la sucursal');
+    }
+  }
+
+  /** Suspende/reactiva una sucursal ya aprobada — mismo diálogo de confirmación que toggleStatus (Company) de arriba. */
+  async toggleStoreStatus(branch: Store): Promise<void> {
+    const suspending = branch.status === 'active';
+    const ok = await this.confirm.confirm({
+      title: suspending ? 'Suspender sucursal' : 'Activar sucursal',
+      message: suspending
+        ? `${branch.name} dejará de verse en la app de clientes. ¿Confirmas?`
+        : `${branch.name} volverá a verse en la app de clientes. ¿Confirmas?`,
+      variant: suspending ? 'danger' : 'default',
+      confirmLabel: suspending ? 'Suspender' : 'Activar',
+    });
+    if (!ok) return;
+
+    try {
+      const updated = await this.storesService.updateStatus(branch.id, suspending ? 'suspended' : 'active');
+      this.patchBranch(updated);
+      this.toast.success(suspending ? 'Sucursal suspendida' : 'Sucursal activada');
+    } catch {
+      this.toast.error('No se pudo actualizar la sucursal');
+    }
+  }
+
+  private patchBranch(updated: Store): void {
+    const company = this.company();
+    if (!company?.branches) return;
+    this.company.set({
+      ...company,
+      branches: company.branches.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)),
+    });
+  }
+
   /** Subcategorías disponibles (habilitadas para el país de la empresa) para el tipo de negocio elegido. */
   private updateSubcategoryOptions(businessTypeId: number | null): void {
     const options = businessTypeId

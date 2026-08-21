@@ -18,6 +18,18 @@
   color: var(--color-text);
 }
 
+// Mismos colores que repartidores.scss — Store.status comparte el mismo
+// enum pending_approval/active/suspended que Driver.status.
+.pill-suspended {
+  background: color-mix(in srgb, var(--color-error) 14%, white);
+  color: var(--color-error);
+}
+
+.pill-pending {
+  background: color-mix(in srgb, var(--color-warning) 16%, white);
+  color: var(--color-warning);
+}
+
 .header-row {
   display: flex;
   flex-wrap: wrap;
