@@ -151,7 +151,13 @@ export class Select implements ControlValueAccessor {
     return option.value;
   }
 
-  @HostListener('document:click', ['$event'])
+  /**
+   * mousedown en vez de click: los modales de la app hacen `(click)="$event.stopPropagation()"`
+   * en su contenedor, así que un click en cualquier otra parte del modal (que no sea el select)
+   * nunca llegaría a document y el panel se quedaría abierto. mousedown dispara antes que click
+   * y esos handlers no lo interceptan.
+   */
+  @HostListener('document:mousedown', ['$event'])
   protected onDocumentClick(event: MouseEvent): void {
     if (this.isOpen() && !this.elementRef.nativeElement.contains(event.target as Node)) {
       this.close();
