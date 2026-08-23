@@ -1,5 +1,6 @@
 <div class="app-select app-multi-select" [class.open]="isOpen()">
   <button
+    #trigger
     type="button"
     class="select-trigger"
     [class.invalid]="invalid"
@@ -13,7 +14,16 @@
   </button>
 
   @if (isOpen()) {
-    <div class="select-panel" role="listbox" aria-multiselectable="true">
+    <div
+      #panel
+      class="select-panel"
+      role="listbox"
+      aria-multiselectable="true"
+      [style.left.px]="panelPosition().left"
+      [style.width.px]="panelPosition().width"
+      [style.top.px]="panelPosition().top"
+      [style.bottom.px]="panelPosition().bottom"
+    >
       @if (showSearch) {
         <div class="select-search">
           <app-icon name="search" />

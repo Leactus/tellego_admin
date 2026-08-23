@@ -13,6 +13,15 @@ export interface SelectOption<T = unknown> {
 const SEARCH_THRESHOLD = 8;
 /** A partir de cuántas opciones (ya filtradas) se usa scroll virtual en vez de renderizar todo. */
 const VIRTUAL_SCROLL_THRESHOLD = 20;
+/**
+ * Ventana, en ms, durante la cual se ignora un click en el disparador si acaba de elegirse una
+ * opción. Confirmado con logging en vivo: un doble click físico (mouse/trackpad) cuyo primer click
+ * elige la opción y cierra el panel puede hacer que el SEGUNDO click de ese mismo gesto — a
+ * milisegundos y unos pocos px de distancia — caiga sobre el botón disparador, que queda revelado
+ * justo ahí apenas el panel se cierra, y lo reabra de inmediato. Sin este guard, elegir una opción
+ * se sentía como si el select "no se cerrara".
+ */
+const SPURIOUS_REOPEN_GUARD_MS = 300;
 
 export interface PanelPosition {
   left: number;
@@ -46,6 +55,7 @@ export class Select implements ControlValueAccessor {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLElement>;
 
   @Input() options: SelectOption[] = [];
   @Input() placeholder = 'Selecciona una opción';
@@ -64,13 +74,21 @@ export class Select implements ControlValueAccessor {
   protected value: unknown = null;
   protected disabled = false;
 
-  private readonly reposition = (): void => this.updatePanelPosition();
+  /** true mientras scrollPanelIntoView() está scrolleando la página a mano — evita que el reposicionamiento por scroll (más abajo) pelee con ese ajuste y lo cancele a mitad de camino. */
+  private suppressReposition = false;
+
+  private readonly reposition = (): void => {
+    if (this.suppressReposition) return;
+    this.updatePanelPosition();
+  };
 
   private onChange: (value: unknown) => void = () => {};
   private onTouched: () => void = () => {};
   private searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
   /** En modo remoto, `options` va cambiando con cada búsqueda y puede dejar de incluir la opción ya elegida — se guarda su label aparte para no perderlo. */
   private selectedLabelCache: string | null = null;
+  /** Timestamp de la última vez que `selectOption` cerró el panel — ver SPURIOUS_REOPEN_GUARD_MS. */
+  private lastSelectionAt = 0;
 
   protected get selectedLabel(): string | null {
     const fromOptions = this.options.find((o) => o.value === this.value)?.label;
@@ -108,13 +126,43 @@ export class Select implements ControlValueAccessor {
     if (this.disabled) return;
     if (this.isOpen()) {
       this.close();
-    } else {
-      this.isOpen.set(true);
-      this.onTouched();
-      this.updatePanelPosition();
-      window.addEventListener('scroll', this.reposition, true);
-      window.addEventListener('resize', this.reposition);
+      return;
     }
+    if (Date.now() - this.lastSelectionAt < SPURIOUS_REOPEN_GUARD_MS) return;
+    this.isOpen.set(true);
+    this.onTouched();
+    this.updatePanelPosition();
+    window.addEventListener('scroll', this.reposition, true);
+    window.addEventListener('resize', this.reposition);
+    // Si el disparador está pegado al borde de la vista (ej. el último campo de un formulario
+    // largo), el panel puede abrir parcialmente fuera de pantalla incluso ya elegido el lado
+    // (updatePanelPosition asume una altura estimada, no la real) — se espera al siguiente tick
+    // para que el panel ya esté en el DOM con su tamaño real, y se ajusta el scroll de la página
+    // solo lo necesario para que quede completo a la vista.
+    setTimeout(() => this.scrollPanelIntoView());
+  }
+
+  private scrollPanelIntoView(): void {
+    const rect = this.panelRef?.nativeElement.getBoundingClientRect();
+    if (!rect) return;
+    const margin = 12;
+    let delta = 0;
+    if (rect.bottom > window.innerHeight) {
+      delta = rect.bottom - window.innerHeight + margin;
+    } else if (rect.top < 0) {
+      delta = rect.top - margin;
+    }
+    if (delta === 0) return;
+
+    // Instantáneo (no smooth): con smooth, el scroll dispara varios eventos 'scroll' intermedios
+    // mientras el panel todavía se está moviendo, y reposition() (que sigue al trigger mientras el
+    // usuario scrollea a mano) recalculaba la posición del panel a mitad de la animación —
+    // llegando a pelearse con este mismo ajuste y anularlo. suppressReposition lo evita, y se
+    // recalcula una sola vez, ya con la página en su posición final.
+    this.suppressReposition = true;
+    window.scrollBy({ top: delta, behavior: 'auto' });
+    this.updatePanelPosition();
+    this.suppressReposition = false;
   }
 
   private close(): void {
@@ -145,6 +193,7 @@ export class Select implements ControlValueAccessor {
     this.selectedLabelCache = option.label;
     this.onChange(this.value);
     this.close();
+    this.lastSelectionAt = Date.now();
   }
 
   protected trackByValue(_index: number, option: SelectOption): unknown {

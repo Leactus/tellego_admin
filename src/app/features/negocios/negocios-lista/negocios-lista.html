@@ -144,6 +144,14 @@
           Esto queda fijo para este negocio: si luego cambias el valor por defecto en Configuraciones &gt; Tipo de
           pago, no afecta lo que ya se le asignó aquí.
         </p>
+        <label>
+          Días gratis (opcional)
+          <input type="number" min="0" step="1" [(ngModel)]="createForm.freeTrialDays" name="freeTrialDays" placeholder="0" />
+        </label>
+        <p class="muted hint">
+          Mientras dure este periodo, el negocio nunca se considera moroso ni se bloquea, sin importar la fecha de
+          pago. Déjalo en 0 para que arranque a facturar de inmediato.
+        </p>
       </div>
 
       <div class="modal-actions">

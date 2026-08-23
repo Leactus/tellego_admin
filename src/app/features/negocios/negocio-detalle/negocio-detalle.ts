@@ -251,18 +251,46 @@ export class NegocioDetalle implements OnInit {
     this.loadPayments();
   }
 
+  /**
+   * Antes de armar el payload, se trae el estado ACTUAL del negocio en la BD — sin esto, el
+   * formulario mandaba siempre los 7 campos completos, con los valores que cargó al abrir esta
+   * pantalla. Si algo cambió del lado del servidor mientras tanto (ej. un pago vía APay que
+   * adelantó next_payment_due_date, ver apay.controller.ts), "Guardar" lo pisaba de vuelta al
+   * valor viejo sin que nadie lo pidiera — bastaba con tocar cualquier otro campo (la
+   * penalización, el periodo de gracia) para perder ese cambio en silencio. Ahora solo se manda
+   * cada campo si de verdad quedó distinto al valor fresco recién leído; lo que no se tocó no
+   * viaja en el PATCH y el backend lo deja intacto (ver `!== undefined` en companies.controller.ts).
+   */
   async saveBilling(): Promise<void> {
     const form = this.billingForm;
     try {
-      const updated = await this.companiesService.updateBilling(this.companyId, {
-        billingType: form.billingType,
-        monthlyFee: form.billingType === 'fee' ? form.monthlyFee : undefined,
-        commissionRate: form.billingType === 'commission' ? form.commissionRate : undefined,
-        nextPaymentDueDate: form.nextPaymentDueDate || null,
-        billingStartsAt: form.billingStartsAt || null,
-        gracePeriodDays: this.useCustomGracePeriod ? form.gracePeriodDays : null,
-        penaltyEnabled: form.penaltyEnabled,
-      });
+      const current = await this.companiesService.getOne(this.companyId);
+
+      const nextPaymentDueDate = form.nextPaymentDueDate || null;
+      const billingStartsAt = form.billingStartsAt || null;
+      const gracePeriodDays = this.useCustomGracePeriod ? form.gracePeriodDays : null;
+
+      const payload = {
+        billingType: form.billingType !== current.billingType ? form.billingType : undefined,
+        monthlyFee:
+          form.billingType === 'fee' && form.monthlyFee !== Number(current.monthlyFee) ? form.monthlyFee : undefined,
+        commissionRate:
+          form.billingType === 'commission' && form.commissionRate !== Number(current.commissionRate ?? 0)
+            ? form.commissionRate
+            : undefined,
+        nextPaymentDueDate: nextPaymentDueDate !== (current.nextPaymentDueDate ?? null) ? nextPaymentDueDate : undefined,
+        billingStartsAt: billingStartsAt !== (current.billingStartsAt ?? null) ? billingStartsAt : undefined,
+        gracePeriodDays: gracePeriodDays !== current.gracePeriodDays ? gracePeriodDays : undefined,
+        penaltyEnabled: form.penaltyEnabled !== current.penaltyEnabled ? form.penaltyEnabled : undefined,
+      };
+      const hasChanges = Object.values(payload).some((v) => v !== undefined);
+      if (!hasChanges) {
+        this.company.set(current);
+        this.toast.success('No hay cambios que guardar');
+        return;
+      }
+
+      const updated = await this.companiesService.updateBilling(this.companyId, payload);
       this.company.set(updated);
       this.billingForm.gracePeriodDays = updated.gracePeriodDays;
       this.useCustomGracePeriod = updated.gracePeriodDays !== null;

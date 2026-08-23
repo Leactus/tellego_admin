@@ -66,6 +66,7 @@ export class NegociosLista implements OnInit, OnDestroy {
     billingType: CompanyBillingType;
     monthlyFee: number;
     commissionRate: number;
+    freeTrialDays: number;
   } = {
     companyName: '',
     ownerName: '',
@@ -75,6 +76,7 @@ export class NegociosLista implements OnInit, OnDestroy {
     billingType: 'fee',
     monthlyFee: 0,
     commissionRate: 0,
+    freeTrialDays: 0,
   };
 
   search = '';
@@ -182,6 +184,7 @@ export class NegociosLista implements OnInit, OnDestroy {
       billingType: 'commission',
       monthlyFee: defaultMonthlyFee,
       commissionRate: defaultCommissionRate,
+      freeTrialDays: 0,
     };
     this.createSubmitted.set(false);
     this.createModalOpen.set(true);
@@ -193,7 +196,8 @@ export class NegociosLista implements OnInit, OnDestroy {
 
   async createCompany(): Promise<void> {
     this.createSubmitted.set(true);
-    const { companyName, ownerName, ownerEmail, ownerPhone, countryId, billingType, monthlyFee, commissionRate } = this.createForm;
+    const { companyName, ownerName, ownerEmail, ownerPhone, countryId, billingType, monthlyFee, commissionRate, freeTrialDays } =
+      this.createForm;
     if (!companyName.trim() || !ownerName.trim() || !ownerEmail.trim() || !EMAIL_PATTERN.test(ownerEmail.trim())) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
@@ -210,6 +214,7 @@ export class NegociosLista implements OnInit, OnDestroy {
         billingType,
         monthlyFee: billingType === 'fee' ? monthlyFee : undefined,
         commissionRate: billingType === 'commission' ? commissionRate : undefined,
+        freeTrialDays: freeTrialDays > 0 ? freeTrialDays : undefined,
       });
       this.closeCreateModal();
       this.tempPasswordModal.show({ title: 'Negocio creado', email: ownerEmail.trim(), password: tempPassword });
