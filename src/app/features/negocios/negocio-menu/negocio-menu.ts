@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
@@ -81,6 +81,7 @@ export class NegocioMenu implements OnInit {
     storeId: null as number | null,
   };
   selectedImageFile: File | null = null;
+  selectedImagePreviewUrl: string | null = null;
   /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
   readonly productSubmitted = signal(false);
 
@@ -95,6 +96,11 @@ export class NegocioMenu implements OnInit {
   isProductStoreInvalid(): boolean {
     return this.productSubmitted() && !this.editingProduct && !this.productForm.storeId;
   }
+
+  // --- Foto rápida desde la lista (clic directo en la miniatura, sin abrir el modal completo) ---
+  @ViewChild('quickImageInput') quickImageInput!: ElementRef<HTMLInputElement>;
+  quickImageProduct: Product | null = null;
+  readonly uploadingProductId = signal<number | null>(null);
 
   // --- Modal: opciones ---
   readonly optionsModalOpen = signal(false);
@@ -121,8 +127,9 @@ export class NegocioMenu implements OnInit {
     await this.reload();
   }
 
+  /** No pone isLoading en true acá: eso solo debe verse en la carga inicial (el signal ya arranca en true).
+   * Los reloads posteriores (tras guardar/borrar/togglear) deben actualizar la lista sin tapar todo con el esqueleto. */
   async reload(): Promise<void> {
-    this.isLoading.set(true);
     try {
       const [company, categories, products] = await Promise.all([
         this.companiesService.getOne(this.companyId),
@@ -220,6 +227,7 @@ export class NegocioMenu implements OnInit {
       storeId: this.branches()[0]?.id ?? null,
     };
     this.selectedImageFile = null;
+    this.selectedImagePreviewUrl = null;
     this.productSubmitted.set(false);
     this.productModalOpen.set(true);
   }
@@ -236,6 +244,7 @@ export class NegocioMenu implements OnInit {
       storeId: null,
     };
     this.selectedImageFile = null;
+    this.selectedImagePreviewUrl = product.imageUrl;
     this.productSubmitted.set(false);
     this.productModalOpen.set(true);
   }
@@ -246,7 +255,10 @@ export class NegocioMenu implements OnInit {
 
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedImageFile = input.files?.[0] ?? null;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.selectedImageFile = file;
+    this.selectedImagePreviewUrl = URL.createObjectURL(file);
   }
 
   async saveProduct(): Promise<void> {
@@ -314,6 +326,33 @@ export class NegocioMenu implements OnInit {
       this.toast.success('Producto borrado');
     } catch {
       this.toast.error('No se pudo borrar el producto');
+    }
+  }
+
+  /** Clic directo en la miniatura de la lista: cambia la foto sin abrir el modal completo. */
+  triggerQuickImageUpload(product: Product): void {
+    if (this.uploadingProductId()) return;
+    this.quickImageProduct = product;
+    this.quickImageInput.nativeElement.click();
+  }
+
+  async onQuickImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const product = this.quickImageProduct;
+    input.value = ''; // permite volver a elegir el mismo archivo más adelante
+    if (!file || !product) return;
+
+    this.uploadingProductId.set(product.id);
+    try {
+      await this.catalog.uploadProductImage(product.id, file);
+      await this.reload();
+      this.toast.success('Foto actualizada');
+    } catch {
+      this.toast.error('No se pudo subir la foto');
+    } finally {
+      this.uploadingProductId.set(null);
+      this.quickImageProduct = null;
     }
   }
 

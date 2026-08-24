@@ -80,6 +80,10 @@ export class NegocioDetalle implements OnInit {
   readonly billingTypeOptions = BILLING_TYPE_OPTIONS;
   readonly isLoading = signal(true);
   readonly company = signal<Company | null>(null);
+  readonly isUploadingLogo = signal(false);
+  readonly isRemovingLogo = signal(false);
+  readonly isUploadingCover = signal(false);
+  readonly isRemovingCover = signal(false);
   readonly isSavingOwner = signal(false);
   readonly isResettingPassword = signal(false);
   ownerForm = { name: '', email: '', phone: '' };
@@ -337,6 +341,84 @@ export class NegocioDetalle implements OnInit {
       this.toast.error(err?.error?.message ?? 'No se pudieron actualizar los datos del dueño');
     } finally {
       this.isSavingOwner.set(false);
+    }
+  }
+
+  async onLogoSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    this.isUploadingLogo.set(true);
+    try {
+      const { logoUrl } = await this.companiesService.uploadLogo(this.companyId, file);
+      this.company.update((c) => (c ? { ...c, logoUrl } : c));
+      this.toast.success('Logo actualizado');
+    } catch {
+      this.toast.error('No se pudo subir el logo');
+    } finally {
+      this.isUploadingLogo.set(false);
+    }
+  }
+
+  async removeLogo(): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Quitar logo',
+      message: 'El logo del negocio se va a borrar. Se puede subir uno nuevo cuando quieras.',
+      confirmLabel: 'Quitar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    this.isRemovingLogo.set(true);
+    try {
+      const { logoUrl } = await this.companiesService.removeLogo(this.companyId);
+      this.company.update((c) => (c ? { ...c, logoUrl } : c));
+      this.toast.success('Logo quitado');
+    } catch {
+      this.toast.error('No se pudo quitar el logo');
+    } finally {
+      this.isRemovingLogo.set(false);
+    }
+  }
+
+  async onCoverSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    this.isUploadingCover.set(true);
+    try {
+      const { coverUrl } = await this.companiesService.uploadCover(this.companyId, file);
+      this.company.update((c) => (c ? { ...c, coverUrl } : c));
+      this.toast.success('Foto de portada actualizada');
+    } catch {
+      this.toast.error('No se pudo subir la foto de portada');
+    } finally {
+      this.isUploadingCover.set(false);
+    }
+  }
+
+  async removeCover(): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Quitar foto de portada',
+      message: 'La foto de portada se va a borrar. Se puede subir una nueva cuando quieras.',
+      confirmLabel: 'Quitar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    this.isRemovingCover.set(true);
+    try {
+      const { coverUrl } = await this.companiesService.removeCover(this.companyId);
+      this.company.update((c) => (c ? { ...c, coverUrl } : c));
+      this.toast.success('Foto de portada quitada');
+    } catch {
+      this.toast.error('No se pudo quitar la foto de portada');
+    } finally {
+      this.isRemovingCover.set(false);
     }
   }
 

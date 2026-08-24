@@ -45,6 +45,8 @@
   </div>
 
   @if (activeTab() === 'info') {
+  <div class="settings-layout">
+  <div class="main-column">
   <section class="card">
     <h2>Dueño del negocio</h2>
     <div class="billing-form">
@@ -76,6 +78,108 @@
       </button>
     </div>
   </section>
+
+  <section class="card">
+    <h2>Tipo de negocio</h2>
+    <p class="muted hint">
+      Aplica a todas sus sucursales por igual. El tipo de negocio solo se puede elegir una vez; las
+      subcategorías se pueden cambiar cuando quieras.
+    </p>
+    <div class="billing-form">
+      @if (c.businessType; as bt) {
+        <label>
+          Tipo de negocio
+          <input type="text" [value]="bt.name" disabled />
+        </label>
+      } @else {
+        <label>
+          Tipo de negocio
+          <app-select
+            [(ngModel)]="businessTypeForm.businessTypeId"
+            name="companyBusinessType"
+            (ngModelChange)="onBusinessTypeChange($event)"
+            [options]="businessTypeOptions()"
+            [invalid]="businessTypeSubmitted() && !businessTypeForm.businessTypeId"
+            placeholder="Selecciona un tipo de negocio"
+          />
+        </label>
+      }
+      <label>
+        Subcategorías
+        <app-multi-select
+          [(ngModel)]="businessTypeForm.subcategoryIds"
+          [options]="subcategoryOptions()"
+          placeholder="Selecciona subcategorías"
+        />
+      </label>
+    </div>
+    @if (!c.businessType && !businessTypeForm.businessTypeId) {
+      <p class="muted hint">Elige primero un tipo de negocio para ver sus subcategorías.</p>
+    }
+    <div class="toolbar">
+      <button class="btn-primary" [disabled]="isSavingBusinessType()" (click)="saveBusinessType()">
+        {{ isSavingBusinessType() ? 'Guardando…' : 'Guardar tipo de negocio' }}
+      </button>
+    </div>
+  </section>
+  </div>
+
+  <div class="side-column">
+    <div class="logo-card">
+      <label class="image-dropzone logo-dropzone" [class.has-image]="c.logoUrl" [class.uploading]="isUploadingLogo()">
+        @if (c.logoUrl) {
+          <img [src]="c.logoUrl" alt="Logo del negocio" />
+          <span class="dropzone-overlay">
+            <app-icon name="camera" />
+            {{ isUploadingLogo() ? 'Subiendo…' : 'Cambiar' }}
+          </span>
+        } @else {
+          <span class="dropzone-empty">
+            <app-icon name="camera" />
+            {{ isUploadingLogo() ? 'Subiendo…' : 'Subir logo' }}
+          </span>
+        }
+        <input type="file" accept="image/*" (change)="onLogoSelected($event)" [disabled]="isUploadingLogo()" hidden />
+      </label>
+      <div class="logo-info">
+        <strong>Logo del negocio</strong>
+        <p class="muted">Se muestra en su tienda dentro de la app. Usa una imagen cuadrada.</p>
+        @if (c.logoUrl) {
+          <button type="button" class="btn-text danger-text" [disabled]="isRemovingLogo()" (click)="removeLogo()">
+            Quitar logo
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="cover-card">
+      <label class="image-dropzone cover-dropzone" [class.has-image]="c.coverUrl" [class.uploading]="isUploadingCover()">
+        @if (c.coverUrl) {
+          <img [src]="c.coverUrl" alt="Foto de portada del negocio" />
+          <span class="dropzone-overlay">
+            <app-icon name="camera" />
+            {{ isUploadingCover() ? 'Subiendo…' : 'Cambiar' }}
+          </span>
+        } @else {
+          <span class="dropzone-empty">
+            <app-icon name="camera" />
+            {{ isUploadingCover() ? 'Subiendo…' : 'Subir portada' }}
+          </span>
+        }
+        <input type="file" accept="image/*" (change)="onCoverSelected($event)" [disabled]="isUploadingCover()" hidden />
+      </label>
+      <div class="cover-info">
+        <strong>Foto de portada</strong>
+        <p class="muted">Banner ancho que se muestra arriba de su tienda en la app.</p>
+        @if (c.coverUrl) {
+          <button type="button" class="btn-text danger-text" [disabled]="isRemovingCover()" (click)="removeCover()">
+            Quitar portada
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+  </div>
   }
 
   @if (activeTab() === 'cobro') {
@@ -131,52 +235,6 @@
         <button type="button" class="btn-primary" (click)="openApayModal()">Conectar cuenta APay</button>
       </div>
     }
-  </section>
-  }
-
-  @if (activeTab() === 'info') {
-  <section class="card">
-    <h2>Tipo de negocio</h2>
-    <p class="muted hint">
-      Aplica a todas sus sucursales por igual. El tipo de negocio solo se puede elegir una vez; las
-      subcategorías se pueden cambiar cuando quieras.
-    </p>
-    <div class="billing-form">
-      @if (c.businessType; as bt) {
-        <label>
-          Tipo de negocio
-          <input type="text" [value]="bt.name" disabled />
-        </label>
-      } @else {
-        <label>
-          Tipo de negocio
-          <app-select
-            [(ngModel)]="businessTypeForm.businessTypeId"
-            name="companyBusinessType"
-            (ngModelChange)="onBusinessTypeChange($event)"
-            [options]="businessTypeOptions()"
-            [invalid]="businessTypeSubmitted() && !businessTypeForm.businessTypeId"
-            placeholder="Selecciona un tipo de negocio"
-          />
-        </label>
-      }
-      <label>
-        Subcategorías
-        <app-multi-select
-          [(ngModel)]="businessTypeForm.subcategoryIds"
-          [options]="subcategoryOptions()"
-          placeholder="Selecciona subcategorías"
-        />
-      </label>
-    </div>
-    @if (!c.businessType && !businessTypeForm.businessTypeId) {
-      <p class="muted hint">Elige primero un tipo de negocio para ver sus subcategorías.</p>
-    }
-    <div class="toolbar">
-      <button class="btn-primary" [disabled]="isSavingBusinessType()" (click)="saveBusinessType()">
-        {{ isSavingBusinessType() ? 'Guardando…' : 'Guardar tipo de negocio' }}
-      </button>
-    </div>
   </section>
   }
 

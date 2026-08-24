@@ -298,3 +298,184 @@
   color: var(--color-error);
   font-weight: 600;
 }
+
+/* De acá para abajo: MISMA estructura que ajustes.scss del panel del dueño (delivery-pedidos-admin,
+   #settings-layout/#main-column/#side-column/#logo-card/#cover-card/#image-dropzone) — ya se ve bien
+   ahí, se copia tal cual en vez de reinventar. La clave es .side-column con ancho tope A LA DERECHA de
+   .main-column: sin eso, el banner de portada se estira a lo ancho de toda la tarjeta y queda como un
+   bloque gris gigante y vacío arriba de todo. */
+.settings-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.main-column {
+  flex: 2 1 780px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.main-column .card {
+  margin-bottom: 0;
+}
+
+.side-column {
+  flex: 1 1 300px;
+  max-width: 400px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.logo-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+}
+
+/* Dropzone de imagen: la vista previa ES el botón — clic en cualquier parte abre el selector de archivo. */
+.image-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--color-surface-variant);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.image-dropzone:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+}
+
+.image-dropzone.has-image {
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
+.image-dropzone.has-image:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-variant);
+}
+
+.image-dropzone.uploading {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.image-dropzone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dropzone-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+  transition: color 0.15s ease;
+}
+
+.image-dropzone:hover .dropzone-empty {
+  color: var(--color-primary);
+}
+
+.dropzone-empty app-icon {
+  font-size: 1.6rem;
+}
+
+.dropzone-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dropzone-overlay app-icon {
+  font-size: 1.3rem;
+}
+
+.image-dropzone:hover .dropzone-overlay,
+.image-dropzone.uploading .dropzone-overlay {
+  opacity: 1;
+}
+
+.logo-dropzone {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+}
+
+.cover-dropzone {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+}
+
+.logo-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.logo-info strong {
+  color: var(--color-text);
+}
+
+.logo-info .muted {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.cover-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+}
+
+.cover-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cover-info strong {
+  color: var(--color-text);
+}
+
+.cover-info .muted {
+  margin: 0;
+  font-size: 0.85rem;
+}

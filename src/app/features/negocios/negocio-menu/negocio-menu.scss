@@ -69,20 +69,161 @@
 }
 
 .product-thumb {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.product-thumb-empty {
+  background: var(--color-surface-variant);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-surface-variant);
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  font-family: inherit;
+}
+
+.product-thumb.clickable {
+  cursor: pointer;
+}
+
+.product-thumb:disabled {
+  cursor: default;
+}
+
+.product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-placeholder {
+  display: inline-flex;
   color: var(--color-text-muted);
   font-size: 1.2rem;
+}
+
+/* Overlay que aparece al pasar el mouse (o mientras sube) para dejar claro que se puede cambiar la foto. */
+.thumb-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.product-thumb.clickable:hover .thumb-overlay,
+.thumb-overlay.uploading {
+  opacity: 1;
+}
+
+.thumb-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: thumb-spin 0.7s linear infinite;
+}
+
+@keyframes thumb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.image-picker {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.image-preview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  border: 2px dashed var(--color-border);
+  transition: border-color 0.15s ease;
+}
+
+.image-preview:hover,
+.image-preview.has-image {
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+.preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-placeholder app-icon {
+  font-size: 1.5rem;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * Franja fija abajo de la foto — siempre visible para que se note que se
+ * puede cambiar. Al pasar el mouse "crece" hacia arriba y se convierte en
+ * el overlay completo (ícono grande + texto centrado en toda la foto).
+ */
+.preview-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: calc(100% - 28px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: top 0.2s ease, background 0.2s ease;
+}
+
+.preview-caption app-icon {
+  font-size: 0.85rem;
+  transition: font-size 0.2s ease;
+}
+
+.image-preview:hover .preview-caption {
+  top: 0;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 0.8rem;
+}
+
+.image-preview:hover .preview-caption app-icon {
+  font-size: 1.4rem;
 }
 
 .availability-row {

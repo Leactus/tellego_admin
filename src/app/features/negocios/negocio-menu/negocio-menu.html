@@ -1,5 +1,13 @@
 <button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
 
+<input
+  #quickImageInput
+  type="file"
+  accept="image/*"
+  hidden
+  (change)="onQuickImageSelected($event)"
+/>
+
 <h1>Menú</h1>
 <p class="muted">{{ company()?.name }} — categorías y productos, compartidos por todas sus sucursales.</p>
 
@@ -54,13 +62,26 @@
       @for (product of products(); track product.id) {
         <div class="product-card">
           <div class="product-main">
-            @if (product.imageUrl) {
-              <img [src]="product.imageUrl" class="product-thumb" alt="" />
-            } @else {
-              <div class="product-thumb product-thumb-empty">
-                <app-icon name="camera" />
-              </div>
-            }
+            <button
+              type="button"
+              class="product-thumb clickable"
+              [disabled]="uploadingProductId() === product.id"
+              (click)="triggerQuickImageUpload(product)"
+              title="Cambiar foto"
+            >
+              @if (product.imageUrl) {
+                <img [src]="product.imageUrl" [alt]="product.name" />
+              } @else {
+                <span class="thumb-placeholder"><app-icon name="camera" /></span>
+              }
+              <span class="thumb-overlay" [class.uploading]="uploadingProductId() === product.id">
+                @if (uploadingProductId() === product.id) {
+                  <span class="thumb-spinner"></span>
+                } @else {
+                  <app-icon name="camera" />
+                }
+              </span>
+            </button>
             <div class="row-info">
               <span class="row-title">{{ product.name }}</span>
               <span class="muted">
@@ -152,6 +173,18 @@
       </div>
 
       <div class="modal-body">
+        <div class="image-picker">
+          <label class="image-preview" [class.has-image]="selectedImagePreviewUrl">
+            @if (selectedImagePreviewUrl) {
+              <img [src]="selectedImagePreviewUrl" alt="Foto del producto" />
+              <span class="preview-caption"><app-icon name="camera" /> Cambiar foto</span>
+            } @else {
+              <span class="preview-placeholder"><app-icon name="camera" /> Agregar foto</span>
+            }
+            <input type="file" accept="image/*" (change)="onImageSelected($event)" hidden />
+          </label>
+        </div>
+
         <label>
           Nombre
           <input
@@ -213,10 +246,6 @@
             <span class="invalid-hint">Elige la sucursal donde se activa primero</span>
           }
         }
-        <label>
-          Foto
-          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-        </label>
       </div>
 
       <div class="modal-actions">

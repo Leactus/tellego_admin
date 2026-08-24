@@ -142,4 +142,40 @@ export class CompaniesService {
       this.http.get<{ data: Country[] }>(`${environment.apiUrl}/admin/countries`),
     ).then((r) => r.data);
   }
+
+  /** Logo/portada de la empresa, compartidos por todas sus sucursales — mismo mecanismo que
+   * OwnerService#uploadCompanyLogo, pero editable por el super-admin sobre cualquier negocio. */
+  uploadLogo(id: number, file: File): Promise<CompanyImages> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return firstValueFrom(
+      this.http.post<{ data: CompanyImages }>(`${this.base}/${id}/logo`, formData),
+    ).then((r) => r.data);
+  }
+
+  removeLogo(id: number): Promise<CompanyImages> {
+    return firstValueFrom(
+      this.http.delete<{ data: CompanyImages }>(`${this.base}/${id}/logo`),
+    ).then((r) => r.data);
+  }
+
+  uploadCover(id: number, file: File): Promise<CompanyImages> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return firstValueFrom(
+      this.http.post<{ data: CompanyImages }>(`${this.base}/${id}/cover`, formData),
+    ).then((r) => r.data);
+  }
+
+  removeCover(id: number): Promise<CompanyImages> {
+    return firstValueFrom(
+      this.http.delete<{ data: CompanyImages }>(`${this.base}/${id}/cover`),
+    ).then((r) => r.data);
+  }
+}
+
+interface CompanyImages {
+  id: number;
+  logoUrl: string | null;
+  coverUrl: string | null;
 }
