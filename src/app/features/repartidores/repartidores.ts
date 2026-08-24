@@ -14,13 +14,14 @@ import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
 import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-password-modal.service';
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
+import { DriverRatingsModal } from './driver-ratings-modal/driver-ratings-modal';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-repartidores',
   standalone: true,
-  imports: [DatePipe, FormsModule, Icon, Pager, Skeleton],
+  imports: [DatePipe, FormsModule, Icon, Pager, Skeleton, DriverRatingsModal],
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })
@@ -41,6 +42,18 @@ export class Repartidores implements OnInit, OnDestroy {
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly totalPages = signal(1);
   readonly total = signal(0);
+
+  readonly ratingsDriverId = signal<number | null>(null);
+  readonly ratingsDriverName = signal('');
+
+  openRatings(driver: Driver): void {
+    this.ratingsDriverName.set(driver.User?.name ?? 'Repartidor');
+    this.ratingsDriverId.set(driver.id);
+  }
+
+  closeRatings(): void {
+    this.ratingsDriverId.set(null);
+  }
 
   readonly formModalOpen = signal(false);
   readonly isSaving = signal(false);

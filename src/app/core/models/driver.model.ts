@@ -1,3 +1,5 @@
+import { Paginated } from './pagination.model';
+
 export type DriverStatus = 'pending_approval' | 'active' | 'suspended';
 
 export interface Driver {
@@ -14,4 +16,20 @@ export interface Driver {
   /** Fin de la suspensión temporal (status='suspended'). null con status='suspended' = indefinida. */
   suspendedUntil: string | null;
   User?: { id: number; name: string; email: string; phone: string | null; status: string };
+}
+
+export interface DriverRating {
+  id: number;
+  orderId: number;
+  driverId: number;
+  customerId: number;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+  customer?: { id: number; name: string };
+}
+
+export interface DriverRatingsSummary extends Paginated<DriverRating> {
+  ratingAvg: string;
+  ratingCount: number;
 }

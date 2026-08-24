@@ -1,0 +1,86 @@
+<div class="modal-backdrop" (click)="close.emit()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Calificaciones {{ driverName ? 'de ' + driverName : '' }}</h2>
+      <button class="modal-close" (click)="close.emit()" aria-label="Cerrar">
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="filters-bar">
+        <div class="presets">
+          @for (preset of presets; track preset.key) {
+            <button class="preset" [class.active]="activePreset === preset.key" (click)="applyPreset(preset.key)">
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+
+        <div class="date-inputs">
+          <label>
+            Desde
+            <input type="date" [(ngModel)]="from" [max]="to" (change)="onCustomDateChange()" />
+          </label>
+          <label>
+            Hasta
+            <input type="date" [(ngModel)]="to" [min]="from" (change)="onCustomDateChange()" />
+          </label>
+        </div>
+      </div>
+
+      @if (isLoading() || isRefreshing()) {
+        <app-skeleton variant="card" [rows]="3" />
+      } @else if (summary(); as data) {
+        <div class="summary-card">
+          <div class="summary-score">
+            <app-icon name="star" />
+            <span>{{ data.ratingAvg }}</span>
+          </div>
+          <span class="summary-count">{{ data.ratingCount }} {{ data.ratingCount === 1 ? 'reseña' : 'reseñas' }}</span>
+        </div>
+
+        @if (data.data.length === 0) {
+          <p class="empty">
+            @if (activePreset !== 'all') {
+              No hay reseñas en este rango de fechas.
+            } @else {
+              Todavía no tiene reseñas.
+            }
+          </p>
+        } @else {
+          <div class="rating-list">
+            @for (rating of data.data; track rating.id) {
+              <div class="rating-card">
+                <div class="rating-header">
+                  <span class="customer-name">{{ rating.customer?.name || 'Cliente' }}</span>
+                  <span class="rating-score">
+                    <app-icon name="star" />
+                    {{ rating.score }}
+                  </span>
+                </div>
+                @if (rating.comment) {
+                  <p class="rating-comment">{{ rating.comment }}</p>
+                }
+                <div class="rating-footer">
+                  <span class="rating-date">{{ formatShortDate(rating.createdAt) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (data.meta.total > 0) {
+          <app-pager
+            [page]="page()"
+            [totalPages]="data.meta.totalPages"
+            [total]="data.meta.total"
+            [pageSize]="pageSize()"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)"
+          />
+        }
+      }
+    </div>
+  </div>
+</div>

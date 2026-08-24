@@ -50,6 +50,9 @@
           }
         </span>
         <div class="row-actions">
+          <button class="icon-btn" (click)="openRatings(driver)" aria-label="Calificaciones">
+            <app-icon name="star" />
+          </button>
           <button class="icon-btn" (click)="openEditModal(driver)" aria-label="Editar">
             <app-icon name="edit" />
           </button>
@@ -186,4 +189,8 @@
       </div>
     </div>
   </div>
+}
+
+@if (ratingsDriverId(); as id) {
+  <app-driver-ratings-modal [driverId]="id" [driverName]="ratingsDriverName()" (close)="closeRatings()" />
 }
