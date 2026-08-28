@@ -43,6 +43,7 @@ export class Shell {
     { path: 'configuraciones/tipos-negocio', label: 'Tipos de negocio', icon: 'store' },
     { path: 'configuraciones/tipo-pago', label: 'Tipo de pago', icon: 'credit-card' },
     { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },
+    { path: 'configuraciones/terminos-privacidad', label: 'Términos y privacidad', icon: 'receipt' },
   ];
   readonly settingsOpen = signal(this.router.url.includes('/configuraciones'));
 

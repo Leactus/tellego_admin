@@ -1,0 +1,97 @@
+<h1>Términos y privacidad</h1>
+<p class="muted">
+  Documentos legales de la plataforma. Son <strong>globales</strong>: todo registro nuevo (cliente, negocio o
+  repartidor) debe aceptarlos para poder crear la cuenta. Al publicar una versión nueva, la anterior se conserva
+  para el historial de qué texto aceptó cada usuario.
+</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="4" />
+} @else {
+  @for (type of docTypes; track type) {
+    <section class="card">
+      <div class="card-head">
+        <h2>{{ labels[type] }}</h2>
+        @if (byType()[type].current; as current) {
+          <span class="badge">Versión vigente: v{{ current.version }}</span>
+        } @else {
+          <span class="badge badge--warn">Sin publicar</span>
+        }
+      </div>
+
+      @if (byType()[type].current; as current) {
+        <p class="meta">
+          Rige desde {{ current.effectiveDate }}
+          @if (summaryFor(type); as s) {
+            · {{ s.acceptedCurrent }} cuenta(s) aceptaron esta versión ({{ s.acceptedTotal }} en total, contando
+            versiones anteriores)
+          }
+        </p>
+        <pre class="doc-content">{{ current.content }}</pre>
+      } @else {
+        <p class="meta">
+          Este documento todavía no se ha publicado. Mientras no exista, el registro no puede exigir su
+          aceptación.
+        </p>
+      }
+
+      @if (!editors()[type].open) {
+        <div class="toolbar">
+          <button class="btn-primary" (click)="startEdit(type)">
+            {{ byType()[type].current ? 'Publicar nueva versión' : 'Publicar documento' }}
+          </button>
+          @if (byType()[type].history.length) {
+            <button class="btn-secondary" (click)="toggleHistory(type)">
+              {{ historyOpen()[type] ? 'Ocultar historial' : 'Ver historial (' + byType()[type].history.length + ')' }}
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="editor">
+          <label>
+            Contenido
+            <textarea
+              rows="16"
+              [ngModel]="editors()[type].content"
+              (ngModelChange)="patchEditor(type, { content: $event })"
+              name="content-{{ type }}"
+              placeholder="Escribe aquí el texto completo del documento…"
+            ></textarea>
+          </label>
+          <label class="date-field">
+            Rige desde
+            <input
+              type="date"
+              [ngModel]="editors()[type].effectiveDate"
+              (ngModelChange)="patchEditor(type, { effectiveDate: $event })"
+              name="effectiveDate-{{ type }}"
+            />
+          </label>
+          <div class="toolbar">
+            <button class="btn-primary" [disabled]="editors()[type].saving" (click)="publish(type)">
+              {{ editors()[type].saving ? 'Publicando…' : 'Publicar' }}
+            </button>
+            <button class="btn-secondary" [disabled]="editors()[type].saving" (click)="cancelEdit(type)">Cancelar</button>
+          </div>
+        </div>
+      }
+
+      @if (historyOpen()[type]) {
+        <ul class="history">
+          @for (doc of byType()[type].history; track doc.id) {
+            <li>
+              <span class="history-version">v{{ doc.version }}</span>
+              <span class="history-date">{{ doc.effectiveDate }}</span>
+              @if (doc.isCurrent) {
+                <span class="badge badge--sm">vigente</span>
+              }
+              @if (doc.createdBy) {
+                <span class="history-author">· {{ doc.createdBy.name }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}

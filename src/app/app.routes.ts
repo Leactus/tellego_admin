@@ -79,6 +79,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuraciones/cuentas-pago/cuentas-pago').then((m) => m.CuentasPago),
       },
+      {
+        path: 'configuraciones/terminos-privacidad',
+        loadComponent: () =>
+          import('./features/configuraciones/terminos-privacidad/terminos-privacidad').then(
+            (m) => m.TerminosPrivacidad,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'login' },
