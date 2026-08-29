@@ -44,6 +44,11 @@ export const routes: Routes = [
           import('./features/negocios/negocio-personal/negocio-personal').then((m) => m.NegocioPersonal),
       },
       {
+        path: 'negocios/:id/pedidos',
+        loadComponent: () =>
+          import('./features/negocios/negocio-pedidos/negocio-pedidos').then((m) => m.NegocioPedidos),
+      },
+      {
         path: 'repartidores',
         loadComponent: () => import('./features/repartidores/repartidores').then((m) => m.Repartidores),
       },

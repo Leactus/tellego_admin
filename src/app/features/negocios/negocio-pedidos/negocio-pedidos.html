@@ -1,0 +1,230 @@
+<button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
+
+<h1>Pedidos</h1>
+<p class="muted">
+  {{ company()?.name }} — pedidos de
+  {{ showStoreFilter() ? 'todas sus sucursales' : 'su sucursal' }}, solo lectura. Para avanzar o
+  cancelar un pedido lo hace el negocio desde su propio panel.
+</p>
+
+<div class="filters">
+  @if (showStoreFilter()) {
+    <app-select
+      class="filter-select"
+      [(ngModel)]="storeFilter"
+      (ngModelChange)="onFilterChange()"
+      [options]="storeFilterOptions()"
+    />
+  }
+  <app-select
+    class="filter-select"
+    [(ngModel)]="statusFilter"
+    (ngModelChange)="onFilterChange()"
+    [options]="statusFilterOptions"
+  />
+</div>
+
+@if (isLoading() || isRefreshing()) {
+  <app-skeleton variant="card" [rows]="4" />
+} @else if (orders().length === 0) {
+  <p class="empty">No hay pedidos en este filtro por ahora.</p>
+} @else {
+  <div class="order-list">
+    @for (order of orders(); track order.id) {
+      <div class="order-card" (click)="openDetail(order)">
+        <div class="order-header">
+          <div class="order-title">
+            <span class="order-id">Pedido #{{ order.publicId }}</span>
+            <span class="status-pill" [class]="statusColorClass[order.status]">
+              {{ statusLabels[order.status] }}
+            </span>
+            <span class="status-pill" [class]="paymentBadge(order).colorClass">
+              {{ paymentBadge(order).label }}
+            </span>
+            @if (showStoreFilter() && order.store) {
+              <span class="status-pill neutral"><app-icon name="map-pin" /> {{ order.store.name }}</span>
+            }
+          </div>
+          <span class="muted order-time">{{ formatShortDateTime(order.createdAt) }}</span>
+        </div>
+
+        <div class="order-body">
+          <div class="order-line">
+            <app-icon name="user" />
+            <span>{{ order.customer?.name ?? 'Cliente' }}</span>
+            @if (order.customer?.phone) {
+              <span class="muted">· {{ order.customer?.phone }}</span>
+            }
+          </div>
+          <div class="order-line">
+            <app-icon [name]="order.fulfillmentType === 'delivery' ? 'truck' : 'package'" />
+            @if (order.fulfillmentType === 'delivery') {
+              <span>
+                A domicilio
+                @if (order.driver?.user?.name) {
+                  · {{ order.driver?.user?.name }}
+                  <span class="muted">({{ order.driver?.type === 'propio' ? 'propio' : 'freelance' }})</span>
+                } @else if (order.driverId) {
+                  · Repartidor #{{ order.driverId }}
+                } @else {
+                  · <span class="muted">sin repartidor asignado</span>
+                }
+              </span>
+            } @else {
+              <span>Recoge en la sucursal</span>
+            }
+          </div>
+          <p class="order-items">{{ itemsSummary(order) }}</p>
+        </div>
+
+        <div class="order-footer">
+          <span class="order-total">${{ order.total | number: '1.2-2' }}</span>
+          <span class="detail-hint">Ver detalle <app-icon name="chevron-down" /></span>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (total() > 0) {
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Detalle del pedido (solo lectura) -->
+@if (selectedOrder(); as o) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Pedido #{{ o.publicId }}</h2>
+        <button class="modal-close" (click)="closeDetail()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-badges">
+          <span class="status-pill" [class]="statusColorClass[o.status]">{{ statusLabels[o.status] }}</span>
+          <span class="status-pill" [class]="paymentBadge(o).colorClass">{{ paymentBadge(o).label }}</span>
+          @if (o.store) {
+            <span class="status-pill neutral"><app-icon name="map-pin" /> {{ o.store.name }}</span>
+          }
+        </div>
+        <p class="muted">{{ formatShortDateTime(o.createdAt) }}</p>
+
+        <div class="detail-section">
+          <h3><app-icon name="user" /> Cliente</h3>
+          <p>{{ o.customer?.name ?? 'Cliente' }}@if (o.customer?.phone) { · {{ o.customer?.phone }} }</p>
+        </div>
+
+        <div class="detail-section">
+          <h3>
+            <app-icon [name]="o.fulfillmentType === 'delivery' ? 'truck' : 'package'" />
+            {{ o.fulfillmentType === 'delivery' ? 'Entrega a domicilio' : 'Recoge en la sucursal' }}
+          </h3>
+          @if (o.fulfillmentType === 'delivery') {
+            @if (o.deliveryAddress) {
+              <p>{{ o.deliveryAddress.line }}</p>
+              @if (o.deliveryAddress.reference) {
+                <p class="muted">{{ o.deliveryAddress.reference }}</p>
+              }
+            }
+            @if (o.driver; as d) {
+              <p>
+                Repartidor: {{ d.user?.name ?? ('#' + d.id) }}
+                <span class="muted">({{ d.type === 'propio' ? 'propio del negocio' : 'freelance' }})</span>
+                @if (d.user?.phone) { · {{ d.user?.phone }} }
+              </p>
+              @if (d.vehicleType || d.plateNumber) {
+                <p class="muted">
+                  {{ d.vehicleType }}@if (d.vehicleType && d.plateNumber) { · }{{ d.plateNumber }}
+                </p>
+              }
+            } @else {
+              <p class="muted">Todavía sin repartidor asignado.</p>
+            }
+          } @else {
+            <p class="muted">El cliente recoge el pedido en el local — no interviene un repartidor.</p>
+          }
+        </div>
+
+        <div class="detail-section">
+          <h3><app-icon name="clock" /> Línea de tiempo</h3>
+          <ul class="timeline">
+            @for (step of timeline(o); track step.label) {
+              <li>
+                <span class="timeline-dot"></span>
+                <span class="timeline-label">{{ step.label }}</span>
+                <span class="muted timeline-time">{{ formatShortDateTime(step.at) }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        @if (o.notes) {
+          <div class="detail-section">
+            <h3><app-icon name="edit" /> Notas del pedido</h3>
+            <p>{{ o.notes }}</p>
+          </div>
+        }
+
+        <div class="detail-section">
+          <h3><app-icon name="receipt" /> Productos</h3>
+          <div class="item-list">
+            @for (item of o.items; track item.id) {
+              <div class="item-row">
+                <div class="item-info">
+                  <span>{{ item.quantity }}x {{ item.productName }}</span>
+                  @if (item.options.length > 0) {
+                    <span class="muted item-options">{{ item.options.map(opt => opt.optionName).join(', ') }}</span>
+                  }
+                  @if (item.notes) {
+                    <span class="muted item-options">{{ item.notes }}</span>
+                  }
+                </div>
+                <span class="item-subtotal">${{ item.subtotal | number: '1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3><app-icon name="credit-card" /> Pago</h3>
+          <div class="totals">
+            <div class="totals-row"><span>Subtotal</span><span>${{ o.subtotal | number: '1.2-2' }}</span></div>
+            @if (toNumber(o.deliveryFee) > 0) {
+              <div class="totals-row"><span>Envío</span><span>${{ o.deliveryFee | number: '1.2-2' }}</span></div>
+            }
+            @if (toNumber(o.discount) > 0) {
+              <div class="totals-row"><span>Descuento</span><span>-${{ o.discount | number: '1.2-2' }}</span></div>
+            }
+            <div class="totals-row totals-final"><span>Total</span><span>${{ o.total | number: '1.2-2' }}</span></div>
+          </div>
+          <p class="muted">
+            Método:
+            {{ o.paymentMethod === 'cash' ? 'Efectivo' : o.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia' }}
+            @if (o.payment?.provider === 'apay') { (APay) }
+          </p>
+          @if (o.payment?.provider === 'apay' && o.payment?.providerPaymentId) {
+            <p class="muted">ID de transacción APay: {{ o.payment?.providerPaymentId }}</p>
+          }
+        </div>
+
+        @if (o.cancelReason) {
+          <div class="detail-section">
+            <h3><app-icon name="x-circle" /> Motivo de cancelación</h3>
+            <p>{{ o.cancelReason }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeDetail()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

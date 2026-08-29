@@ -1,0 +1,289 @@
+@use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  text-decoration: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--color-text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.filter-select {
+  min-width: 220px;
+}
+
+/* --- Tarjetas de pedido --- */
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.order-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.order-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.order-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-id {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.order-time {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.order-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.order-line app-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.order-items {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.order-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-total {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.detail-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.detail-hint app-icon {
+  transform: rotate(-90deg);
+}
+
+/* --- Pills de estado --- */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+.status-pill app-icon {
+  font-size: 0.85rem;
+}
+
+.status-pill.warning {
+  background: color-mix(in srgb, var(--color-warning) 16%, white);
+  color: var(--color-warning);
+}
+
+.status-pill.info {
+  background: color-mix(in srgb, var(--color-info) 14%, white);
+  color: var(--color-info);
+}
+
+.status-pill.success {
+  background: color-mix(in srgb, var(--color-success) 16%, white);
+  color: var(--color-success);
+}
+
+.status-pill.error {
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+  color: var(--color-error);
+}
+
+.status-pill.neutral {
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+/* --- Detalle --- */
+
+.detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.detail-section h3 app-icon {
+  color: var(--color-text-muted);
+}
+
+.detail-section p {
+  margin: 2px 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.timeline-label {
+  color: var(--color-text);
+}
+
+.timeline-time {
+  margin-left: auto;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-options {
+  font-size: 0.8rem;
+}
+
+.item-subtotal {
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.totals-final {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+  font-weight: 700;
+  color: var(--color-text);
+}
