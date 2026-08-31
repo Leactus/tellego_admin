@@ -30,6 +30,7 @@ export class TipoPago implements OnInit {
     defaultCommissionRate: 0,
     defaultGracePeriodDays: 0,
     defaultSalesCutoffHour: 0,
+    defaultSalesCutoffDow: 0,
     defaultCommissionPaymentDueDays: 1,
   };
 
@@ -39,6 +40,17 @@ export class TipoPago implements OnInit {
     label: `${String(hour).padStart(2, '0')}:00`,
   }));
 
+  /** 0=domingo … 6=sábado (misma convención que Date.getDay() en el backend). */
+  readonly cutoffDowOptions = [
+    { value: 0, label: 'Domingo' },
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miércoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sábado' },
+  ];
+
   async ngOnInit(): Promise<void> {
     try {
       const settings = await this.billingSettings.get();
@@ -47,6 +59,7 @@ export class TipoPago implements OnInit {
         defaultCommissionRate: Number(settings.defaultCommissionRate),
         defaultGracePeriodDays: settings.defaultGracePeriodDays,
         defaultSalesCutoffHour: settings.defaultSalesCutoffHour,
+        defaultSalesCutoffDow: settings.defaultSalesCutoffDow,
         defaultCommissionPaymentDueDays: settings.defaultCommissionPaymentDueDays,
       };
     } catch {
@@ -65,6 +78,7 @@ export class TipoPago implements OnInit {
         defaultCommissionRate: Number(settings.defaultCommissionRate),
         defaultGracePeriodDays: settings.defaultGracePeriodDays,
         defaultSalesCutoffHour: settings.defaultSalesCutoffHour,
+        defaultSalesCutoffDow: settings.defaultSalesCutoffDow,
         defaultCommissionPaymentDueDays: settings.defaultCommissionPaymentDueDays,
       };
       this.toast.success('Valores por defecto actualizados');

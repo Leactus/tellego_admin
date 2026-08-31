@@ -121,11 +121,35 @@ export class NegocioDetalle implements OnInit {
     billingStartsAt: '',
     /** null = usa el periodo de gracia general (Configuraciones > Tipo de pago). */
     gracePeriodDays: null as number | null,
+    /** Corte de comisión propio de este negocio — null = sigue el general. */
+    salesCutoffDow: 0,
+    salesCutoffHour: 0,
+    /** Solo comisión — días tras el corte en que vence el pago; null = sigue el general. */
+    commissionPaymentDueDays: 1,
     /** Si está en false, esta empresa nunca se bloquea automáticamente por mora. */
     penaltyEnabled: true,
   };
   /** Checkbox "usar override propio" — controla si gracePeriodDays se manda null o un número. */
   useCustomGracePeriod = false;
+  /** Checkbox "usar corte propio" — controla si salesCutoffDow/Hour se mandan null o un número. */
+  useCustomCutoff = false;
+  /** Checkbox "usar vencimiento propio" — controla si commissionPaymentDueDays se manda null o un número. */
+  useCustomCommissionDue = false;
+
+  /** 0=domingo … 6=sábado (misma convención que Date.getDay() en el backend). */
+  readonly cutoffDowOptions = [
+    { value: 0, label: 'Domingo' },
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miércoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sábado' },
+  ];
+  readonly cutoffHourOptions = Array.from({ length: 24 }, (_, hour) => ({
+    value: hour,
+    label: `${String(hour).padStart(2, '0')}:00`,
+  }));
 
   readonly paymentModalOpen = signal(false);
   readonly isCalculatingSales = signal(false);
@@ -216,9 +240,14 @@ export class NegocioDetalle implements OnInit {
         nextPaymentDueDate: company.nextPaymentDueDate ?? '',
         billingStartsAt: company.billingStartsAt ?? '',
         gracePeriodDays: company.gracePeriodDays,
+        salesCutoffDow: company.salesCutoffDow ?? company.effectiveSalesCutoffDow ?? 0,
+        salesCutoffHour: company.salesCutoffHour ?? company.effectiveSalesCutoffHour ?? 0,
+        commissionPaymentDueDays: company.commissionPaymentDueDays ?? company.effectiveCommissionPaymentDueDays ?? 1,
         penaltyEnabled: company.penaltyEnabled,
       };
       this.useCustomGracePeriod = company.gracePeriodDays !== null;
+      this.useCustomCutoff = company.salesCutoffDow !== null || company.salesCutoffHour !== null;
+      this.useCustomCommissionDue = company.commissionPaymentDueDays !== null;
       this.ownerForm = {
         name: company.owner?.name ?? '',
         email: company.owner?.email ?? '',
@@ -275,6 +304,10 @@ export class NegocioDetalle implements OnInit {
       const nextPaymentDueDate = form.nextPaymentDueDate || null;
       const billingStartsAt = form.billingStartsAt || null;
       const gracePeriodDays = this.useCustomGracePeriod ? form.gracePeriodDays : null;
+      const salesCutoffDow = this.useCustomCutoff ? form.salesCutoffDow : null;
+      const salesCutoffHour = this.useCustomCutoff ? form.salesCutoffHour : null;
+      const commissionPaymentDueDays =
+        form.billingType === 'commission' && this.useCustomCommissionDue ? form.commissionPaymentDueDays : null;
 
       const payload = {
         billingType: form.billingType !== current.billingType ? form.billingType : undefined,
@@ -287,6 +320,10 @@ export class NegocioDetalle implements OnInit {
         nextPaymentDueDate: nextPaymentDueDate !== (current.nextPaymentDueDate ?? null) ? nextPaymentDueDate : undefined,
         billingStartsAt: billingStartsAt !== (current.billingStartsAt ?? null) ? billingStartsAt : undefined,
         gracePeriodDays: gracePeriodDays !== current.gracePeriodDays ? gracePeriodDays : undefined,
+        salesCutoffDow: salesCutoffDow !== current.salesCutoffDow ? salesCutoffDow : undefined,
+        salesCutoffHour: salesCutoffHour !== current.salesCutoffHour ? salesCutoffHour : undefined,
+        commissionPaymentDueDays:
+          commissionPaymentDueDays !== current.commissionPaymentDueDays ? commissionPaymentDueDays : undefined,
         penaltyEnabled: form.penaltyEnabled !== current.penaltyEnabled ? form.penaltyEnabled : undefined,
       };
       const hasChanges = Object.values(payload).some((v) => v !== undefined);
@@ -300,6 +337,12 @@ export class NegocioDetalle implements OnInit {
       this.company.set(updated);
       this.billingForm.gracePeriodDays = updated.gracePeriodDays;
       this.useCustomGracePeriod = updated.gracePeriodDays !== null;
+      this.billingForm.salesCutoffDow = updated.salesCutoffDow ?? updated.effectiveSalesCutoffDow ?? 0;
+      this.billingForm.salesCutoffHour = updated.salesCutoffHour ?? updated.effectiveSalesCutoffHour ?? 0;
+      this.billingForm.commissionPaymentDueDays =
+        updated.commissionPaymentDueDays ?? updated.effectiveCommissionPaymentDueDays ?? 1;
+      this.useCustomCutoff = updated.salesCutoffDow !== null || updated.salesCutoffHour !== null;
+      this.useCustomCommissionDue = updated.commissionPaymentDueDays !== null;
       this.toast.success('Facturación actualizada');
     } catch (err: any) {
       this.toast.error(err?.error?.message ?? 'No se pudo actualizar la facturación');
@@ -694,6 +737,12 @@ export class NegocioDetalle implements OnInit {
     }
     if ((this.storeForm.lat === null) !== (this.storeForm.lng === null)) {
       this.toast.error('Debes completar tanto la latitud como la longitud');
+      return;
+    }
+    // El departamento es obligatorio: de él sale la zona y la tarifa de envío.
+    if (this.storeForm.departmentId == null) {
+      this.toast.error('Elige la región / departamento de la sucursal');
+      scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
 

@@ -371,6 +371,41 @@
           <input type="number" min="0" step="1" [(ngModel)]="billingForm.gracePeriodDays" name="gracePeriodDays" />
         </label>
       }
+
+      <label class="checkbox-row">
+        <input type="checkbox" [(ngModel)]="useCustomCutoff" name="useCustomCutoff" />
+        Usar un corte de comisión propio para este negocio (si no, usa el general de Configuraciones)
+      </label>
+      @if (useCustomCutoff) {
+        <label>
+          Día de corte
+          <app-select [(ngModel)]="billingForm.salesCutoffDow" name="salesCutoffDow" [options]="cutoffDowOptions" />
+        </label>
+        <label>
+          Hora de corte
+          <app-select [(ngModel)]="billingForm.salesCutoffHour" name="salesCutoffHour" [options]="cutoffHourOptions" />
+        </label>
+      }
+
+      @if (billingForm.billingType === 'commission') {
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="useCustomCommissionDue" name="useCustomCommissionDue" />
+          Usar días de vencimiento propios para este negocio (si no, usa el general de Configuraciones)
+        </label>
+        @if (useCustomCommissionDue) {
+          <label>
+            Días después del corte en que vence el pago
+            <input
+              type="number"
+              min="0"
+              step="1"
+              [(ngModel)]="billingForm.commissionPaymentDueDays"
+              name="commissionPaymentDueDays"
+            />
+          </label>
+        }
+      }
+
       <label class="checkbox-row">
         <input type="checkbox" [(ngModel)]="billingForm.penaltyEnabled" name="penaltyEnabled" />
         Aplicar penalización automática (bloqueo) a este negocio si se pasa de la gracia
@@ -611,7 +646,7 @@
           <span class="invalid-hint">Ingresa un nombre</span>
         }
         <label>
-          Región / departamento
+          Región / departamento *
           <app-select
             [(ngModel)]="storeForm.departmentId"
             name="storeDepartment"
@@ -619,6 +654,9 @@
             placeholder="Selecciona un departamento"
           />
         </label>
+        @if (storeSubmitted() && storeForm.departmentId == null) {
+          <span class="invalid-hint">Obligatorio — de aquí sale la zona y la tarifa de envío</span>
+        }
         <label>
           Dirección
           <input type="text" [(ngModel)]="storeForm.address" name="storeAddress" />

@@ -15,6 +15,10 @@ interface BillingUpdate {
   billingStartsAt?: string | null;
   /** null = vuelve a usar el general (PlatformSettings.defaultGracePeriodDays). */
   gracePeriodDays?: number | null;
+  /** Overrides de corte/vencimiento por negocio; null = vuelve a usar el general de Configuraciones. */
+  salesCutoffHour?: number | null;
+  salesCutoffDow?: number | null;
+  commissionPaymentDueDays?: number | null;
   penaltyEnabled?: boolean;
 }
 

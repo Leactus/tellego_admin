@@ -23,12 +23,20 @@ export interface Company {
   commissionRate: string | null;
   nextPaymentDueDate: string | null;
   billingStartsAt: string | null;
-  /** Override de días de gracia de ESTA empresa sobre PlatformSettings.defaultGracePeriodDays; null = usa el general. */
+  /** Override de días de gracia de ESTA empresa sobre PlatformSettings.defaultGracePeriodDays; null = usa el general.
+   * Se llena con una foto del general al crear el negocio; null solo si el admin lo limpió a mano. */
   gracePeriodDays: number | null;
+  /** Overrides de corte/vencimiento de ESTA empresa (foto del general al crear); null = sigue al general de Configuraciones. */
+  salesCutoffHour: number | null;
+  salesCutoffDow: number | null;
+  commissionPaymentDueDays: number | null;
   /** Si es false, esta empresa nunca se bloquea automáticamente por mora (excepción manual del admin). */
   penaltyEnabled: boolean;
-  /** Calculados por el backend, no se editan directo: días de gracia efectivos, si está bloqueada ahora, y desde cuándo. */
+  /** Calculados por el backend, no se editan directo: valores efectivos, si está bloqueada ahora, y desde cuándo. */
   effectiveGracePeriodDays?: number;
+  effectiveSalesCutoffHour?: number;
+  effectiveSalesCutoffDow?: number;
+  effectiveCommissionPaymentDueDays?: number;
   isBlocked?: boolean;
   blockDate?: string | null;
   createdAt: string;
@@ -67,6 +75,8 @@ export interface PlatformSettings {
   defaultGracePeriodDays: number;
   /** Hora (0-23, hora del servidor) en que "cierra" un día para el cálculo de ventas por comisión — ver billing.service.ts#computeCommissionSales en el backend. */
   defaultSalesCutoffHour: number;
+  /** Día de la semana en que "cierra" el periodo semanal de comisión (0=domingo … 6=sábado). Por defecto domingo. Se congela por negocio al crearlo. */
+  defaultSalesCutoffDow: number;
   /** Solo billing_type='commission': días después de periodEnd de un pago en que queda nextPaymentDueDate. No aplica a 'fee'. */
   defaultCommissionPaymentDueDays: number;
 }

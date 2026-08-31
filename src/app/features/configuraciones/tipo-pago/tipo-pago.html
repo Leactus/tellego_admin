@@ -44,14 +44,31 @@
   </section>
 
   <section class="card">
-    <h2>Hora de corte para ventas por comisión</h2>
+    <h2>Corte para ventas por comisión</h2>
     <p class="muted">
-      A qué hora "cierra" un día al calcular las ventas de un periodo (botón "Calcular desde ventas" al
-      registrar un pago). Por ejemplo, con corte a las 12:00, el periodo del 19 al 20 de agosto cuenta los
-      pedidos entregados entre el 19 a las 12:00 y el 20 a las 12:00 — no de medianoche a medianoche.
-      00:00 = día calendario completo (como funcionaba antes de este ajuste).
+      <strong>Día de corte:</strong> qué día "cierra" el periodo semanal de comisión. Todos los negocios de
+      comisión cortan el mismo día; un negocio que se registra a mitad de semana arranca con un primer
+      periodo corto y de ahí queda sincronizado. Por defecto domingo.
     </p>
-    <div class="billing-form single-column">
+    <p class="muted">
+      <strong>Hora de corte:</strong> a qué hora "cierra" un día al calcular las ventas de un periodo (botón
+      "Calcular desde ventas" al registrar un pago). Por ejemplo, con corte a las 12:00, el periodo del 19 al
+      20 de agosto cuenta los pedidos entregados entre el 19 a las 12:00 y el 20 a las 12:00 — no de
+      medianoche a medianoche. 00:00 = día calendario completo.
+    </p>
+    <p class="muted">
+      Cambiar esto <strong>no afecta</strong> a los negocios que ya existen: cada uno conserva el día y la
+      hora de corte que tenía cuando se creó (editable por negocio desde su página de Facturación).
+    </p>
+    <div class="billing-form">
+      <label>
+        Día de corte
+        <app-select
+          [(ngModel)]="form.defaultSalesCutoffDow"
+          name="defaultSalesCutoffDow"
+          [options]="cutoffDowOptions"
+        />
+      </label>
       <label>
         Hora de corte
         <app-select

@@ -42,6 +42,7 @@ export class Shell {
   readonly settingsItems: MenuItem[] = [
     { path: 'configuraciones/tipos-negocio', label: 'Tipos de negocio', icon: 'store' },
     { path: 'configuraciones/tipo-pago', label: 'Tipo de pago', icon: 'credit-card' },
+    { path: 'configuraciones/zonas-envio', label: 'Zonas de envío', icon: 'map-pin' },
     { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },
     { path: 'configuraciones/terminos-privacidad', label: 'Términos y privacidad', icon: 'receipt' },
   ];

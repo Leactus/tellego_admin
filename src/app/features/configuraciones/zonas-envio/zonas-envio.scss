@@ -1,0 +1,147 @@
+@use '../../../shared/styles/page' as *;
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--color-text);
+}
+
+.formula {
+  margin: 8px 0 8px 18px;
+  padding: 0;
+}
+
+.formula li {
+  margin: 2px 0;
+}
+
+.country-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  max-width: 320px;
+}
+
+.zone-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.zone-head .depts {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.depts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-bg, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--color-border);
+  font-size: 0.78rem;
+}
+
+.billing-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.billing-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.billing-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-family: inherit;
+}
+
+.preview {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.preview h3 {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+}
+
+.preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.preview th,
+.preview td {
+  text-align: right;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.preview th:first-child,
+.preview td:first-child {
+  text-align: left;
+}
+
+.preview td.earn {
+  font-weight: 700;
+  color: var(--color-success, #2e7d32);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.toolbar .updated {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .billing-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .billing-form {
+    grid-template-columns: 1fr;
+  }
+}
