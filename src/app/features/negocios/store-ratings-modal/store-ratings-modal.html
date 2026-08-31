@@ -1,51 +1,30 @@
 <div class="modal-backdrop" (click)="close.emit()">
   <div class="modal modal-wide" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Calificaciones {{ driverName ? 'de ' + driverName : '' }}</h2>
+      <h2>Calificaciones {{ companyName ? 'de ' + companyName : 'del negocio' }}</h2>
       <button class="modal-close" (click)="close.emit()" aria-label="Cerrar">
         <app-icon name="close" />
       </button>
     </div>
 
     <div class="modal-body">
-      <div class="filters-bar">
-        <div class="presets">
-          @for (preset of presets; track preset.key) {
-            <button class="preset" [class.active]="activePreset === preset.key" (click)="applyPreset(preset.key)">
-              {{ preset.label }}
-            </button>
-          }
-        </div>
-
-        <div class="date-inputs">
-          <label>
-            Desde
-            <input type="date" [(ngModel)]="from" [max]="to" (change)="onCustomDateChange()" />
-          </label>
-          <label>
-            Hasta
-            <input type="date" [(ngModel)]="to" [min]="from" (change)="onCustomDateChange()" />
-          </label>
-        </div>
+      <div class="filters">
+        @for (f of filters; track f.key) {
+          <button class="filter" [class.active]="filter() === f.key" (click)="setFilter(f.key)">
+            {{ f.label }}
+          </button>
+        }
       </div>
 
       @if (isLoading() || isRefreshing()) {
         <app-skeleton variant="card" [rows]="3" />
-      } @else if (summary(); as data) {
-        <div class="summary-card">
-          <div class="summary-score">
-            <app-icon name="star" />
-            <span>{{ data.ratingAvg }}</span>
-          </div>
-          <span class="summary-count">{{ data.ratingCount }} {{ data.ratingCount === 1 ? 'reseña' : 'reseñas' }}</span>
-        </div>
-
+      } @else if (result(); as data) {
         @if (data.data.length === 0) {
           <p class="empty">
-            @if (activePreset !== 'all') {
-              No hay reseñas en este rango de fechas.
-            } @else {
-              Todavía no tiene reseñas.
+            @switch (filter()) {
+              @case ('hidden') { No hay reseñas ocultas. }
+              @case ('visible') { No hay reseñas visibles. }
+              @default { Este negocio todavía no tiene reseñas. }
             }
           </p>
         } @else {
@@ -53,11 +32,11 @@
             @for (rating of data.data; track rating.id) {
               <div class="rating-card" [class.rating-card--hidden]="rating.hiddenAt">
                 <div class="rating-header">
-                  <span class="customer-name">{{ rating.customer?.name || 'Cliente' }}</span>
-                  <span class="rating-score">
-                    <app-icon name="star" />
-                    {{ rating.score }}
+                  <span class="customer-name">
+                    {{ rating.customer?.name || 'Cliente' }}
+                    @if (rating.store) { <span class="store-tag">· {{ rating.store.name }}</span> }
                   </span>
+                  <span class="rating-score"><app-icon name="star" /> {{ rating.score }}</span>
                 </div>
                 @if (rating.comment) {
                   <p class="rating-comment">{{ rating.comment }}</p>

@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../config/environment';
 import { ApayCredencial, Company, CompanyBillingType, CompanyOwner, CompanySales, CompanyStatus, Country, Department } from '../models/company.model';
 import { Paginated, PageParams, toHttpParams } from '../models/pagination.model';
+import { RatingVisibilityFilter, StoreRatingsPage } from '../models/store-rating.model';
 
 interface BillingUpdate {
   billingType?: CompanyBillingType;
@@ -100,6 +101,33 @@ export class CompaniesService {
     return firstValueFrom(
       this.http.post<{ tempPassword: string }>(`${this.base}/${id}/owner/reset-password`, {}),
     ).then((r) => r.tempPassword);
+  }
+
+  /**
+   * Reseñas de TODAS las sucursales de la empresa (incluidas las ocultas por
+   * moderación), para revisar reportes. `status` filtra visible/hidden/all.
+   */
+  getStoreRatings(
+    companyId: number,
+    params?: PageParams & { status?: RatingVisibilityFilter },
+  ): Promise<StoreRatingsPage> {
+    const httpParams = {
+      ...toHttpParams(params),
+      ...(params?.status ? { status: params.status } : {}),
+    };
+    return firstValueFrom(
+      this.http.get<StoreRatingsPage>(`${this.base}/${companyId}/store-ratings`, { params: httpParams }),
+    );
+  }
+
+  /** Oculta o restaura una reseña de una sucursal (moderación tras un reporte). No la borra. */
+  setStoreRatingVisibility(ratingId: number, hidden: boolean, reason?: string): Promise<void> {
+    return firstValueFrom(
+      this.http.patch<{ data: unknown }>(`${environment.apiUrl}/admin/store-ratings/${ratingId}`, {
+        hidden,
+        ...(reason ? { reason } : {}),
+      }),
+    ).then(() => undefined);
   }
 
   /** Departamentos del país de esta empresa — para el select de "Región / departamento" de sus sucursales. */

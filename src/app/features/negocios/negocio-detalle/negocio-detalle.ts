@@ -21,6 +21,7 @@ import { LocationField } from '../../../shared/location-field/location-field';
 import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
+import { StoreRatingsModal } from '../store-ratings-modal/store-ratings-modal';
 import { MultiSelect } from '../../../shared/multi-select/multi-select';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
@@ -45,7 +46,7 @@ type Tab = 'info' | 'cobro' | 'sucursales' | 'facturacion' | 'pagos';
 @Component({
   selector: 'app-negocio-detalle',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, Select, MultiSelect, Pager, LocationField, Skeleton],
+  imports: [FormsModule, RouterLink, Icon, Select, MultiSelect, Pager, LocationField, Skeleton, StoreRatingsModal],
   templateUrl: './negocio-detalle.html',
   styleUrl: './negocio-detalle.scss',
 })
@@ -95,6 +96,7 @@ export class NegocioDetalle implements OnInit {
   readonly isRevealingApay = signal(false);
   apayForm = { apayToken: '', apayBusinessId: '' };
   readonly apayModalOpen = signal(false);
+  readonly ratingsModalOpen = signal(false);
   /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
   readonly apaySubmitted = signal(false);
 

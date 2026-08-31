@@ -1,0 +1,144 @@
+@use '../../../shared/styles/modal' as *;
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rating-card {
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.rating-card--hidden {
+  opacity: 0.62;
+  border: 1px dashed var(--color-border);
+}
+
+.rating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.customer-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.store-tag {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.rating-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.rating-score app-icon {
+  font-size: 1rem;
+}
+
+.rating-comment {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rating-hidden-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.rating-hidden-note app-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.rating-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rating-date {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.rating-mod-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-error);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rating-mod-btn.restore {
+  color: var(--color-primary);
+}
+
+.rating-mod-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rating-mod-btn app-icon {
+  font-size: 0.9rem;
+}

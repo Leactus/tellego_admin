@@ -27,6 +27,10 @@ export interface DriverRating {
   comment: string | null;
   createdAt: string;
   customer?: { id: number; name: string };
+  /** Moderación: != null = oculta por el super-admin (no cuenta ni la ve el dueño/repartidor). */
+  hiddenAt: string | null;
+  hiddenReason: string | null;
+  hiddenBy?: { id: number; name: string } | null;
 }
 
 export interface DriverRatingsSummary extends Paginated<DriverRating> {

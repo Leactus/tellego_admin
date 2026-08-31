@@ -58,4 +58,17 @@ export class DriversService {
       this.http.get<DriverRatingsSummary>(`${this.base}/${driverId}/ratings`, { params: httpParams }),
     );
   }
+
+  /**
+   * Oculta o restaura una reseña de un repartidor (moderación tras un reporte).
+   * La fila no se borra: deja de contar y de verse salvo para el super-admin.
+   */
+  setRatingVisibility(ratingId: number, hidden: boolean, reason?: string): Promise<void> {
+    return firstValueFrom(
+      this.http.patch<{ data: unknown }>(`${environment.apiUrl}/admin/driver-ratings/${ratingId}`, {
+        hidden,
+        ...(reason ? { reason } : {}),
+      }),
+    ).then(() => undefined);
+  }
 }

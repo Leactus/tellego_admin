@@ -113,4 +113,39 @@ export class DriverRatingsModal implements OnInit {
       this.isLoading.set(false);
     }
   }
+
+  /** ids de reseñas cuya visibilidad se está cambiando ahora mismo. */
+  readonly busyRatingIds = signal<Set<number>>(new Set());
+
+  async toggleHidden(rating: { id: number; hiddenAt: string | null }): Promise<void> {
+    const willHide = rating.hiddenAt === null;
+    if (willHide) {
+      const reason = window.prompt(
+        'Motivo para ocultar esta reseña (opcional).\n\nLa reseña NO se borra: solo deja de contar en el promedio y de verse para el negocio y el repartidor.',
+        '',
+      );
+      // prompt devuelve null si cancelan.
+      if (reason === null) return;
+      await this.applyVisibility(rating.id, true, reason || undefined);
+    } else {
+      await this.applyVisibility(rating.id, false);
+    }
+  }
+
+  private async applyVisibility(ratingId: number, hidden: boolean, reason?: string): Promise<void> {
+    this.busyRatingIds.update((s) => new Set(s).add(ratingId));
+    try {
+      await this.drivers.setRatingVisibility(ratingId, hidden, reason);
+      this.toast.success(hidden ? 'Reseña ocultada' : 'Reseña restaurada');
+      await this.reload();
+    } catch {
+      this.toast.error('No se pudo actualizar la reseña');
+    } finally {
+      this.busyRatingIds.update((s) => {
+        const next = new Set(s);
+        next.delete(ratingId);
+        return next;
+      });
+    }
+  }
 }

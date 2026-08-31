@@ -34,6 +34,7 @@
       <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'horario']">Ver horarios</a>
       <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'menu']">Ver menú</a>
       <a class="btn-secondary" [routerLink]="['/negocios', c.id, 'personal']">Ver personal</a>
+      <button class="btn-secondary" (click)="ratingsModalOpen.set(true)">Ver calificaciones</button>
       <button
         class="btn-secondary"
         [class.danger-text]="c.status === 'active'"
@@ -646,4 +647,12 @@
       </div>
     </div>
   </div>
+}
+
+@if (ratingsModalOpen() && company(); as c) {
+  <app-store-ratings-modal
+    [companyId]="c.id"
+    [companyName]="c.name"
+    (close)="ratingsModalOpen.set(false)"
+  />
 }
