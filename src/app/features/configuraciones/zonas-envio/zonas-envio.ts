@@ -1,13 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { CompaniesService } from '../../../core/services/companies.service';
 import { Country } from '../../../core/models/company.model';
 import { Zone, ZonesService, ZoneFeePreview } from '../../../core/services/zones.service';
+import { Icon } from '../../../shared/icon/icon';
 import { Select } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
+import { ConfirmService } from '../../../shared/confirm/confirm.service';
 
 interface ZoneForm {
   fuelPrice: number;
@@ -18,21 +20,17 @@ interface ZoneForm {
 }
 
 /**
- * Configuraciones > Zonas de envío: la tarifa de envío la controla 100% la
+ * Configuraciones > Zonas de envío. La tarifa de envío la controla 100% la
  * plataforma por ZONA (Occidental / Central / Oriental...). Cada sucursal
  * hereda la tarifa de la zona de su departamento — ya no configura envío.
  *
- *   Cliente paga  = max(mínimo, base + $/km × distancia)
- *   Plataforma retiene  = % del envío
- *   Repartidor gana  = envío − lo que retiene la plataforma
- *
- * El precio de la gasolina es solo un dato de referencia visible: NO entra
- * en la fórmula, el admin ajusta base y $/km a mano.
+ * Desde acá el super-admin también administra el territorio: agregar países,
+ * zonas y departamentos, y mover un departamento de zona.
  */
 @Component({
   selector: 'app-zonas-envio',
   standalone: true,
-  imports: [FormsModule, DatePipe, Select, Skeleton],
+  imports: [FormsModule, DatePipe, Icon, Select, Skeleton],
   templateUrl: './zonas-envio.html',
   styleUrl: './zonas-envio.scss',
 })
@@ -40,6 +38,7 @@ export class ZonasEnvio implements OnInit {
   private readonly companies = inject(CompaniesService);
   private readonly zonesService = inject(ZonesService);
   private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
 
   readonly isLoading = signal(true);
   readonly savingZoneId = signal<number | null>(null);
@@ -49,14 +48,30 @@ export class ZonasEnvio implements OnInit {
   readonly currencySymbol = signal('$');
 
   readonly zones = signal<Zone[]>([]);
-  /** Estado editable del formulario por zona (id → valores). */
   readonly forms = signal<Record<number, ZoneForm>>({});
-  /** Preview recalculado en vivo mientras se edita (id → filas). */
   readonly livePreview = signal<Record<number, ZoneFeePreview[]>>({});
+  /** Zonas cuyo editor de tarifa está abierto. */
+  readonly expanded = signal<Set<number>>(new Set());
 
   get countryOptions() {
     return this.countries().map((c) => ({ value: c.id, label: c.name }));
   }
+
+  get zoneOptions() {
+    return this.zones().map((z) => ({ value: z.id, label: z.name }));
+  }
+
+  readonly currentCountry = computed(() => this.countries().find((c) => c.id === this.countryId) ?? null);
+
+  // --- Modales ---
+  readonly countryModalOpen = signal(false);
+  readonly zoneModalOpen = signal(false);
+  readonly deptModalOpen = signal(false);
+  readonly isSavingModal = signal(false);
+
+  countryForm = { name: '', currencyCode: '', currencySymbol: '' };
+  zoneForm = { id: 0 as number, name: '', sortOrder: 0 };
+  deptForm = { id: 0 as number, name: '', zoneId: 0 };
 
   async ngOnInit(): Promise<void> {
     try {
@@ -106,6 +121,18 @@ export class ZonasEnvio implements OnInit {
     }
   }
 
+  toggleExpanded(zoneId: number): void {
+    this.expanded.update((s) => {
+      const next = new Set(s);
+      next.has(zoneId) ? next.delete(zoneId) : next.add(zoneId);
+      return next;
+    });
+  }
+
+  isExpanded(zoneId: number): boolean {
+    return this.expanded().has(zoneId);
+  }
+
   /** Recalcula el preview de una zona en el navegador mientras se edita (misma fórmula que el backend). */
   recalc(zoneId: number): void {
     const f = this.forms()[zoneId];
@@ -151,6 +178,142 @@ export class ZonasEnvio implements OnInit {
       this.toast.error(err?.error?.message ?? 'No se pudieron guardar los cambios');
     } finally {
       this.savingZoneId.set(null);
+    }
+  }
+
+  // --- País ---
+  openCountryModal(): void {
+    this.countryForm = { name: '', currencyCode: '', currencySymbol: '' };
+    this.countryModalOpen.set(true);
+  }
+
+  async saveCountry(): Promise<void> {
+    const name = this.countryForm.name.trim();
+    const currencyCode = this.countryForm.currencyCode.trim().toUpperCase();
+    const currencySymbol = this.countryForm.currencySymbol.trim();
+    if (!name || !/^[A-Z]{3}$/.test(currencyCode) || !currencySymbol) {
+      this.toast.error('Completa nombre, código de moneda (3 letras) y símbolo');
+      return;
+    }
+    this.isSavingModal.set(true);
+    try {
+      const created = await this.zonesService.createCountry({ name, currencyCode, currencySymbol });
+      this.countries.update((cs) => [...cs, created].sort((a, b) => a.name.localeCompare(b.name)));
+      this.countryModalOpen.set(false);
+      this.countryId = created.id;
+      this.isLoading.set(true);
+      await this.loadZones();
+      this.toast.success(`País "${name}" creado — ahora agrégale zonas y departamentos`);
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo crear el país');
+    } finally {
+      this.isSavingModal.set(false);
+    }
+  }
+
+  // --- Zona ---
+  openNewZoneModal(): void {
+    this.zoneForm = { id: 0, name: '', sortOrder: this.zones().length + 1 };
+    this.zoneModalOpen.set(true);
+  }
+
+  openEditZoneModal(zone: Zone): void {
+    this.zoneForm = { id: zone.id, name: zone.name, sortOrder: zone.sortOrder };
+    this.zoneModalOpen.set(true);
+  }
+
+  async saveZone(): Promise<void> {
+    const name = this.zoneForm.name.trim();
+    if (!name) {
+      this.toast.error('El nombre de la zona es obligatorio');
+      return;
+    }
+    this.isSavingModal.set(true);
+    try {
+      if (this.zoneForm.id) {
+        await this.zonesService.updateZone(this.zoneForm.id, { name, sortOrder: Number(this.zoneForm.sortOrder) });
+      } else {
+        await this.zonesService.createZone(this.countryId, { name, sortOrder: Number(this.zoneForm.sortOrder) });
+      }
+      this.zoneModalOpen.set(false);
+      await this.loadZones();
+      this.toast.success(this.zoneForm.id ? 'Zona actualizada' : 'Zona creada');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo guardar la zona');
+    } finally {
+      this.isSavingModal.set(false);
+    }
+  }
+
+  async deleteZone(zone: Zone): Promise<void> {
+    if (zone.departments.length > 0) {
+      this.toast.error(`Reasigná los ${zone.departments.length} departamentos de "${zone.name}" a otra zona antes de borrarla`);
+      return;
+    }
+    const ok = await this.confirm.confirm({
+      title: 'Archivar zona',
+      message: `La zona "${zone.name}" dejará de verse. No se borra: su tarifa se conserva y se reactiva si vuelves a crear una zona con el mismo nombre.`,
+      confirmLabel: 'Archivar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await this.zonesService.deleteZone(zone.id);
+      await this.loadZones();
+      this.toast.success('Zona borrada');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo borrar la zona');
+    }
+  }
+
+  // --- Departamento ---
+  openNewDeptModal(zoneId?: number): void {
+    this.deptForm = { id: 0, name: '', zoneId: zoneId ?? this.zones()[0]?.id ?? 0 };
+    this.deptModalOpen.set(true);
+  }
+
+  openEditDeptModal(dept: { id: number; name: string }, zoneId: number): void {
+    this.deptForm = { id: dept.id, name: dept.name, zoneId };
+    this.deptModalOpen.set(true);
+  }
+
+  async saveDept(): Promise<void> {
+    const name = this.deptForm.name.trim();
+    if (!name || !this.deptForm.zoneId) {
+      this.toast.error('Completa el nombre y la zona del departamento');
+      return;
+    }
+    this.isSavingModal.set(true);
+    try {
+      if (this.deptForm.id) {
+        await this.zonesService.updateDepartment(this.deptForm.id, { name, zoneId: Number(this.deptForm.zoneId) });
+      } else {
+        await this.zonesService.createDepartment(this.countryId, { name, zoneId: Number(this.deptForm.zoneId) });
+      }
+      this.deptModalOpen.set(false);
+      await this.loadZones();
+      this.toast.success(this.deptForm.id ? 'Departamento actualizado' : 'Departamento creado');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo guardar el departamento');
+    } finally {
+      this.isSavingModal.set(false);
+    }
+  }
+
+  async deleteDept(dept: { id: number; name: string }): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: 'Archivar departamento',
+      message: `"${dept.name}" dejará de verse. No se borra: se reactiva si vuelves a crear un departamento con el mismo nombre. Solo se puede si ninguna sucursal está en él.`,
+      confirmLabel: 'Archivar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await this.zonesService.deleteDepartment(dept.id);
+      await this.loadZones();
+      this.toast.success('Departamento borrado');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo borrar el departamento');
     }
   }
 }

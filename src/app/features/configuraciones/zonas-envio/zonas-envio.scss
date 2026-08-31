@@ -1,11 +1,12 @@
 @use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
 
 .card {
   background: var(--color-surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: 20px 22px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .card h2 {
@@ -14,101 +15,258 @@
   color: var(--color-text);
 }
 
-.formula {
-  margin: 8px 0 8px 18px;
-  padding: 0;
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
-.formula li {
-  margin: 2px 0;
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* --- Intro / fórmula --- */
+.intro .formula-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.intro .formula-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg, rgba(0, 0, 0, 0.03));
+}
+
+.intro .k {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.intro .v {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+/* --- Barra de país --- */
+.country-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .country-picker {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-text-muted);
-  max-width: 320px;
+  min-width: 220px;
+}
+
+.currency-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--color-bg, rgba(0, 0, 0, 0.05));
+  font-size: 0.8rem;
+  align-self: center;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-bg, rgba(0, 0, 0, 0.04));
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Tarjeta de zona --- */
+.zone-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 14px;
 }
 
 .zone-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
+  gap: 10px;
 }
 
-.zone-head .depts {
-  font-size: 0.8rem;
+.zone-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+.zone-title app-icon {
+  color: var(--color-primary, #0c3533);
+}
+
+.zone-title .count {
+  font-size: 0.78rem;
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
-.depts-list {
+.warn-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(237, 108, 2, 0.14);
+  color: #b5560a;
+}
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0 0 16px;
+  margin: 12px 0 4px;
 }
 
 .chip {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--color-bg, rgba(0, 0, 0, 0.05));
   border: 1px solid var(--color-border);
-  font-size: 0.78rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  padding: 4px 11px;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--color-text);
 }
 
-.billing-form {
+.chip:hover {
+  border-color: var(--color-primary, #0c3533);
+}
+
+.chip-add {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+
+/* --- Editor de tarifa (colapsable) --- */
+.tariff-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary, #0c3533);
+  cursor: pointer;
+}
+
+.tariff-toggle app-icon {
+  transition: transform 0.15s ease;
+}
+
+.tariff-toggle app-icon.open {
+  transform: rotate(180deg);
+}
+
+.tariff-body {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.fields {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-.billing-form label {
+.fields label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.9rem;
+  gap: 5px;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--color-text-muted);
 }
 
-.billing-form input {
-  padding: 10px 12px;
+.input-money {
+  display: flex;
+  align-items: center;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  color: var(--color-text);
+  overflow: hidden;
   background: var(--color-surface);
-  font-family: inherit;
 }
 
-.preview {
-  border-top: 1px solid var(--color-border);
-  padding-top: 14px;
-}
-
-.preview h3 {
-  margin: 0 0 10px;
-  font-size: 0.92rem;
+.input-money span {
+  padding: 0 8px;
   color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.input-money.suffix span {
+  order: 2;
+}
+
+.input-money input {
+  border: none;
+  outline: none;
+  padding: 9px 10px;
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  background: transparent;
+  color: var(--color-text);
 }
 
 .preview table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
 }
 
 .preview th,
 .preview td {
   text-align: right;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -122,26 +280,24 @@
   color: var(--color-success, #2e7d32);
 }
 
-.toolbar {
+.tariff-actions {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  gap: 14px;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
-.toolbar .updated {
-  font-size: 0.8rem;
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-@media (max-width: 900px) {
-  .billing-form {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.btn-text.danger {
+  color: var(--color-danger, #c0392b);
 }
 
-@media (max-width: 620px) {
-  .billing-form {
+@media (max-width: 720px) {
+  .intro .formula-grid {
     grid-template-columns: 1fr;
   }
 }
