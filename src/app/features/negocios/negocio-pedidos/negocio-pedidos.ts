@@ -1,4 +1,5 @@
 import { Location, DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +8,7 @@ import { CompaniesService } from '../../../core/services/companies.service';
 import { OrdersService } from '../../../core/services/orders.service';
 import { Company } from '../../../core/models/company.model';
 import { Order, OrderStatus } from '../../../core/models/order.model';
+import { OrderChatTranscript } from '../../../core/models/order-chat.model';
 import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../../core/utils/query-param-state';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLOR_CLASS } from '../../../core/utils/order-status-labels';
@@ -81,6 +83,12 @@ export class NegocioPedidos implements OnInit {
   storeFilter: number | null = null;
 
   readonly selectedOrder = signal<Order | null>(null);
+
+  // --- Chat cliente ↔ repartidor del pedido abierto (solo lectura, para reportes) ---
+  readonly chat = signal<OrderChatTranscript | null>(null);
+  readonly chatLoading = signal(false);
+  /** true si el backend responde 503: el chat no está configurado en este entorno. */
+  readonly chatUnavailable = signal(false);
 
   readonly branches = computed(() => this.company()?.branches ?? []);
   readonly showStoreFilter = computed(() => this.branches().length > 1);
@@ -175,11 +183,49 @@ export class NegocioPedidos implements OnInit {
 
   openDetail(order: Order): void {
     this.selectedOrder.set(order);
+    void this.loadChat(order);
   }
 
   closeDetail(): void {
     this.selectedOrder.set(null);
+    this.chat.set(null);
+    this.chatLoading.set(false);
+    this.chatUnavailable.set(false);
   }
+
+  /**
+   * Trae la transcripción del chat del pedido. Solo tiene sentido en pedidos
+   * de entrega a domicilio (los de recoger no tienen repartidor). Si el
+   * backend responde 503, el chat no está configurado en este entorno.
+   */
+  private async loadChat(order: Order): Promise<void> {
+    this.chat.set(null);
+    this.chatUnavailable.set(false);
+
+    if (order.fulfillmentType !== 'delivery') {
+      return;
+    }
+
+    this.chatLoading.set(true);
+    try {
+      const transcript = await this.ordersService.getOrderChat(order.id);
+      // El modal pudo cerrarse (u otro pedido abrirse) mientras cargaba.
+      if (this.selectedOrder()?.id !== order.id) return;
+      this.chat.set(transcript);
+    } catch (err) {
+      if (this.selectedOrder()?.id !== order.id) return;
+      if (err instanceof HttpErrorResponse && err.status === 503) {
+        this.chatUnavailable.set(true);
+      } else {
+        this.toast.error('No se pudo cargar el chat del pedido');
+      }
+    } finally {
+      if (this.selectedOrder()?.id === order.id) this.chatLoading.set(false);
+    }
+  }
+
+  /** El pedido tiene chat que mostrar (mensajes reales). */
+  readonly hasChatMessages = computed(() => (this.chat()?.messages?.length ?? 0) > 0);
 
   /** Pasos ya ocurridos de un pedido, en orden — para la línea de tiempo del detalle. */
   timeline(order: Order): TimelineStep[] {

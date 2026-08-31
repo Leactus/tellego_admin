@@ -165,6 +165,52 @@
           </ul>
         </div>
 
+        @if (o.fulfillmentType === 'delivery') {
+          <div class="detail-section">
+            <h3><app-icon name="chat" /> Chat cliente &harr; repartidor</h3>
+
+            @if (chatLoading()) {
+              <div class="chat-transcript chat-transcript--loading">
+                <span class="chat-sk chat-sk--in"></span>
+                <span class="chat-sk chat-sk--out"></span>
+                <span class="chat-sk chat-sk--in"></span>
+              </div>
+            } @else if (chatUnavailable()) {
+              <p class="muted">El chat no está disponible en este momento.</p>
+            } @else if (!hasChatMessages()) {
+              <p class="muted">
+                Este pedido no tuvo chat — el repartidor no llegó a activarlo o nunca se le asignó uno.
+              </p>
+            } @else {
+              @if (chat()?.chat?.status === 'closed') {
+                <p class="muted chat-status">
+                  <app-icon name="check-circle" />
+                  Chat cerrado@if (chat()?.chat?.closedAt) { · {{ formatShortDateTime(chat()!.chat!.closedAt) }} }
+                </p>
+              }
+              <div class="chat-transcript">
+                @for (m of chat()!.messages; track m.id) {
+                  <div class="chat-msg" [class.chat-msg--driver]="m.senderRole === 'repartidor'">
+                    <div class="chat-bubble">
+                      <span class="chat-sender">
+                        {{
+                          m.senderRole === 'repartidor'
+                            ? (chat()?.chat?.driverName ?? 'Repartidor')
+                            : (chat()?.chat?.customerName ?? 'Cliente')
+                        }}
+                      </span>
+                      <p class="chat-body">{{ m.body }}</p>
+                      <span class="chat-time">
+                        {{ formatShortDateTime(m.createdAt) }}@if (m.readAt) { · visto }
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
         @if (o.notes) {
           <div class="detail-section">
             <h3><app-icon name="edit" /> Notas del pedido</h3>

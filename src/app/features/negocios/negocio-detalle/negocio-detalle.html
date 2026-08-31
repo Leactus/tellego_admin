@@ -1,7 +1,22 @@
 <button type="button" class="back-link" (click)="goBack()">&larr; Volver a negocios</button>
 
 @if (isLoading()) {
-  <app-skeleton variant="modal" [rows]="5" />
+  <!-- Esqueleto que insinúa la forma real de la página. A propósito NO se
+       dibujan los botones de acción ni la barra de tabs: aparecen recién con
+       los datos ya cargados, no como huesos grises. -->
+  <div class="detail-loading">
+    <span class="dl-title"></span>
+    <span class="dl-subtitle"></span>
+
+    <div class="settings-layout">
+      <div class="main-column">
+        <app-skeleton variant="card" [rows]="2" />
+      </div>
+      <div class="side-column">
+        <app-skeleton variant="card" [rows]="2" />
+      </div>
+    </div>
+  </div>
 } @else if (company(); as c) {
   <div class="header-row">
     <div>

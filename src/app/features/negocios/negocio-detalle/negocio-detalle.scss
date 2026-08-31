@@ -18,6 +18,48 @@
   color: var(--color-text);
 }
 
+/* Esqueleto de carga de la página — solo título + subtítulo + las dos
+   columnas de tarjetas. El espacio de los botones y los tabs se deja vacío
+   (no se dibujan como huesos), tal como se pidió. */
+.detail-loading {
+  .dl-title,
+  .dl-subtitle {
+    display: block;
+    border-radius: 8px;
+    background: linear-gradient(
+      100deg,
+      var(--color-surface-variant) 30%,
+      var(--color-border) 50%,
+      var(--color-surface-variant) 70%
+    );
+    background-size: 200% 100%;
+    animation: detail-loading-shimmer 1.4s ease-in-out infinite;
+  }
+
+  .dl-title {
+    height: 32px;
+    width: 240px;
+    margin-bottom: 12px;
+  }
+
+  .dl-subtitle {
+    height: 14px;
+    width: 150px;
+    /* margen grande: aquí es donde irían los botones + la barra de tabs, se
+       deja como aire en blanco a propósito. */
+    margin-bottom: 36px;
+  }
+}
+
+@keyframes detail-loading-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -50% 0;
+  }
+}
+
 // Mismos colores que repartidores.scss — Store.status comparte el mismo
 // enum pending_approval/active/suspended que Driver.status.
 .pill-suspended {

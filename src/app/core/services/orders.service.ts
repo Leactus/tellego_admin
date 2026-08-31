@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../config/environment';
 import { Order, OrdersPage, OrderStatus } from '../models/order.model';
+import { OrderChatTranscript } from '../models/order-chat.model';
 
 export interface AdminOrdersParams {
   page?: number;
@@ -34,5 +35,17 @@ export class OrdersService {
 
   getOne(id: number): Promise<Order> {
     return firstValueFrom(this.http.get<{ data: Order }>(`${this.base}/orders/${id}`)).then((r) => r.data);
+  }
+
+  /**
+   * Transcripción del chat cliente ↔ repartidor de un pedido, para dar
+   * seguimiento a un reporte. Solo lectura y funciona aunque el chat ya esté
+   * cerrado (el backend lo lee con el Admin SDK). Puede devolver 503 si el
+   * chat no está configurado — el llamador lo maneja.
+   */
+  getOrderChat(id: number): Promise<OrderChatTranscript> {
+    return firstValueFrom(
+      this.http.get<{ data: OrderChatTranscript }>(`${this.base}/orders/${id}/chat`),
+    ).then((r) => r.data);
   }
 }
