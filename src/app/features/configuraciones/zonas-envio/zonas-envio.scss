@@ -15,73 +15,99 @@
   color: var(--color-text);
 }
 
+/* --- Tabs --- */
+.tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin: 4px 0 20px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  overflow-y: hidden; /* sin esto el navegador computa overflow-y:auto y dibuja un scrollbar vertical de 1px */
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
+.card-header .muted.small {
+  margin: 4px 0 0;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-/* --- Intro / fórmula --- */
-.intro .formula-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.intro .formula-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: var(--color-bg, rgba(0, 0, 0, 0.03));
-}
-
-.intro .k {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--color-text-muted);
 }
 
-.intro .v {
-  font-size: 0.86rem;
-  font-weight: 600;
+.field-label em {
+  font-weight: 400;
+  font-style: normal;
+  opacity: 0.7;
 }
 
-/* --- Barra de país --- */
-.country-bar {
+/* --- 1 · País --- */
+.country-card {
+  padding: 16px 22px;
+}
+
+.country-row {
   display: flex;
-  align-items: flex-end;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.country-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.row-lead {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-text-muted);
+}
+
+.country-select {
   min-width: 220px;
 }
 
 .currency-chip {
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: var(--color-bg, rgba(0, 0, 0, 0.05));
-  font-size: 0.8rem;
-  align-self: center;
+  font-size: 0.82rem;
+  line-height: 1;
 }
 
 .spacer {
@@ -97,6 +123,7 @@
   font-weight: 600;
   cursor: pointer;
   color: var(--color-text);
+  white-space: nowrap;
 }
 
 .btn-ghost:hover:not(:disabled) {
@@ -104,16 +131,26 @@
 }
 
 .btn-ghost:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* --- Tarjeta de zona --- */
+.btn-ghost.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+/* --- 2 · Tarjeta de zona --- */
 .zone-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 16px 18px;
   margin-top: 14px;
+}
+
+.zone-card.needs-tariff {
+  border-color: rgba(237, 108, 2, 0.4);
+  background: rgba(237, 108, 2, 0.03);
 }
 
 .zone-head {
@@ -132,6 +169,7 @@
 
 .zone-title app-icon {
   color: var(--color-primary, #0c3533);
+  flex-shrink: 0;
 }
 
 .zone-title .count {
@@ -140,34 +178,87 @@
   font-weight: 500;
 }
 
+.row-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* resumen de tarifa + botón editar */
+.tariff-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.tariff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--color-bg, rgba(0, 0, 0, 0.05));
+  color: var(--color-text);
+}
+
+.tag-accent {
+  background: rgba(12, 53, 51, 0.1);
+  color: var(--color-primary, #0c3533);
+}
+
+.tag-muted {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
 .warn-pill {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: rgba(237, 108, 2, 0.14);
   color: #b5560a;
 }
 
-.row-actions {
-  display: flex;
-  gap: 4px;
+/* departamentos */
+.dept-block {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.block-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin-bottom: 7px;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 12px 0 4px;
 }
 
 .chip {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-surface);
-  padding: 4px 11px;
+  padding: 4px 12px;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   cursor: pointer;
   color: var(--color-text);
 }
@@ -181,50 +272,97 @@
   color: var(--color-text-muted);
 }
 
-/* --- Editor de tarifa (colapsable) --- */
-.tariff-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 6px 0;
-  background: none;
-  border: none;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-primary, #0c3533);
-  cursor: pointer;
-}
-
-.tariff-toggle app-icon {
-  transition: transform 0.15s ease;
-}
-
-.tariff-toggle app-icon.open {
-  transform: rotate(180deg);
-}
-
-.tariff-body {
-  margin-top: 10px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--color-border);
-}
-
-.fields {
+/* --- Fórmula (tab) --- */
+.intro .formula-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.intro .formula-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg, rgba(0, 0, 0, 0.03));
+}
+
+.intro .k {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.intro .v {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.formula-notes {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  line-height: 1.7;
+}
+
+/* --- Modal de tarifa --- */
+.modal.modal-wide {
+  max-width: 600px;
+  width: 94vw;
+}
+
+.tariff-modal .group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
   margin-bottom: 14px;
 }
 
-.fields label {
+.tariff-modal .group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tariff-modal .group-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tariff-modal .group-hint {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.tariff-modal .group-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.tariff-modal .group-fields.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.tariff-modal .group-fields.cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.tariff-modal label {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-size: 0.82rem;
-  font-weight: 600;
+}
+
+.tariff-modal .field-hint {
+  font-size: 0.72rem;
   color: var(--color-text-muted);
+  line-height: 1.3;
 }
 
 .input-money {
@@ -252,40 +390,63 @@
   padding: 9px 10px;
   width: 100%;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   background: transparent;
   color: var(--color-text);
 }
 
-.preview table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
+/* preview como tarjetas */
+.preview-group {
+  background: var(--color-bg, rgba(0, 0, 0, 0.02));
 }
 
-.preview th,
-.preview td {
-  text-align: right;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--color-border);
+.preview-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
-.preview th:first-child,
-.preview td:first-child {
-  text-align: left;
+.preview-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
 }
 
-.preview td.earn {
+.pc-dist {
+  display: block;
   font-weight: 700;
-  color: var(--color-success, #2e7d32);
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
 }
 
-.tariff-actions {
+.pc-line {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  padding: 2px 0;
 }
 
+.pc-line.earn {
+  color: var(--color-success, #2e7d32);
+  font-weight: 700;
+}
+
+.pc-line.muted {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 560px) {
+  .tariff-modal .group-fields.cols-3,
+  .tariff-modal .group-fields.cols-2,
+  .preview-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* otros modales */
 .two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;

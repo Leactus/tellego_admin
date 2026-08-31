@@ -5,6 +5,24 @@
   <button class="btn-primary" (click)="openNewModal()">+ Crear repartidor</button>
 </div>
 
+<div class="status-tabs">
+  @for (t of tabs; track t.value) {
+    <button type="button" class="tab" [class.active]="tab() === t.value" (click)="setTab(t.value)">
+      {{ t.label }}
+      <span
+        class="tab-count"
+        [class.pending]="t.value === 'pending' && statusCounts().pending > 0"
+      >
+        @switch (t.value) {
+          @case ('active') { {{ statusCounts().active }} }
+          @case ('pending') { {{ statusCounts().pending }} }
+          @case ('suspended') { {{ statusCounts().suspended }} }
+        }
+      </span>
+    </button>
+  }
+</div>
+
 <div class="search-bar">
   <app-icon name="search" />
   <input
@@ -20,7 +38,15 @@
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
   <p class="empty">
-    {{ search ? 'No se encontraron repartidores con esos datos.' : 'Todavía no hay repartidores registrados.' }}
+    @if (search) {
+      No se encontraron repartidores con esos datos.
+    } @else if (tab() === 'pending') {
+      No hay repartidores pendientes de aprobación.
+    } @else if (tab() === 'suspended') {
+      No hay repartidores suspendidos.
+    } @else {
+      Todavía no hay repartidores activos.
+    }
   </p>
 } @else {
   <div class="list">

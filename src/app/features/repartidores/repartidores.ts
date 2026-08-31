@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DriversService } from '../../core/services/drivers.service';
+import { DriversService, DriverStatusFilter } from '../../core/services/drivers.service';
 import { Driver } from '../../core/models/driver.model';
 import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
 import { debounce } from '../../core/utils/debounce';
@@ -42,6 +42,17 @@ export class Repartidores implements OnInit, OnDestroy {
   readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly totalPages = signal(1);
   readonly total = signal(0);
+
+  /** Pestaña de estado. 'active' es el default: los que se crean desde este panel entran activos;
+   * solo los que se registran solos por la app caen en 'pending'. Se refleja en la URL (?estado=) para
+   * que un refresh (F5) no reinicie la vista. */
+  readonly tab = signal<DriverStatusFilter>('active');
+  readonly statusCounts = signal({ active: 0, pending: 0, suspended: 0 });
+  readonly tabs: { value: DriverStatusFilter; label: string }[] = [
+    { value: 'active', label: 'Activos' },
+    { value: 'pending', label: 'Pendientes' },
+    { value: 'suspended', label: 'Suspendidos' },
+  ];
 
   readonly ratingsDriverId = signal<number | null>(null);
   readonly ratingsDriverName = signal('');
@@ -89,7 +100,17 @@ export class Repartidores implements OnInit, OnDestroy {
     this.page.set(getQueryParamNumber(this.route, 'page', 1));
     this.pageSize.set(getQueryParamNumber(this.route, 'pageSize', DEFAULT_PAGE_SIZE));
     this.search = getQueryParam(this.route, 'search') ?? '';
+    const tab = getQueryParam(this.route, 'estado') as DriverStatusFilter | null;
+    if (tab && this.tabs.some((t) => t.value === tab)) this.tab.set(tab);
     await this.reload();
+  }
+
+  /** Cambiar de pestaña es un filtro nuevo: siempre vuelve a la página 1. */
+  setTab(tab: DriverStatusFilter): void {
+    if (this.tab() === tab) return;
+    this.tab.set(tab);
+    this.page.set(1);
+    this.reload();
   }
 
   /** Cancela el debounce pendiente al salir de la pantalla — ver el comentario de `debounce()` en
@@ -119,17 +140,20 @@ export class Repartidores implements OnInit, OnDestroy {
       page: this.page() > 1 ? this.page() : null,
       pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
       search: this.search.trim() || null,
+      estado: this.tab() !== 'active' ? this.tab() : null,
     });
     if (!silent) this.isRefreshing.set(true);
     try {
-      const { data, meta } = await this.drivers.list({
+      const { data, meta, statusCounts } = await this.drivers.list({
         page: this.page(),
         pageSize: this.pageSize(),
         search: this.search.trim(),
+        status: this.tab(),
       });
       this.items.set(data);
       this.totalPages.set(meta.totalPages);
       this.total.set(meta.total);
+      this.statusCounts.set(statusCounts);
     } catch {
       this.toast.error('No se pudieron cargar los repartidores');
     } finally {
@@ -195,6 +219,8 @@ export class Repartidores implements OnInit, OnDestroy {
         });
         this.closeFormModal();
         this.tempPasswordModal.show({ title: 'Repartidor creado', email, password: tempPassword });
+        // Se crea activo — asegura que la pestaña actual lo muestre.
+        this.tab.set('active');
       }
       this.page.set(1);
       await this.reload();
@@ -207,9 +233,11 @@ export class Repartidores implements OnInit, OnDestroy {
 
   async approve(driver: Driver): Promise<void> {
     try {
-      const updated = await this.drivers.updateStatus(driver.id, 'active');
-      this.items.update((list) => list.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+      await this.drivers.updateStatus(driver.id, 'active');
       this.toast.success('Repartidor aprobado');
+      // Cambia de estado: sale de "Pendientes" y entra en "Activos" — se recarga para que
+      // la lista y los contadores de las pestañas queden al día.
+      await this.reload(true);
     } catch {
       this.toast.error('No se pudo aprobar el repartidor');
     }
@@ -231,10 +259,10 @@ export class Repartidores implements OnInit, OnDestroy {
 
     this.isSuspending.set(true);
     try {
-      const updated = await this.drivers.updateStatus(driver.id, 'suspended', this.suspendDays ?? undefined);
-      this.items.update((list) => list.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+      await this.drivers.updateStatus(driver.id, 'suspended', this.suspendDays ?? undefined);
       this.toast.success('Repartidor suspendido');
       this.closeSuspendModal();
+      await this.reload(true);
     } catch {
       this.toast.error('No se pudo suspender el repartidor');
     } finally {

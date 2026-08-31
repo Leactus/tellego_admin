@@ -11,7 +11,7 @@ import { BusinessTypesService } from '../../../core/services/business-types.serv
 import { SubcategoriesService } from '../../../core/services/subcategories.service';
 import { ApayCredencial, Company, CompanyBillingType, CompanySales, Department, PlatformPayment } from '../../../core/models/company.model';
 import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
-import { getQueryParamNumber, syncQueryParams } from '../../../core/utils/query-param-state';
+import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../../core/utils/query-param-state';
 import { formatLongDate } from '../../../core/utils/format-date';
 import { addMonthsToDateOnly } from '../../../core/utils/billing';
 import { Store, StoreInput } from '../../../core/models/store.model';
@@ -42,6 +42,7 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Tab = 'info' | 'cobro' | 'sucursales' | 'facturacion' | 'pagos';
+const TABS: Tab[] = ['info', 'cobro', 'sucursales', 'facturacion', 'pagos'];
 
 @Component({
   selector: 'app-negocio-detalle',
@@ -54,8 +55,10 @@ export class NegocioDetalle implements OnInit {
   readonly formatLongDate = formatLongDate;
 
   readonly activeTab = signal<Tab>('info');
+  /** Refleja la pestaña en la URL (?tab=) para que un refresh (F5) no vuelva a "Información básica". */
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
+    syncQueryParams(this.router, this.route, { tab: tab === 'info' ? null : tab });
   }
 
   /** Vuelve a la página/búsqueda exacta de la que se vino (respeta filtros) en vez de una ruta fija —
@@ -205,6 +208,8 @@ export class NegocioDetalle implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));
+    const tab = getQueryParam(this.route, 'tab') as Tab | null;
+    if (tab && TABS.includes(tab)) this.activeTab.set(tab);
     this.paymentsPage.set(getQueryParamNumber(this.route, 'paymentsPage', 1));
     this.paymentsPageSize.set(getQueryParamNumber(this.route, 'paymentsPageSize', DEFAULT_PAGE_SIZE));
     await this.reload();
@@ -304,8 +309,9 @@ export class NegocioDetalle implements OnInit {
       const nextPaymentDueDate = form.nextPaymentDueDate || null;
       const billingStartsAt = form.billingStartsAt || null;
       const gracePeriodDays = this.useCustomGracePeriod ? form.gracePeriodDays : null;
-      const salesCutoffDow = this.useCustomCutoff ? form.salesCutoffDow : null;
-      const salesCutoffHour = this.useCustomCutoff ? form.salesCutoffHour : null;
+      const useCutoff = form.billingType === 'commission' && this.useCustomCutoff;
+      const salesCutoffDow = useCutoff ? form.salesCutoffDow : null;
+      const salesCutoffHour = useCutoff ? form.salesCutoffHour : null;
       const commissionPaymentDueDays =
         form.billingType === 'commission' && this.useCustomCommissionDue ? form.commissionPaymentDueDays : null;
 

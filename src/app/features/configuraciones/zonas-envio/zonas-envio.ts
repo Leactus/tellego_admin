@@ -1,8 +1,9 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { CompaniesService } from '../../../core/services/companies.service';
+import { getQueryParam, syncQueryParams } from '../../../core/utils/query-param-state';
 import { Country } from '../../../core/models/company.model';
 import { Zone, ZonesService, ZoneFeePreview } from '../../../core/services/zones.service';
 import { Icon } from '../../../shared/icon/icon';
@@ -30,18 +31,29 @@ interface ZoneForm {
 @Component({
   selector: 'app-zonas-envio',
   standalone: true,
-  imports: [FormsModule, DatePipe, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, Select, Skeleton],
   templateUrl: './zonas-envio.html',
   styleUrl: './zonas-envio.scss',
 })
 export class ZonasEnvio implements OnInit {
   private readonly companies = inject(CompaniesService);
   private readonly zonesService = inject(ZonesService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
 
   readonly isLoading = signal(true);
   readonly savingZoneId = signal<number | null>(null);
+
+  /** Pestañas de la vista: primero las zonas, aparte la explicación de la fórmula. */
+  readonly activeTab = signal<'zonas' | 'formula'>('zonas');
+
+  /** Refleja la pestaña en la URL (?tab=) para que un refresh (F5) no vuelva a "Zonas". */
+  setTab(tab: 'zonas' | 'formula'): void {
+    this.activeTab.set(tab);
+    syncQueryParams(this.router, this.route, { tab: tab === 'zonas' ? null : tab });
+  }
 
   readonly countries = signal<Country[]>([]);
   countryId = 0;
@@ -50,8 +62,9 @@ export class ZonasEnvio implements OnInit {
   readonly zones = signal<Zone[]>([]);
   readonly forms = signal<Record<number, ZoneForm>>({});
   readonly livePreview = signal<Record<number, ZoneFeePreview[]>>({});
-  /** Zonas cuyo editor de tarifa está abierto. */
-  readonly expanded = signal<Set<number>>(new Set());
+
+  /** Zona cuyo modal de tarifa está abierto (null = cerrado). */
+  readonly tariffModalZone = signal<Zone | null>(null);
 
   get countryOptions() {
     return this.countries().map((c) => ({ value: c.id, label: c.name }));
@@ -74,6 +87,8 @@ export class ZonasEnvio implements OnInit {
   deptForm = { id: 0 as number, name: '', zoneId: 0 };
 
   async ngOnInit(): Promise<void> {
+    const tab = getQueryParam(this.route, 'tab');
+    if (tab === 'formula') this.activeTab.set('formula');
     try {
       const countries = await this.companies.listCountries();
       this.countries.set(countries);
@@ -121,16 +136,30 @@ export class ZonasEnvio implements OnInit {
     }
   }
 
-  toggleExpanded(zoneId: number): void {
-    this.expanded.update((s) => {
-      const next = new Set(s);
-      next.has(zoneId) ? next.delete(zoneId) : next.add(zoneId);
-      return next;
-    });
+  /** true si la zona todavía no tiene una tarifa útil (todo en cero). */
+  isUnconfigured(zone: Zone): boolean {
+    const s = zone.settings;
+    return !s || (Number(s.baseFare) === 0 && Number(s.pricePerKm) === 0 && Number(s.minFee) === 0);
   }
 
-  isExpanded(zoneId: number): boolean {
-    return this.expanded().has(zoneId);
+  openTariffModal(zone: Zone): void {
+    // Reinicia el form desde los valores guardados por si se editó sin guardar antes.
+    this.forms.update((all) => ({
+      ...all,
+      [zone.id]: {
+        fuelPrice: Number(zone.settings?.fuelPrice ?? 0),
+        baseFare: Number(zone.settings?.baseFare ?? 0),
+        pricePerKm: Number(zone.settings?.pricePerKm ?? 0),
+        minFee: Number(zone.settings?.minFee ?? 0),
+        driverCommissionPct: Number(zone.settings?.driverCommissionPct ?? 0),
+      },
+    }));
+    this.recalc(zone.id);
+    this.tariffModalZone.set(zone);
+  }
+
+  closeTariffModal(): void {
+    this.tariffModalZone.set(null);
   }
 
   /** Recalcula el preview de una zona en el navegador mientras se edita (misma fórmula que el backend). */
@@ -173,6 +202,7 @@ export class ZonasEnvio implements OnInit {
       });
       this.zones.update((zs) => zs.map((z) => (z.id === zone.id ? { ...z, settings: saved } : z)));
       this.recalc(zone.id);
+      this.tariffModalZone.set(null);
       this.toast.success(`Tarifa de la zona ${zone.name} actualizada`);
     } catch (err: any) {
       this.toast.error(err?.error?.message ?? 'No se pudieron guardar los cambios');

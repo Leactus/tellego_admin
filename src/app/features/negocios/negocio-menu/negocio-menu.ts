@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { CompaniesService } from '../../../core/services/companies.service';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -14,6 +14,7 @@ import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
+import { getQueryParam, syncQueryParams } from '../../../core/utils/query-param-state';
 
 type Tab = 'categorias' | 'productos';
 
@@ -26,6 +27,7 @@ type Tab = 'categorias' | 'productos';
 })
 export class NegocioMenu implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly companiesService = inject(CompaniesService);
   private readonly catalog = inject(CatalogService);
   private readonly confirmService = inject(ConfirmService);
@@ -124,6 +126,8 @@ export class NegocioMenu implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));
+    const tab = getQueryParam(this.route, 'tab');
+    if (tab === 'categorias' || tab === 'productos') this.activeTab.set(tab);
     await this.reload();
   }
 
@@ -150,8 +154,10 @@ export class NegocioMenu implements OnInit {
     }
   }
 
+  /** Refleja la pestaña en la URL (?tab=) para que un refresh (F5) no vuelva a "Categorías". */
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
+    syncQueryParams(this.router, this.route, { tab: tab === 'categorias' ? null : tab });
   }
 
   // --- Categorías ---

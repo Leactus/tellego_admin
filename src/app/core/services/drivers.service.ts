@@ -6,6 +6,14 @@ import { environment } from '../config/environment';
 import { Driver, DriverRatingsSummary, DriverStatus } from '../models/driver.model';
 import { Paginated, PageParams, toHttpParams } from '../models/pagination.model';
 
+/** Pestañas de repartidores.html — 'all' no manda filtro (útil si algún día se agrega esa pestaña). */
+export type DriverStatusFilter = 'all' | 'active' | 'pending' | 'suspended';
+
+export interface DriversPage extends Paginated<Driver> {
+  /** Totales de TODA la plataforma (no de la página ni del texto buscado) — para los badges de las pestañas. */
+  statusCounts: { active: number; pending: number; suspended: number };
+}
+
 interface CreateDriverInput {
   name: string;
   email: string;
@@ -28,8 +36,17 @@ export class DriversService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/admin/drivers`;
 
-  list(params?: PageParams): Promise<Paginated<Driver>> {
-    return firstValueFrom(this.http.get<Paginated<Driver>>(this.base, { params: toHttpParams(params) }));
+  list(params?: PageParams & { status?: DriverStatusFilter }): Promise<DriversPage> {
+    const statusMap: Record<Exclude<DriverStatusFilter, 'all'>, string> = {
+      active: 'active',
+      pending: 'pending_approval',
+      suspended: 'suspended',
+    };
+    const httpParams = {
+      ...toHttpParams(params),
+      ...(params?.status && params.status !== 'all' ? { status: statusMap[params.status] } : {}),
+    };
+    return firstValueFrom(this.http.get<DriversPage>(this.base, { params: httpParams }));
   }
 
   create(input: CreateDriverInput): Promise<{ data: Driver; tempPassword: string }> {

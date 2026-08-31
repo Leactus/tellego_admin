@@ -4,183 +4,234 @@
   tarifa de la zona de su departamento — el negocio ya no configura envío.
 </p>
 
-<section class="card intro">
-  <div class="formula-grid">
-    <div><span class="k">Cliente paga</span><span class="v">máx(mínimo, base + $/km × distancia)</span></div>
-    <div><span class="k">Plataforma retiene</span><span class="v">% del envío</span></div>
-    <div><span class="k">Repartidor gana</span><span class="v">envío − lo que retiene la plataforma</span></div>
-  </div>
-  <p class="muted small">
-    El precio de la gasolina es solo referencia: no entra en la fórmula, ajustá la base y el $/km a
-    mano.
-  </p>
-</section>
+<div class="tabs">
+  <button class="tab-btn" [class.active]="activeTab() === 'zonas'" (click)="setTab('zonas')">
+    Zonas
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'formula'" (click)="setTab('formula')">
+    Cómo se calcula el envío
+  </button>
+</div>
 
-<section class="card country-bar">
-  <label class="country-picker">
-    País
-    <app-select
-      [(ngModel)]="countryId"
-      name="countryId"
-      [options]="countryOptions"
-      (ngModelChange)="onCountryChange()"
-    />
-  </label>
-  @if (currentCountry(); as c) {
-    <span class="currency-chip">Moneda: {{ c.currencySymbol }} ({{ c.currencyCode }})</span>
-  }
-  <span class="spacer"></span>
-  <button class="btn-ghost" (click)="openCountryModal()">+ Nuevo país</button>
-</section>
-
-@if (isLoading()) {
-  <app-skeleton variant="modal" [rows]="5" />
-} @else {
-  <section class="card">
-    <div class="card-header">
-      <h2>Zonas de {{ currentCountry()?.name ?? 'este país' }}</h2>
-      <div class="header-actions">
-        <button class="btn-ghost" (click)="openNewDeptModal()" [disabled]="zones().length === 0">
-          + Departamento
-        </button>
-        <button class="btn-primary" (click)="openNewZoneModal()">+ Nueva zona</button>
-      </div>
+<!-- ============ TAB: ZONAS ============ -->
+@if (activeTab() === 'zonas') {
+  <!-- 1 · País -->
+  <section class="card country-card">
+    <div class="country-row">
+      <span class="row-lead">País</span>
+      <app-select
+        class="country-select"
+        [(ngModel)]="countryId"
+        name="countryId"
+        [options]="countryOptions"
+        (ngModelChange)="onCountryChange()"
+      />
+      @if (currentCountry(); as c) {
+        <span class="currency-chip">Moneda&nbsp;<strong>{{ c.currencySymbol }}</strong> ({{ c.currencyCode }})</span>
+      }
+      <span class="spacer"></span>
+      <button class="btn-ghost" (click)="openCountryModal()">+ Nuevo país</button>
     </div>
+  </section>
 
-    @if (zones().length === 0) {
-      <p class="empty">
-        Este país todavía no tiene zonas. Creá una zona (ej. "Central") y después agregale
-        departamentos.
-      </p>
-    }
-
-    @for (zone of zones(); track zone.id) {
-      <div class="zone-card">
-        <div class="zone-head">
-          <div class="zone-title">
-            <app-icon name="map-pin" />
-            <strong>{{ zone.name }}</strong>
-            <span class="count">{{ zone.departments.length }} depto(s)</span>
-            @if (!zone.settings || zone.settings.baseFare === 0) {
-              <span class="warn-pill">sin tarifa</span>
-            }
-          </div>
-          <div class="row-actions">
-            <button class="icon-btn" (click)="openEditZoneModal(zone)" aria-label="Editar zona">
-              <app-icon name="edit" />
-            </button>
-            <button class="icon-btn danger" (click)="deleteZone(zone)" aria-label="Borrar zona">
-              <app-icon name="trash" />
-            </button>
-          </div>
+  @if (isLoading()) {
+    <app-skeleton variant="modal" [rows]="6" />
+  } @else {
+    <!-- 2 · Zonas del país -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2>Zonas de {{ currentCountry()?.name ?? 'este país' }}</h2>
+          <p class="muted small">
+            {{ zones().length }} zona(s). Cada zona agrupa departamentos y tiene su propia tarifa.
+          </p>
         </div>
-
-        <div class="chips">
-          @for (d of zone.departments; track d.id) {
-            <button class="chip" (click)="openEditDeptModal(d, zone.id)" title="Editar / mover de zona">
-              {{ d.name }}
-            </button>
-          }
-          <button class="chip chip-add" (click)="openNewDeptModal(zone.id)">+ departamento</button>
+        <div class="header-actions">
+          <button class="btn-ghost" (click)="openNewDeptModal()" [disabled]="zones().length === 0">
+            + Departamento
+          </button>
+          <button class="btn-primary" (click)="openNewZoneModal()">+ Nueva zona</button>
         </div>
+      </div>
 
-        <button class="tariff-toggle" (click)="toggleExpanded(zone.id)">
-          <app-icon name="chevron-down" [class.open]="isExpanded(zone.id)" />
-          {{ isExpanded(zone.id) ? 'Ocultar tarifa' : 'Editar tarifa de envío' }}
-          @if (zone.settings?.updatedAt) {
-            <span class="muted small">· actualizada {{ zone.settings!.updatedAt | date: 'short' }}</span>
-          }
-        </button>
+      @if (zones().length === 0) {
+        <p class="empty">
+          Este país todavía no tiene zonas. Creá una zona (ej. «Central») y después agregale
+          departamentos.
+        </p>
+      }
 
-        @if (isExpanded(zone.id) && forms()[zone.id]; as f) {
-          <div class="tariff-body">
-            <div class="fields">
-              <label>
-                Gasolina (ref.)
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input type="number" min="0" step="0.01" [(ngModel)]="f.fuelPrice" [name]="'fuel-' + zone.id" />
-                </div>
-              </label>
-              <label>
-                Tarifa base
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input
-                    type="number" min="0" step="0.01"
-                    [(ngModel)]="f.baseFare" [name]="'base-' + zone.id"
-                    (ngModelChange)="recalc(zone.id)"
-                  />
-                </div>
-              </label>
-              <label>
-                Costo por km
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input
-                    type="number" min="0" step="0.01"
-                    [(ngModel)]="f.pricePerKm" [name]="'perkm-' + zone.id"
-                    (ngModelChange)="recalc(zone.id)"
-                  />
-                </div>
-              </label>
-              <label>
-                Envío mínimo
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input
-                    type="number" min="0" step="0.01"
-                    [(ngModel)]="f.minFee" [name]="'min-' + zone.id"
-                    (ngModelChange)="recalc(zone.id)"
-                  />
-                </div>
-              </label>
-              <label>
-                Plataforma retiene
-                <div class="input-money suffix">
-                  <input
-                    type="number" min="0" max="100" step="0.01"
-                    [(ngModel)]="f.driverCommissionPct" [name]="'pct-' + zone.id"
-                    (ngModelChange)="recalc(zone.id)"
-                  />
-                  <span>%</span>
-                </div>
-              </label>
+      @for (zone of zones(); track zone.id) {
+        <article class="zone-card" [class.needs-tariff]="isUnconfigured(zone)">
+          <header class="zone-head">
+            <div class="zone-title">
+              <app-icon name="map-pin" />
+              <strong>{{ zone.name }}</strong>
+              <span class="count">{{ zone.departments.length }} departamento(s)</span>
             </div>
-
-            <div class="preview">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Distancia</th>
-                    <th>Cliente paga</th>
-                    <th>Repartidor gana</th>
-                    <th>Plataforma</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of livePreview()[zone.id]; track row.distanceKm) {
-                    <tr>
-                      <td>{{ row.distanceKm }} km</td>
-                      <td>{{ currencySymbol() }}{{ row.customerFee.toFixed(2) }}</td>
-                      <td class="earn">{{ currencySymbol() }}{{ row.driverEarning.toFixed(2) }}</td>
-                      <td>{{ currencySymbol() }}{{ row.platformCut.toFixed(2) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <div class="tariff-actions">
-              <button class="btn-primary" [disabled]="savingZoneId() === zone.id" (click)="save(zone)">
-                {{ savingZoneId() === zone.id ? 'Guardando…' : 'Guardar tarifa' }}
+            <div class="row-actions">
+              <button class="icon-btn" (click)="openEditZoneModal(zone)" aria-label="Editar nombre de la zona">
+                <app-icon name="edit" />
+              </button>
+              <button class="icon-btn danger" (click)="deleteZone(zone)" aria-label="Archivar zona">
+                <app-icon name="trash" />
               </button>
             </div>
+          </header>
+
+          <!-- resumen de tarifa + acción -->
+          <div class="tariff-row">
+            <div class="tariff-summary">
+              @if (isUnconfigured(zone)) {
+                <span class="warn-pill">Falta configurar la tarifa</span>
+              } @else {
+                <span class="tag">Base {{ currencySymbol() }}{{ zone.settings!.baseFare.toFixed(2) }}</span>
+                <span class="tag">{{ currencySymbol() }}{{ zone.settings!.pricePerKm.toFixed(2) }}/km</span>
+                <span class="tag">Mín {{ currencySymbol() }}{{ zone.settings!.minFee.toFixed(2) }}</span>
+                <span class="tag tag-accent">Plataforma {{ zone.settings!.driverCommissionPct.toFixed(0) }}%</span>
+                <span class="tag tag-muted">Gasolina {{ currencySymbol() }}{{ zone.settings!.fuelPrice.toFixed(2) }}</span>
+              }
+            </div>
+            <button class="btn-ghost btn-sm" (click)="openTariffModal(zone)">Editar tarifa</button>
           </div>
-        }
-      </div>
-    }
+
+          <!-- departamentos -->
+          <div class="dept-block">
+            <span class="block-label">Departamentos</span>
+            <div class="chips">
+              @for (d of zone.departments; track d.id) {
+                <button class="chip" (click)="openEditDeptModal(d, zone.id)" title="Editar o mover de zona">
+                  {{ d.name }}
+                </button>
+              }
+              <button class="chip chip-add" (click)="openNewDeptModal(zone.id)">+ agregar</button>
+            </div>
+          </div>
+        </article>
+      }
+    </section>
+  }
+}
+
+<!-- ============ TAB: CÓMO SE CALCULA ============ -->
+@if (activeTab() === 'formula') {
+  <section class="card intro">
+    <h2>Cómo se calcula el envío</h2>
+    <div class="formula-grid">
+      <div><span class="k">Cliente paga</span><span class="v">máx(mínimo, base + $/km × distancia)</span></div>
+      <div><span class="k">Plataforma retiene</span><span class="v">% del envío</span></div>
+      <div><span class="k">Repartidor gana</span><span class="v">envío − lo que retiene la plataforma</span></div>
+    </div>
+    <ul class="muted formula-notes">
+      <li>La <strong>distancia</strong> es en línea recta (Haversine) entre la sucursal y la dirección de entrega.</li>
+      <li>El <strong>precio de la gasolina</strong> es solo un dato de referencia visible: no entra en la fórmula, ajustá la base y el $/km a mano.</li>
+      <li>Si la distancia todavía no se conoce (el cliente no compartió ubicación), se cobra solo la <strong>tarifa base</strong> como estimado.</li>
+      <li>El <strong>mínimo</strong> es el piso del envío: nunca baja de ese valor.</li>
+    </ul>
   </section>
+}
+
+<!-- ============ MODALES ============ -->
+
+<!-- Modal: editar tarifa de la zona -->
+@if (tariffModalZone(); as zone) {
+  @if (forms()[zone.id]; as f) {
+    <div class="modal-backdrop">
+      <div class="modal modal-wide">
+        <div class="modal-header">
+          <h2>Tarifa de envío — {{ zone.name }}</h2>
+          <button class="modal-close" (click)="closeTariffModal()" aria-label="Cerrar">
+            <app-icon name="close" />
+          </button>
+        </div>
+
+        <div class="modal-body tariff-modal">
+          <!-- Grupo 1: lo que paga el cliente -->
+          <div class="group">
+            <div class="group-head">
+              <span class="group-title">Lo que paga el cliente</span>
+              <span class="group-hint">Cliente paga = máx(mínimo, base + $/km × distancia)</span>
+            </div>
+            <div class="group-fields cols-3">
+              <label>
+                <span class="field-label">Tarifa base</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.baseFare" name="tBase" (ngModelChange)="recalc(zone.id)" />
+                </div>
+                <span class="field-hint">Fijo, antes de sumar distancia</span>
+              </label>
+              <label>
+                <span class="field-label">Costo por km</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.pricePerKm" name="tPerKm" (ngModelChange)="recalc(zone.id)" />
+                </div>
+                <span class="field-hint">Por cada km sucursal → cliente</span>
+              </label>
+              <label>
+                <span class="field-label">Envío mínimo</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.minFee" name="tMin" (ngModelChange)="recalc(zone.id)" />
+                </div>
+                <span class="field-hint">El cobro nunca baja de aquí</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Grupo 2: reparto -->
+          <div class="group">
+            <div class="group-head">
+              <span class="group-title">Reparto del envío</span>
+            </div>
+            <div class="group-fields cols-2">
+              <label>
+                <span class="field-label">Comisión de la plataforma</span>
+                <div class="input-money suffix">
+                  <input type="number" inputmode="decimal" min="0" max="100" step="0.01" [(ngModel)]="f.driverCommissionPct" name="tPct" (ngModelChange)="recalc(zone.id)" />
+                  <span>%</span>
+                </div>
+                <span class="field-hint">El repartidor recibe el resto del envío</span>
+              </label>
+              <label>
+                <span class="field-label">Precio de la gasolina</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.fuelPrice" name="tFuel" />
+                </div>
+                <span class="field-hint">Solo referencia — no entra en el cálculo</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Vista previa -->
+          <div class="group preview-group">
+            <div class="group-head">
+              <span class="group-title">Ejemplos según la distancia</span>
+            </div>
+            <div class="preview-cards">
+              @for (row of livePreview()[zone.id]; track row.distanceKm) {
+                <div class="preview-card">
+                  <span class="pc-dist">{{ row.distanceKm }} km</span>
+                  <div class="pc-line"><span>Cliente paga</span><strong>{{ currencySymbol() }}{{ row.customerFee.toFixed(2) }}</strong></div>
+                  <div class="pc-line earn"><span>Repartidor gana</span><strong>{{ currencySymbol() }}{{ row.driverEarning.toFixed(2) }}</strong></div>
+                  <div class="pc-line muted"><span>Plataforma</span><strong>{{ currencySymbol() }}{{ row.platformCut.toFixed(2) }}</strong></div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-text" (click)="closeTariffModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="savingZoneId() === zone.id" (click)="save(zone)">
+            {{ savingZoneId() === zone.id ? 'Guardando…' : 'Guardar tarifa' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 }
 
 <!-- Modal: nuevo país -->
@@ -265,7 +316,7 @@
       <div class="modal-actions">
         @if (deptForm.id) {
           <button class="btn-text danger" (click)="deleteDept({ id: deptForm.id, name: deptForm.name }); deptModalOpen.set(false)">
-            Borrar
+            Archivar
           </button>
         }
         <span class="spacer"></span>

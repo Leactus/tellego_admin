@@ -320,7 +320,7 @@
           Cuota mensual (USD)
           <input type="number" min="0" step="0.01" [(ngModel)]="billingForm.monthlyFee" name="monthlyFee" />
         </label>
-      } @else {
+      } @else if (billingForm.billingType === 'commission') {
         <label>
           Comisión (%)
           <input type="number" min="0" max="100" step="0.01" [(ngModel)]="billingForm.commissionRate" name="commissionRate" />
@@ -372,22 +372,22 @@
         </label>
       }
 
-      <label class="checkbox-row">
-        <input type="checkbox" [(ngModel)]="useCustomCutoff" name="useCustomCutoff" />
-        Usar un corte de comisión propio para este negocio (si no, usa el general de Configuraciones)
-      </label>
-      @if (useCustomCutoff) {
-        <label>
-          Día de corte
-          <app-select [(ngModel)]="billingForm.salesCutoffDow" name="salesCutoffDow" [options]="cutoffDowOptions" />
-        </label>
-        <label>
-          Hora de corte
-          <app-select [(ngModel)]="billingForm.salesCutoffHour" name="salesCutoffHour" [options]="cutoffHourOptions" />
-        </label>
-      }
-
       @if (billingForm.billingType === 'commission') {
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="useCustomCutoff" name="useCustomCutoff" />
+          Usar un corte de comisión propio para este negocio (si no, usa el general de Configuraciones)
+        </label>
+        @if (useCustomCutoff) {
+          <label>
+            Día de corte
+            <app-select [(ngModel)]="billingForm.salesCutoffDow" name="salesCutoffDow" [options]="cutoffDowOptions" />
+          </label>
+          <label>
+            Hora de corte
+            <app-select [(ngModel)]="billingForm.salesCutoffHour" name="salesCutoffHour" [options]="cutoffHourOptions" />
+          </label>
+        }
+
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="useCustomCommissionDue" name="useCustomCommissionDue" />
           Usar días de vencimiento propios para este negocio (si no, usa el general de Configuraciones)

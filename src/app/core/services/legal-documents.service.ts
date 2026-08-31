@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../config/environment';
-import { LegalAcceptanceSummary, LegalDocument, LegalDocumentType } from '../models/legal.model';
+import { LegalAcceptanceSummary, LegalAudience, LegalDocument, LegalDocumentType } from '../models/legal.model';
 
 /**
  * Documentos legales de la plataforma (términos y condiciones / privacidad),
@@ -15,7 +15,7 @@ export class LegalDocumentsService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/admin/legal-documents`;
 
-  /** Historial completo de versiones (ambos tipos), la más nueva primero por tipo. */
+  /** Historial completo de versiones (todos los públicos y tipos), la más nueva primero. */
   list(): Promise<LegalDocument[]> {
     return firstValueFrom(this.http.get<{ data: LegalDocument[] }>(this.base)).then((r) => r.data);
   }
@@ -26,8 +26,13 @@ export class LegalDocumentsService {
     ).then((r) => r.data);
   }
 
-  /** Publica una versión nueva del documento (queda como la vigente). */
-  publish(payload: { docType: LegalDocumentType; content: string; effectiveDate?: string }): Promise<LegalDocument> {
+  /** Publica una versión nueva del documento para un público (queda como la vigente). */
+  publish(payload: {
+    docType: LegalDocumentType;
+    audience: LegalAudience;
+    content: string;
+    effectiveDate?: string;
+  }): Promise<LegalDocument> {
     return firstValueFrom(this.http.post<{ data: LegalDocument }>(this.base, payload)).then((r) => r.data);
   }
 }
