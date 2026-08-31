@@ -169,7 +169,14 @@
           <div class="detail-section">
             <h3><app-icon name="chat" /> Chat cliente &harr; repartidor</h3>
 
-            @if (chatLoading()) {
+            @if (!chatRequested()) {
+              <p class="muted chat-cta-hint">
+                La conversación entre el cliente y el repartidor, para dar seguimiento a un reporte.
+              </p>
+              <button type="button" class="btn-secondary chat-cta-btn" (click)="openChat()">
+                <app-icon name="chat" /> Ver conversación
+              </button>
+            } @else if (chatLoading()) {
               <div class="chat-transcript chat-transcript--loading">
                 <span class="chat-sk chat-sk--in"></span>
                 <span class="chat-sk chat-sk--out"></span>

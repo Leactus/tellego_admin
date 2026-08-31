@@ -85,6 +85,8 @@ export class NegocioPedidos implements OnInit {
   readonly selectedOrder = signal<Order | null>(null);
 
   // --- Chat cliente ↔ repartidor del pedido abierto (solo lectura, para reportes) ---
+  /** Solo se carga cuando el admin toca "Ver conversación" — no al abrir el modal. */
+  readonly chatRequested = signal(false);
   readonly chat = signal<OrderChatTranscript | null>(null);
   readonly chatLoading = signal(false);
   /** true si el backend responde 503: el chat no está configurado en este entorno. */
@@ -183,29 +185,31 @@ export class NegocioPedidos implements OnInit {
 
   openDetail(order: Order): void {
     this.selectedOrder.set(order);
-    void this.loadChat(order);
   }
 
   closeDetail(): void {
     this.selectedOrder.set(null);
+    this.chatRequested.set(false);
     this.chat.set(null);
     this.chatLoading.set(false);
     this.chatUnavailable.set(false);
   }
 
+  /** El admin tocó "Ver conversación" — recién ahí se pide el chat al backend. */
+  openChat(): void {
+    const order = this.selectedOrder();
+    if (!order || this.chatRequested()) return;
+    this.chatRequested.set(true);
+    void this.loadChat(order);
+  }
+
   /**
-   * Trae la transcripción del chat del pedido. Solo tiene sentido en pedidos
-   * de entrega a domicilio (los de recoger no tienen repartidor). Si el
-   * backend responde 503, el chat no está configurado en este entorno.
+   * Trae la transcripción del chat del pedido. Si el backend responde 503, el
+   * chat no está configurado en este entorno.
    */
   private async loadChat(order: Order): Promise<void> {
     this.chat.set(null);
     this.chatUnavailable.set(false);
-
-    if (order.fulfillmentType !== 'delivery') {
-      return;
-    }
-
     this.chatLoading.set(true);
     try {
       const transcript = await this.ordersService.getOrderChat(order.id);

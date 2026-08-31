@@ -277,6 +277,22 @@
 
 /* --- Chat cliente ↔ repartidor (solo lectura) --- */
 
+.chat-cta-hint {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+
+.chat-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-cta-btn app-icon {
+  font-size: 0.95rem;
+}
+
+
 .chat-status {
   display: flex;
   align-items: center;
