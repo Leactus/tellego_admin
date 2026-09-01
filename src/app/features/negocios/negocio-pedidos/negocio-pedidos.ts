@@ -183,8 +183,34 @@ export class NegocioPedidos implements OnInit {
     return Number(value);
   }
 
+  readonly regeneratingCode = signal(false);
+
   openDetail(order: Order): void {
     this.selectedOrder.set(order);
+  }
+
+  /**
+   * Genera / regenera el código de retiro de un pedido con repartidor
+   * freelance (cuando por lo que sea no se creó al aceptar la oferta). El
+   * backend lo empuja en vivo a la sucursal y al repartidor.
+   */
+  async regeneratePickupCode(): Promise<void> {
+    const order = this.selectedOrder();
+    if (!order || this.regeneratingCode()) return;
+    this.regeneratingCode.set(true);
+    try {
+      const code = await this.ordersService.regeneratePickupCode(order.id);
+      // Refleja el código nuevo en el modal y en la fila de la lista.
+      const patch = (o: Order): Order => (o.id === order.id ? { ...o, pickupCode: code } : o);
+      this.selectedOrder.update((o) => (o ? patch(o) : o));
+      this.orders.update((list) => list.map(patch));
+      this.toast.success('Código de retiro generado — la sucursal y el repartidor ya lo ven');
+    } catch (err) {
+      const message = (err as { error?: { message?: string } })?.error?.message;
+      this.toast.error(message ?? 'No se pudo generar el código de retiro');
+    } finally {
+      this.regeneratingCode.set(false);
+    }
   }
 
   closeDetail(): void {

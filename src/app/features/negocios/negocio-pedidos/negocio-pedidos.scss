@@ -442,3 +442,22 @@
   font-weight: 700;
   color: var(--color-text);
 }
+
+.pickup-code {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0.3rem;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: center;
+  margin: 6px 0 10px;
+}
+
+.warn-text {
+  color: var(--color-warning, #b5560a);
+  font-weight: 600;
+  margin: 4px 0 10px;
+}

@@ -330,9 +330,21 @@ export class Pagos implements OnInit, OnDestroy {
 
     this.isSendingReminder.set(true);
     try {
-      await this.notificationsService.send({ title, body, type: 'pago', companyId: company.id });
+      const { sentTo, skipped } = await this.notificationsService.send({
+        title,
+        body,
+        type: 'pago',
+        companyId: company.id,
+      });
       this.closeReminderModal();
-      this.toast.success('Recordatorio enviado');
+      if (sentTo > 0) {
+        this.toast.success('Recordatorio enviado');
+      } else if (skipped?.sinVentas) {
+        // Un aviso de 'pago' nunca le llega a un negocio por comisión sin ventas sin cobrar — no debe nada.
+        this.toast.error('No se envió: este negocio es por comisión y no tiene comisión pendiente este período.');
+      } else {
+        this.toast.error('No se envió: el negocio ya está al día.');
+      }
     } catch {
       this.toast.error('No se pudo enviar el recordatorio');
     } finally {

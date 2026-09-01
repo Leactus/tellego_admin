@@ -152,6 +152,28 @@
           }
         </div>
 
+        @if (o.driver?.type === 'freelance') {
+          <div class="detail-section">
+            <h3><app-icon name="package" /> Código de retiro</h3>
+            <p class="muted">
+              La sucursal le pide este código al repartidor freelance antes de entregarle el pedido.
+              Lo ven la sucursal y el repartidor; si tocás «Regenerar» les llega el nuevo al instante.
+            </p>
+            @if (o.pickupCode) {
+              <div class="pickup-code">{{ o.pickupCode }}</div>
+            } @else {
+              <p class="warn-text">No se generó un código para este pedido.</p>
+            }
+            <button
+              class="btn-secondary"
+              [disabled]="regeneratingCode()"
+              (click)="regeneratePickupCode()"
+            >
+              {{ regeneratingCode() ? 'Generando…' : o.pickupCode ? 'Regenerar código' : 'Generar código' }}
+            </button>
+          </div>
+        }
+
         <div class="detail-section">
           <h3><app-icon name="clock" /> Línea de tiempo</h3>
           <ul class="timeline">

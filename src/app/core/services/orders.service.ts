@@ -38,6 +38,20 @@ export class OrdersService {
   }
 
   /**
+   * Genera (o regenera) el código de retiro de un pedido con repartidor
+   * freelance — para cuando no se creó solo al aceptar la oferta. El backend
+   * lo empuja en vivo a la sucursal y al repartidor (socket).
+   */
+  regeneratePickupCode(orderId: number): Promise<string> {
+    return firstValueFrom(
+      this.http.post<{ data: { orderId: number; pickupCode: string } }>(
+        `${this.base}/orders/${orderId}/pickup-code/regenerate`,
+        {},
+      ),
+    ).then((r) => r.data.pickupCode);
+  }
+
+  /**
    * Transcripción del chat cliente ↔ repartidor de un pedido, para dar
    * seguimiento a un reporte. Solo lectura y funciona aunque el chat ya esté
    * cerrado (el backend lo lee con el Admin SDK). Puede devolver 503 si el

@@ -8,6 +8,64 @@
   </button>
 </div>
 
+<!-- Programadas -->
+<section class="card">
+  <div class="card-head">
+    <h2>Programadas</h2>
+    @if (scheduled().length > 0) {
+      <button class="btn-secondary btn-sm" (click)="runDueNow()">Ejecutar pendientes ahora</button>
+    }
+  </div>
+
+  @if (isLoadingScheduled()) {
+    <app-skeleton variant="list" [rows]="2" />
+  } @else if (scheduled().length === 0) {
+    <p class="empty">No hay notificaciones programadas. Al crear una, elegí “Programar” en “¿Cuándo enviar?”.</p>
+  } @else {
+    <div class="list">
+      @for (s of scheduled(); track s.id) {
+        <div class="row" [class.row--paused]="!s.isActive">
+          <app-icon name="clock" class="row-icon" />
+          <div class="row-info">
+            <span class="row-title">
+              {{ s.title }}
+              <span class="pill pill-type">{{ typeLabels[s.type] }}</span>
+              @if (!s.isActive) {
+                <span class="pill pill-paused">Pausada</span>
+              }
+            </span>
+            <span class="muted">{{ s.body }}</span>
+            <span class="muted small">
+              {{ scheduleSummary(s) }} ·
+              {{ s.audience === 'all' ? 'Todos los negocios' : (s.companyIds?.length ?? 0) + ' negocio(s)' }}
+              @if (s.isActive) {
+                · Próximo: {{ formatNextRun(s.nextRunAt) }}
+              }
+              @if (s.runCount > 0) {
+                · Enviada {{ s.runCount }} vez(ces)
+              }
+            </span>
+          </div>
+          <div class="row-actions">
+            <button
+              class="icon-btn"
+              [disabled]="togglingScheduledId() === s.id"
+              (click)="toggleScheduledActive(s)"
+              [attr.aria-label]="s.isActive ? 'Pausar' : 'Reanudar'"
+              [title]="s.isActive ? 'Pausar' : 'Reanudar'"
+            >
+              <app-icon [name]="s.isActive ? 'x-circle' : 'check-circle'" />
+            </button>
+            <button class="icon-btn danger" (click)="deleteScheduled(s)" aria-label="Eliminar" title="Eliminar">
+              <app-icon name="trash" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
 <section class="card">
   <h2>Historial</h2>
 
@@ -131,20 +189,88 @@
             <span class="invalid-hint">Elegí al menos un negocio o marcá "Enviar a todos"</span>
           }
         }
-        @if (isBroadcastPagoFiltered) {
+        @if (isPagoFiltered) {
           <p class="muted hint">
             <app-icon name="info-circle" />
-            Se enviará solo a los negocios con pago vencido — quien ya pagó, pagó por adelantado o sigue en período
-            de cortesía no recibe este mensaje.
+            Un aviso de <strong>pago</strong> solo le llega a quien de verdad debe: el que ya pagó, el que todavía
+            no factura, o el que es por comisión y no tiene ventas sin cobrar, queda fuera — aunque lo elijas a
+            mano.
           </p>
         }
+
+        <!-- ¿Cuándo enviar? -->
+        <fieldset class="when-block">
+          <legend>¿Cuándo enviar?</legend>
+          <div class="segmented">
+            <label [class.active]="form.when === 'now'">
+              <input type="radio" name="when" value="now" [(ngModel)]="form.when" />
+              Ahora
+            </label>
+            <label [class.active]="form.when === 'schedule'">
+              <input type="radio" name="when" value="schedule" [(ngModel)]="form.when" />
+              Programar
+            </label>
+          </div>
+
+          @if (form.when === 'schedule') {
+            <div class="form-row">
+              <label>
+                Frecuencia
+                <app-select [(ngModel)]="form.frequency" name="frequency" [options]="frequencyOptions" />
+              </label>
+              <label>
+                Hora
+                <input type="time" [(ngModel)]="form.timeOfDay" name="timeOfDay" [class.invalid]="isTimeInvalid()" />
+              </label>
+            </div>
+
+            @if (form.frequency === 'once') {
+              <label>
+                Fecha
+                <input type="date" [(ngModel)]="form.runDate" name="runDate" [class.invalid]="isRunDateInvalid()" />
+              </label>
+              @if (isRunDateInvalid()) {
+                <span class="invalid-hint">Elegí la fecha</span>
+              }
+            }
+
+            @if (form.frequency === 'weekly') {
+              <div class="weekday-picker">
+                @for (label of weekdayLabels; track $index) {
+                  <button
+                    type="button"
+                    class="weekday"
+                    [class.active]="form.daysOfWeek.includes($index)"
+                    [class.invalid]="isDaysInvalid()"
+                    (click)="toggleWeekday($index)"
+                  >
+                    {{ label }}
+                  </button>
+                }
+              </div>
+              @if (isDaysInvalid()) {
+                <span class="invalid-hint">Elegí al menos un día</span>
+              }
+            }
+
+            <p class="muted hint">
+              <app-icon name="info-circle" />
+              Hora de El Salvador. Las de tipo “pago” se filtran igual en cada envío: si el negocio ya pagó o no
+              tiene comisión pendiente, ese día no le llega nada.
+            </p>
+          }
+        </fieldset>
       </div>
 
       <div class="modal-actions">
         <button class="btn-text" (click)="closeComposeModal()">Cancelar</button>
         <button class="btn-primary" [disabled]="isSending() || !form.title || !form.body" (click)="send()">
           <app-icon name="send" />
-          {{ isSending() ? 'Enviando…' : 'Enviar notificación' }}
+          {{
+            isSending()
+              ? (form.when === 'schedule' ? 'Programando…' : 'Enviando…')
+              : (form.when === 'schedule' ? 'Programar notificación' : 'Enviar notificación')
+          }}
         </button>
       </div>
     </div>
