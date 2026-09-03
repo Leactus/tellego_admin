@@ -42,6 +42,8 @@ export interface Product {
   salePrice: string | null;
   imageUrl: string | null;
   isAvailable: boolean;
+  /** true = solo para mayores de edad (cerveza, licores...). */
+  isAgeRestricted: boolean;
   category?: { id: number; name: string };
   optionGroups: OptionGroup[];
   storeProducts: StoreProductInfo[];

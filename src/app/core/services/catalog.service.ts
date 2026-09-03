@@ -12,6 +12,7 @@ interface ProductInput {
   salePrice?: number | null;
   categoryId?: number | null;
   isAvailable?: boolean;
+  isAgeRestricted?: boolean;
   storeId?: number;
 }
 

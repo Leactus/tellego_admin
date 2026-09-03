@@ -83,7 +83,10 @@
               </span>
             </button>
             <div class="row-info">
-              <span class="row-title">{{ product.name }}</span>
+              <span class="row-title">
+                {{ product.name }}
+                @if (product.isAgeRestricted) { <span class="age-badge">+18</span> }
+              </span>
               <span class="muted">
                 ${{ product.price }}
                 @if (product.salePrice) {
@@ -232,6 +235,10 @@
             <input type="number" min="0" step="0.01" [(ngModel)]="productForm.salePrice" name="salePrice" />
           </label>
         }
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="productForm.isAgeRestricted" name="isAgeRestricted" />
+          Solo para mayores de edad (cerveza, licores…)
+        </label>
         @if (!editingProduct) {
           <label>
             Sucursal donde se activa primero

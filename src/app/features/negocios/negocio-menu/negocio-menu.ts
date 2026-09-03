@@ -80,6 +80,7 @@ export class NegocioMenu implements OnInit {
     hasSale: false,
     salePrice: 0,
     categoryId: null as number | null,
+    isAgeRestricted: false,
     storeId: null as number | null,
   };
   selectedImageFile: File | null = null;
@@ -230,6 +231,7 @@ export class NegocioMenu implements OnInit {
       hasSale: false,
       salePrice: 0,
       categoryId: null,
+      isAgeRestricted: false,
       storeId: this.branches()[0]?.id ?? null,
     };
     this.selectedImageFile = null;
@@ -247,6 +249,7 @@ export class NegocioMenu implements OnInit {
       hasSale: product.salePrice != null,
       salePrice: product.salePrice != null ? Number(product.salePrice) : 0,
       categoryId: product.categoryId,
+      isAgeRestricted: product.isAgeRestricted ?? false,
       storeId: null,
     };
     this.selectedImageFile = null;
@@ -289,6 +292,7 @@ export class NegocioMenu implements OnInit {
           price: this.productForm.price,
           salePrice: this.productForm.hasSale ? this.productForm.salePrice : null,
           categoryId: this.productForm.categoryId,
+          isAgeRestricted: this.productForm.isAgeRestricted,
         });
         productId = updated.id;
       } else {
@@ -298,6 +302,7 @@ export class NegocioMenu implements OnInit {
           price: this.productForm.price,
           salePrice: this.productForm.hasSale ? this.productForm.salePrice : null,
           categoryId: this.productForm.categoryId,
+          isAgeRestricted: this.productForm.isAgeRestricted,
           storeId: this.productForm.storeId!,
         });
         productId = created.id;

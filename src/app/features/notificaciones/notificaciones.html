@@ -161,12 +161,10 @@
         @if (isBodyInvalid()) {
           <span class="invalid-hint">El mensaje es obligatorio</span>
         }
-        <div class="form-row">
-          <label>
-            Tipo
-            <app-select [(ngModel)]="form.type" name="type" [options]="typeOptions" />
-          </label>
-        </div>
+        <label>
+          Tipo
+          <app-select [(ngModel)]="form.type" name="type" [options]="typeOptions" />
+        </label>
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="form.sendToAll" name="sendToAll" />
           Enviar a todos los negocios

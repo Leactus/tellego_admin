@@ -333,3 +333,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+.age-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-danger, #c0392b) 15%, transparent);
+  color: var(--color-danger, #c0392b);
+  vertical-align: middle;
+}

@@ -59,7 +59,7 @@ export interface Order {
   deliveryFee: string;
   discount: string;
   total: string;
-  /** Código de retiro de 6 dígitos — se genera cuando un repartidor FREELANCE acepta la oferta. null = repartidor propio o sin repartidor / no se generó. El super-admin lo puede regenerar. */
+  /** Código de retiro de 4 dígitos — se genera cuando un repartidor FREELANCE acepta la oferta. null = repartidor propio o sin repartidor / no se generó. El super-admin lo puede regenerar. */
   pickupCode: string | null;
   paymentMethod: 'cash' | 'transfer' | 'card';
   paymentStatus: OrderPaymentStatus;

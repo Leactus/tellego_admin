@@ -97,6 +97,7 @@
 .modal input[type='password'],
 .modal input[type='tel'],
 .modal input[type='date'],
+.modal input[type='time'],
 .modal textarea {
   padding: 11px 13px;
   border: 1px solid var(--color-border);
@@ -117,7 +118,8 @@
 /* type="date" trae su propio look nativo del navegador (borde/relleno propio) que se monta
    encima del border de arriba — se ve como "2 tonos" en vez de un solo borde continuo.
    appearance:none lo apaga y deja el border de arriba como el único visible. */
-.modal input[type='date'] {
+.modal input[type='date'],
+.modal input[type='time'] {
   appearance: none;
   -webkit-appearance: none;
 }
