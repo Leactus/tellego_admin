@@ -80,6 +80,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/configuraciones/tipo-pago/tipo-pago').then((m) => m.TipoPago),
       },
       {
+        path: 'configuraciones/documentos-repartidor',
+        loadComponent: () =>
+          import('./features/configuraciones/documentos-repartidor/documentos-repartidor').then(
+            (m) => m.DocumentosRepartidor,
+          ),
+      },
+      {
         path: 'configuraciones/zonas-envio',
         loadComponent: () =>
           import('./features/configuraciones/zonas-envio/zonas-envio').then((m) => m.ZonasEnvio),

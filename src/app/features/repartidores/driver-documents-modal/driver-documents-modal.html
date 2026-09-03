@@ -1,0 +1,138 @@
+<div class="modal-backdrop" (click)="close.emit()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        Documentos {{ driverName ? 'de ' + driverName : '' }}
+        @if (state()?.countryName) { <span class="country-tag">{{ state()!.countryName }}</span> }
+      </h2>
+      <button class="modal-close" (click)="close.emit()" aria-label="Cerrar">
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <div class="modal-body">
+      @if (isLoading()) {
+        <app-skeleton variant="card" [rows]="3" />
+      } @else if (state(); as data) {
+        <!-- Capital -->
+        <div class="block">
+          <div class="block-head">
+            <h3>Capital de trabajo</h3>
+            @if (data.capital.capitalOk) {
+              <span class="chip chip-ok"><app-icon name="check-circle" /> Confirmado</span>
+            } @else {
+              <span class="chip chip-pending">Sin confirmar</span>
+            }
+          </div>
+          <p class="muted">
+            Mínimo exigido:
+            <strong>{{ data.capital.currencySymbol }}{{ data.capital.minCapital.toFixed(2) }}</strong>.
+            @if (data.capital.capitalOk) {
+              El repartidor confirmó contar con
+              {{ data.capital.currencySymbol
+              }}{{ (data.capital.capitalConfirmedAmount ?? data.capital.minCapital).toFixed(2) }}
+              @if (data.capital.capitalConfirmedAt) {
+                el {{ data.capital.capitalConfirmedAt | date: 'short' }}
+              }.
+            } @else {
+              El repartidor todavía no lo confirma en su app.
+            }
+          </p>
+        </div>
+
+        <!-- Documentos -->
+        @for (type of data.documentTypes; track type.id) {
+          <div class="block">
+            <div class="block-head">
+              <h3>
+                {{ type.label }}
+                @if (!type.isRequired) { <span class="tag">Opcional</span> }
+              </h3>
+              @if (type.complete) {
+                <span class="chip chip-ok"><app-icon name="check-circle" /> Aprobado</span>
+              }
+            </div>
+            @if (type.description) { <p class="muted small">{{ type.description }}</p> }
+
+            <div class="slots">
+              @for (slot of type.slots; track slot.side) {
+                <div class="slot">
+                  <div class="slot-title">{{ slotLabel(type, slot) }}</div>
+
+                  @if (slot.document; as doc) {
+                    <div class="preview">
+                      @if (doc.isPdf) {
+                        <a class="pdf" [href]="doc.url" target="_blank" rel="noopener">
+                          <app-icon name="receipt" /> Abrir PDF
+                        </a>
+                      } @else if (doc.url) {
+                        <a [href]="doc.url" target="_blank" rel="noopener">
+                          <img [src]="doc.url" alt="" />
+                        </a>
+                      } @else {
+                        <span class="muted small">Sin vista previa</span>
+                      }
+                    </div>
+
+                    @if (fieldEntries(type, doc).length) {
+                      <dl class="field-values">
+                        @for (fv of fieldEntries(type, doc); track fv.label) {
+                          <div><dt>{{ fv.label }}</dt><dd>{{ fv.value }}</dd></div>
+                        }
+                      </dl>
+                    }
+
+                    <div class="slot-status">
+                      @switch (doc.status) {
+                        @case ('approved') { <span class="chip chip-ok">Aprobado</span> }
+                        @case ('rejected') {
+                          <span class="chip chip-bad">Rechazado</span>
+                          @if (doc.reviewReason) { <span class="reason">Motivo: {{ doc.reviewReason }}</span> }
+                        }
+                        @default { <span class="chip chip-pending">En revisión</span> }
+                      }
+                    </div>
+
+                    <div class="slot-actions">
+                      <button
+                        class="btn-approve"
+                        [disabled]="busyDocIds().has(doc.id) || doc.status === 'approved'"
+                        (click)="review(doc, 'approved')"
+                      >
+                        <app-icon name="check" /> Aprobar
+                      </button>
+                      <button
+                        class="btn-reject"
+                        [disabled]="busyDocIds().has(doc.id) || doc.status === 'rejected'"
+                        (click)="review(doc, 'rejected')"
+                      >
+                        <app-icon name="x-circle" /> Rechazar
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="chip chip-pending">Sin subir</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      } @else {
+        <p class="muted">No se pudo cargar la información.</p>
+      }
+    </div>
+
+    @if (state(); as data) {
+      <div class="modal-actions">
+        <button class="btn-text" (click)="approveDriver(true)">Forzar aprobación</button>
+        <button
+          class="btn-primary"
+          [disabled]="isApproving() || !data.readyForApproval"
+          (click)="approveDriver(false)"
+        >
+          {{ isApproving() ? 'Aprobando…' : 'Aprobar repartidor' }}
+        </button>
+      </div>
+    }
+  </div>
+</div>

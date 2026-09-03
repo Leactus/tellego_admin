@@ -1,0 +1,203 @@
+<h1>Documentos de repartidor</h1>
+<p class="muted">
+  Cada país tiene su propio reglamento: su lista de documentos y su capital mínimo. Un documento
+  <strong>global</strong> se pide en todos los países. Un repartidor que se registra por la app queda
+  <strong>pendiente</strong> hasta que confirma su capital, sube estos documentos y el equipo los
+  aprueba desde <strong>Repartidores</strong>.
+</p>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="4" />
+} @else {
+  <section class="card">
+    <label class="scope-picker">
+      País / alcance
+      <app-select [(ngModel)]="scope" name="scope" [options]="scopeOptions" (ngModelChange)="onScopeChange()" />
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>Capital mínimo</h2>
+    <p class="muted">
+      Monto que el repartidor debe <strong>confirmar que posee</strong> (capital propio para dar cambio y
+      cubrir imprevistos). No se maneja dinero en la plataforma: es una declaración que el equipo verifica
+      al aprobarlo.
+    </p>
+
+    @if (scope !== 'global') {
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="useGlobalCapital" name="useGlobal" />
+        Usar el monto global ({{ '$' + globalMinCapital.toFixed(2) }})
+      </label>
+    }
+
+    <div class="capital-row">
+      <label>
+        Capital mínimo ({{ currencySymbol }})
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="capitalInput"
+          name="capitalInput"
+          [disabled]="scope !== 'global' && useGlobalCapital"
+        />
+      </label>
+      <button class="btn-primary" [disabled]="isSavingCapital()" (click)="saveCapital()">
+        {{ isSavingCapital() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Documentos requeridos</h2>
+      <button class="btn-primary" (click)="openNew()">+ Agregar documento</button>
+    </div>
+
+    @if (types().length === 0) {
+      <p class="empty">Todavía no hay documentos configurados para este alcance.</p>
+    } @else {
+      <div class="list">
+        @for (type of types(); track type.id) {
+          <div class="row" [class.inactive]="!type.isActive">
+            <div class="row-main">
+              <span class="row-title">{{ type.label }}</span>
+              <div class="tags">
+                <span class="pill" [class.pill-global]="type.countryId == null">{{ scopeLabel(type) }}</span>
+                <span class="pill">{{ acceptsLabel(type.accepts) }}</span>
+                @if (type.twoSided) { <span class="pill">Frente y reverso</span> }
+                @if (type.fields && type.fields.length) {
+                  <span class="pill">{{ type.fields.length }} campo(s)</span>
+                }
+                @if (type.isRequired) {
+                  <span class="pill pill-req">Obligatorio</span>
+                } @else {
+                  <span class="pill">Opcional</span>
+                }
+                @if (!type.isActive) { <span class="pill pill-off">Inactivo</span> }
+              </div>
+              @if (type.description) {
+                <p class="row-desc muted">{{ type.description }}</p>
+              }
+            </div>
+            <div class="row-actions">
+              <button class="icon-btn" (click)="openEdit(type)" aria-label="Editar">
+                <app-icon name="edit" />
+              </button>
+              <button class="icon-btn danger" (click)="remove(type)" aria-label="Quitar">
+                <app-icon name="trash" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
+
+@if (modalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editing ? 'Editar documento' : 'Agregar documento' }}</h2>
+        <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (!editing) {
+          <p class="muted small">Se agregará a: <strong>{{ scopeName }}</strong></p>
+        }
+
+        <label>
+          Nombre
+          <input
+            type="text"
+            [(ngModel)]="form.label"
+            name="label"
+            placeholder="Ej. DUI"
+            [class.invalid]="isLabelInvalid()"
+          />
+        </label>
+        @if (isLabelInvalid()) {
+          <span class="invalid-hint">El nombre es obligatorio</span>
+        }
+
+        <label>
+          Instrucción para el repartidor (opcional)
+          <textarea
+            [(ngModel)]="form.description"
+            name="description"
+            rows="2"
+            placeholder="Ej. Foto legible del documento por ambos lados."
+          ></textarea>
+        </label>
+
+        <label>
+          Formato aceptado
+          <app-select [(ngModel)]="form.accepts" name="accepts" [options]="acceptsOptions" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.twoSided" name="twoSided" />
+          Pedir frente y reverso (dos fotos)
+        </label>
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.isRequired" name="isRequired" />
+          Obligatorio para aprobar al repartidor
+        </label>
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" />
+          Activo (se le pide a los repartidores nuevos)
+        </label>
+
+        <div class="fields-block">
+          <div class="fields-head">
+            <strong>Campos adicionales</strong>
+            <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
+          </div>
+          <p class="muted small">
+            Datos que el repartidor escribe al subir el documento (nº de documento, fecha de vencimiento…).
+          </p>
+
+          @for (f of fields; track $index) {
+            <div class="field-row">
+              <input type="text" [(ngModel)]="f.label" [name]="'fl' + $index" placeholder="Nombre del campo" />
+              <app-select [(ngModel)]="f.type" [name]="'ft' + $index" [options]="fieldTypeOptions" />
+              <label class="check compact">
+                <input type="checkbox" [(ngModel)]="f.required" [name]="'fr' + $index" />
+                Obligatorio
+              </label>
+              <button type="button" class="icon-btn danger" (click)="removeField($index)" aria-label="Quitar campo">
+                <app-icon name="trash" />
+              </button>
+              @if (f.type === 'select') {
+                <input
+                  class="field-options"
+                  type="text"
+                  [(ngModel)]="f.optionsText"
+                  [name]="'fo' + $index"
+                  placeholder="Opciones separadas por coma (ej. A, B, C)"
+                />
+              }
+            </div>
+          }
+        </div>
+
+        <label>
+          Orden
+          <input type="number" min="0" step="1" [(ngModel)]="form.sortOrder" name="sortOrder" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="isSaving() || !form.label.trim()" (click)="save()">
+          {{ isSaving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -57,6 +57,7 @@
           <span class="row-title">{{ driver.User?.name || 'Repartidor #' + driver.id }}</span>
           <span class="muted">
             {{ driver.User?.phone || 'Sin teléfono' }} · {{ driver.vehicleType || 'Vehículo no especificado' }}
+            @if (driver.country?.name) { · {{ driver.country?.name }} }
             @if (driver.ratingCount > 0) {
               · {{ driver.ratingAvg }}★ ({{ driver.ratingCount }})
             }
@@ -82,8 +83,13 @@
           <button class="icon-btn" (click)="openEditModal(driver)" aria-label="Editar">
             <app-icon name="edit" />
           </button>
-          @if (driver.status !== 'active') {
-            <button class="icon-btn" (click)="approve(driver)" aria-label="Aprobar">
+          @if (driver.status === 'pending_approval') {
+            <button class="icon-btn" (click)="openDocs(driver)" aria-label="Revisar documentos">
+              <app-icon name="receipt" />
+            </button>
+          }
+          @if (driver.status === 'suspended') {
+            <button class="icon-btn" (click)="approve(driver)" aria-label="Reactivar">
               <app-icon name="check-circle" />
             </button>
           }
@@ -170,6 +176,13 @@
             placeholder="Ej. 04521987-1"
           />
         </label>
+        @if (countries().length > 0) {
+          <label>
+            País
+            <app-select [(ngModel)]="form.countryId" name="driverCountry" [options]="countryOptions" />
+          </label>
+          <p class="hint muted">Define qué documentos y qué capital mínimo se le piden en su onboarding.</p>
+        }
       </div>
 
       <div class="modal-actions">
@@ -219,4 +232,13 @@
 
 @if (ratingsDriverId(); as id) {
   <app-driver-ratings-modal [driverId]="id" [driverName]="ratingsDriverName()" (close)="closeRatings()" />
+}
+
+@if (docsDriverId(); as id) {
+  <app-driver-documents-modal
+    [driverId]="id"
+    [driverName]="docsDriverName()"
+    (close)="closeDocs()"
+    (approved)="onDriverApproved()"
+  />
 }

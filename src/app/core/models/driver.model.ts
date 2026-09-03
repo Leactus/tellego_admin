@@ -15,6 +15,9 @@ export interface Driver {
   status: DriverStatus;
   /** Fin de la suspensión temporal (status='suspended'). null con status='suspended' = indefinida. */
   suspendedUntil: string | null;
+  /** País del repartidor (lo elige al registrarse) — define su onboarding (documentos + capital). */
+  countryId: number | null;
+  country?: { id: number; name: string } | null;
   User?: { id: number; name: string; email: string; phone: string | null; status: string };
 }
 

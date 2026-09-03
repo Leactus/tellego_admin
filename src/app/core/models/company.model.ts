@@ -79,6 +79,8 @@ export interface PlatformSettings {
   defaultSalesCutoffDow: number;
   /** Solo billing_type='commission': días después de periodEnd de un pago en que queda nextPaymentDueDate. No aplica a 'fee'. */
   defaultCommissionPaymentDueDays: number;
+  /** Capital mínimo (declarado, no depositado) que confirma un repartidor nuevo antes de aprobarlo. No toca repartidores ya activos. */
+  driverMinCapital: string;
 }
 
 export interface CompanySales {

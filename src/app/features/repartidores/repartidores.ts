@@ -4,8 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DriversService, DriverStatusFilter } from '../../core/services/drivers.service';
+import { CompaniesService } from '../../core/services/companies.service';
 import { Driver } from '../../core/models/driver.model';
+import { Country } from '../../core/models/company.model';
 import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
+import { Select, SelectOption } from '../../shared/select/select';
 import { debounce } from '../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
 import { Icon } from '../../shared/icon/icon';
@@ -15,18 +18,20 @@ import { ToastService } from '../../shared/toast/toast.service';
 import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-password-modal.service';
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { DriverRatingsModal } from './driver-ratings-modal/driver-ratings-modal';
+import { DriverDocumentsModal } from './driver-documents-modal/driver-documents-modal';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-repartidores',
   standalone: true,
-  imports: [DatePipe, FormsModule, Icon, Pager, Skeleton, DriverRatingsModal],
+  imports: [DatePipe, FormsModule, Icon, Pager, Select, Skeleton, DriverRatingsModal, DriverDocumentsModal],
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })
 export class Repartidores implements OnInit, OnDestroy {
   private readonly drivers = inject(DriversService);
+  private readonly companiesService = inject(CompaniesService);
   private readonly toast = inject(ToastService);
   private readonly tempPasswordModal = inject(TempPasswordModalService);
   private readonly route = inject(ActivatedRoute);
@@ -66,10 +71,42 @@ export class Repartidores implements OnInit, OnDestroy {
     this.ratingsDriverId.set(null);
   }
 
+  readonly docsDriverId = signal<number | null>(null);
+  readonly docsDriverName = signal('');
+
+  openDocs(driver: Driver): void {
+    this.docsDriverName.set(driver.User?.name ?? 'Repartidor');
+    this.docsDriverId.set(driver.id);
+  }
+
+  closeDocs(): void {
+    this.docsDriverId.set(null);
+  }
+
+  /** El repartidor pasó a 'active' desde el modal de documentos: refrescar lista + contadores. */
+  async onDriverApproved(): Promise<void> {
+    this.tab.set('active');
+    this.page.set(1);
+    await this.reload(true);
+  }
+
   readonly formModalOpen = signal(false);
   readonly isSaving = signal(false);
   editingDriver: Driver | null = null;
-  form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
+  form = {
+    name: '',
+    email: '',
+    phone: '',
+    vehicleType: '',
+    plateNumber: '',
+    licenseNumber: '',
+    countryId: null as number | null,
+  };
+  readonly countries = signal<Country[]>([]);
+
+  get countryOptions(): SelectOption<number | null>[] {
+    return [{ value: null, label: 'Sin país' }, ...this.countries().map((c) => ({ value: c.id, label: c.name }))];
+  }
   /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
   readonly formSubmitted = signal(false);
 
@@ -102,6 +139,10 @@ export class Repartidores implements OnInit, OnDestroy {
     this.search = getQueryParam(this.route, 'search') ?? '';
     const tab = getQueryParam(this.route, 'estado') as DriverStatusFilter | null;
     if (tab && this.tabs.some((t) => t.value === tab)) this.tab.set(tab);
+    this.companiesService
+      .listCountries()
+      .then((c) => this.countries.set(c))
+      .catch(() => undefined);
     await this.reload();
   }
 
@@ -164,7 +205,15 @@ export class Repartidores implements OnInit, OnDestroy {
 
   openNewModal(): void {
     this.editingDriver = null;
-    this.form = { name: '', email: '', phone: '', vehicleType: '', plateNumber: '', licenseNumber: '' };
+    this.form = {
+      name: '',
+      email: '',
+      phone: '',
+      vehicleType: '',
+      plateNumber: '',
+      licenseNumber: '',
+      countryId: this.countries()[0]?.id ?? null,
+    };
     this.formSubmitted.set(false);
     this.formModalOpen.set(true);
   }
@@ -178,6 +227,7 @@ export class Repartidores implements OnInit, OnDestroy {
       vehicleType: driver.vehicleType ?? '',
       plateNumber: driver.plateNumber ?? '',
       licenseNumber: driver.licenseNumber ?? '',
+      countryId: driver.countryId ?? null,
     };
     this.formSubmitted.set(false);
     this.formModalOpen.set(true);
@@ -205,6 +255,7 @@ export class Repartidores implements OnInit, OnDestroy {
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
           licenseNumber: this.form.licenseNumber.trim(),
+          countryId: this.form.countryId,
         });
         this.closeFormModal();
         this.toast.success('Repartidor actualizado');
@@ -216,6 +267,7 @@ export class Repartidores implements OnInit, OnDestroy {
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
           licenseNumber: this.form.licenseNumber.trim(),
+          countryId: this.form.countryId,
         });
         this.closeFormModal();
         this.tempPasswordModal.show({ title: 'Repartidor creado', email, password: tempPassword });

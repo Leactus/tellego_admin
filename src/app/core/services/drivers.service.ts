@@ -21,6 +21,7 @@ interface CreateDriverInput {
   vehicleType?: string;
   plateNumber?: string;
   licenseNumber?: string;
+  countryId?: number | null;
 }
 
 interface UpdateDriverInput {
@@ -29,6 +30,7 @@ interface UpdateDriverInput {
   vehicleType?: string;
   plateNumber?: string;
   licenseNumber?: string;
+  countryId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -57,10 +59,14 @@ export class DriversService {
     return firstValueFrom(this.http.patch<{ data: Driver }>(`${this.base}/${id}`, input)).then((r) => r.data);
   }
 
-  /** `suspensionDays` solo aplica con status='suspended': ausente/0 = suspensión indefinida. */
-  updateStatus(id: number, status: DriverStatus, suspensionDays?: number): Promise<Driver> {
+  /**
+   * `suspensionDays` solo aplica con status='suspended': ausente/0 = suspensión indefinida.
+   * `force` (solo al aprobar): saltea la validación de onboarding completo (capital + documentos).
+   * Si `force` no está y el onboarding no está listo, el backend responde 422.
+   */
+  updateStatus(id: number, status: DriverStatus, suspensionDays?: number, force?: boolean): Promise<Driver> {
     return firstValueFrom(
-      this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status, suspensionDays }),
+      this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status, suspensionDays, force }),
     ).then((r) => r.data);
   }
 

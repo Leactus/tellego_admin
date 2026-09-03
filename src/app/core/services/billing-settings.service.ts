@@ -22,6 +22,7 @@ export class BillingSettingsService {
     defaultSalesCutoffHour?: number;
     defaultSalesCutoffDow?: number;
     defaultCommissionPaymentDueDays?: number;
+    driverMinCapital?: number;
   }): Promise<PlatformSettings> {
     return firstValueFrom(this.http.patch<{ data: PlatformSettings }>(this.base, payload)).then((r) => r.data);
   }
