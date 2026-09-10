@@ -301,8 +301,30 @@ export class NegocioDetalle implements OnInit {
    * cada campo si de verdad quedó distinto al valor fresco recién leído; lo que no se tocó no
    * viaja en el PATCH y el backend lo deja intacto (ver `!== undefined` en companies.controller.ts).
    */
+  /**
+   * Regla de coherencia entre las dos fechas de facturación: la "próxima fecha de pago" no puede
+   * ser anterior a "facturación inicia el" — un negocio no debería tener un pago vencido antes de
+   * arrancar a facturar (ver overdueWhere en el backend, donde billingStartsAt es el piso).
+   * Devuelve el mensaje de error, o null si están bien o si falta alguna de las dos. El backend
+   * valida lo mismo en companies.controller.ts#updateBilling.
+   */
+  billingDatesError(): string | null {
+    const due = this.billingForm.nextPaymentDueDate;
+    const start = this.billingForm.billingStartsAt;
+    // <input type="date"> entrega 'AAAA-MM-DD', así que comparar como texto ya ordena por fecha.
+    if (due && start && due < start) {
+      return 'La "próxima fecha de pago" no puede ser anterior a "facturación inicia el".';
+    }
+    return null;
+  }
+
   async saveBilling(): Promise<void> {
     const form = this.billingForm;
+    const datesError = this.billingDatesError();
+    if (datesError) {
+      this.toast.error(datesError);
+      return;
+    }
     try {
       const current = await this.companiesService.getOne(this.companyId);
 

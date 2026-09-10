@@ -328,13 +328,26 @@
       }
       <label>
         Próxima fecha de pago
-        <input type="date" [(ngModel)]="billingForm.nextPaymentDueDate" name="nextPaymentDueDate" />
+        <input
+          type="date"
+          [(ngModel)]="billingForm.nextPaymentDueDate"
+          name="nextPaymentDueDate"
+          [class.invalid]="billingDatesError()"
+        />
       </label>
       <label>
         Facturación inicia el
-        <input type="date" [(ngModel)]="billingForm.billingStartsAt" name="billingStartsAt" />
+        <input
+          type="date"
+          [(ngModel)]="billingForm.billingStartsAt"
+          name="billingStartsAt"
+          [class.invalid]="billingDatesError()"
+        />
       </label>
     </div>
+    @if (billingDatesError(); as err) {
+      <p class="invalid-hint">{{ err }}</p>
+    }
     <p class="muted hint">
       "Facturación inicia el" permite dar de gracia a un cliente nuevo: no se considera moroso antes de esa fecha.
       Cambiar el tipo de cobro o su valor aquí solo aplica hacia adelante — no toca el historial de pagos ya registrado.
