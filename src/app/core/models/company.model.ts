@@ -59,6 +59,8 @@ export interface Country {
   name: string;
   currencyCode: string;
   currencySymbol: string;
+  /** Zona horaria IANA (ej. "America/El_Salvador") — de aquí sale si las sucursales de este país están abiertas ahora mismo. */
+  timezone: string;
 }
 
 export interface Department {

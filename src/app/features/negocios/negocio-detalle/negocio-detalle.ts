@@ -168,6 +168,7 @@ export class NegocioDetalle implements OnInit {
   readonly isSavingStore = signal(false);
   readonly isUploadingStoreRefPhoto = signal(false);
   readonly isRemovingStoreRefPhoto = signal(false);
+  readonly storeRefPhotoZoomOpen = signal(false);
   readonly departmentOptions = signal<SelectOption<number>[]>([]);
   editingStore: Store | null = null;
   storeForm: {
@@ -761,6 +762,14 @@ export class NegocioDetalle implements OnInit {
 
   closeStoreModal(): void {
     this.storeModalOpen.set(false);
+  }
+
+  openStoreRefPhotoZoom(): void {
+    this.storeRefPhotoZoomOpen.set(true);
+  }
+
+  closeStoreRefPhotoZoom(): void {
+    this.storeRefPhotoZoomOpen.set(false);
   }
 
   async onStoreRefPhotoSelected(event: Event): Promise<void> {

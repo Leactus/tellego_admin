@@ -711,9 +711,9 @@
           ></textarea>
         </label>
         @if (editingStore) {
-          <div class="cover-card">
+          <div class="cover-card ref-photo-card">
             <label
-              class="image-dropzone cover-dropzone"
+              class="image-dropzone ref-photo-dropzone"
               [class.has-image]="editingStore.refPhotoUrl"
               [class.uploading]="isUploadingStoreRefPhoto()"
             >
@@ -723,6 +723,15 @@
                   <app-icon name="camera" />
                   {{ isUploadingStoreRefPhoto() ? 'Subiendo…' : 'Cambiar' }}
                 </span>
+                <button
+                  type="button"
+                  class="ref-photo-zoom-btn"
+                  (click)="$event.preventDefault(); $event.stopPropagation(); openStoreRefPhotoZoom()"
+                  aria-label="Ver en grande"
+                  title="Ver en grande"
+                >
+                  <app-icon name="search" />
+                </button>
               } @else {
                 <span class="dropzone-empty">
                   <app-icon name="camera" />
@@ -752,6 +761,15 @@
               }
             </div>
           </div>
+
+          @if (storeRefPhotoZoomOpen() && editingStore.refPhotoUrl) {
+            <div class="image-zoom-backdrop" (click)="closeStoreRefPhotoZoom()">
+              <button type="button" class="image-zoom-close" (click)="closeStoreRefPhotoZoom()" aria-label="Cerrar">
+                <app-icon name="close" />
+              </button>
+              <img [src]="editingStore.refPhotoUrl" alt="Foto de referencia de la sucursal" (click)="$event.stopPropagation()" />
+            </div>
+          }
         } @else {
           <p class="muted">Guarda la sucursal primero para poder subirle una foto de referencia.</p>
         }

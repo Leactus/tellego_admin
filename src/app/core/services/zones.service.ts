@@ -63,8 +63,17 @@ export class ZonesService {
   }
 
   // --- País ---
-  createCountry(payload: { name: string; currencyCode: string; currencySymbol: string }): Promise<Country> {
+  createCountry(payload: { name: string; currencyCode: string; currencySymbol: string; timezone: string }): Promise<Country> {
     return firstValueFrom(this.http.post<{ data: Country }>(`${this.base}/countries`, payload)).then((r) => r.data);
+  }
+
+  updateCountry(
+    id: number,
+    payload: { name?: string; currencyCode?: string; currencySymbol?: string; timezone?: string },
+  ): Promise<Country> {
+    return firstValueFrom(this.http.patch<{ data: Country }>(`${this.base}/countries/${id}`, payload)).then(
+      (r) => r.data,
+    );
   }
 
   // --- Zona ---

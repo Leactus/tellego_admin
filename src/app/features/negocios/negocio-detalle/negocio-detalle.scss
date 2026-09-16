@@ -521,3 +521,73 @@
   margin: 0;
   font-size: 0.85rem;
 }
+
+/* Foto de referencia: es una ayuda visual chica (no una portada/banner), así que va en
+   miniatura tipo logo-card en vez del tamaño 16:7 de .cover-dropzone. Clic en la miniatura
+   sigue subiendo/cambiando la foto (mismo patrón que logo/portada); el ícono de lupa hace
+   zoom sin disparar el file picker (stopPropagation en su click). */
+.ref-photo-card {
+  flex-direction: row;
+  align-items: center;
+}
+
+.ref-photo-dropzone {
+  position: relative;
+  width: 140px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.ref-photo-zoom-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: zoom-in;
+}
+
+.image-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.8);
+  cursor: zoom-out;
+}
+
+.image-zoom-backdrop img {
+  max-width: min(90vw, 900px);
+  max-height: 85vh;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  cursor: default;
+}
+
+.image-zoom-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}

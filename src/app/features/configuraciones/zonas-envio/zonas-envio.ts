@@ -8,10 +8,55 @@ import { Country } from '../../../core/models/company.model';
 import { Zone, ZonesService, ZoneFeePreview } from '../../../core/services/zones.service';
 import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
-import { Select } from '../../../shared/select/select';
+import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
+
+/**
+ * Zonas horarias IANA de América (Intl.supportedValuesOf('timeZone') filtrado
+ * a "America/") — el super-admin elige la del país al crearlo/editarlo, de
+ * ahí sale el día/hora que usa isOpenNow() en el backend para el horario de
+ * las sucursales de ese país. Ver stores.controller.ts#isOpenNow.
+ */
+const TIMEZONE_OPTIONS: SelectOption<string>[] = [
+  'America/Adak', 'America/Anchorage', 'America/Anguilla', 'America/Antigua', 'America/Araguaina',
+  'America/Argentina/La_Rioja', 'America/Argentina/Rio_Gallegos', 'America/Argentina/Salta',
+  'America/Argentina/San_Juan', 'America/Argentina/San_Luis', 'America/Argentina/Tucuman',
+  'America/Argentina/Ushuaia', 'America/Aruba', 'America/Asuncion', 'America/Bahia',
+  'America/Bahia_Banderas', 'America/Barbados', 'America/Belem', 'America/Belize',
+  'America/Blanc-Sablon', 'America/Boa_Vista', 'America/Bogota', 'America/Boise',
+  'America/Buenos_Aires', 'America/Cambridge_Bay', 'America/Campo_Grande', 'America/Cancun',
+  'America/Caracas', 'America/Catamarca', 'America/Cayenne', 'America/Cayman', 'America/Chicago',
+  'America/Chihuahua', 'America/Ciudad_Juarez', 'America/Coral_Harbour', 'America/Cordoba',
+  'America/Costa_Rica', 'America/Coyhaique', 'America/Creston', 'America/Cuiaba', 'America/Curacao',
+  'America/Danmarkshavn', 'America/Dawson', 'America/Dawson_Creek', 'America/Denver',
+  'America/Detroit', 'America/Dominica', 'America/Edmonton', 'America/Eirunepe',
+  'America/El_Salvador', 'America/Fort_Nelson', 'America/Fortaleza', 'America/Glace_Bay',
+  'America/Godthab', 'America/Goose_Bay', 'America/Grand_Turk', 'America/Grenada',
+  'America/Guadeloupe', 'America/Guatemala', 'America/Guayaquil', 'America/Guyana',
+  'America/Halifax', 'America/Havana', 'America/Hermosillo', 'America/Indiana/Knox',
+  'America/Indiana/Marengo', 'America/Indiana/Petersburg', 'America/Indiana/Tell_City',
+  'America/Indiana/Vevay', 'America/Indiana/Vincennes', 'America/Indiana/Winamac',
+  'America/Indianapolis', 'America/Inuvik', 'America/Iqaluit', 'America/Jamaica', 'America/Jujuy',
+  'America/Juneau', 'America/Kentucky/Monticello', 'America/Kralendijk', 'America/La_Paz',
+  'America/Lima', 'America/Los_Angeles', 'America/Louisville', 'America/Lower_Princes',
+  'America/Maceio', 'America/Managua', 'America/Manaus', 'America/Marigot', 'America/Martinique',
+  'America/Matamoros', 'America/Mazatlan', 'America/Mendoza', 'America/Menominee',
+  'America/Merida', 'America/Metlakatla', 'America/Mexico_City', 'America/Miquelon',
+  'America/Moncton', 'America/Monterrey', 'America/Montevideo', 'America/Montserrat',
+  'America/Nassau', 'America/New_York', 'America/Nome', 'America/Noronha',
+  'America/North_Dakota/Beulah', 'America/North_Dakota/Center', 'America/North_Dakota/New_Salem',
+  'America/Ojinaga', 'America/Panama', 'America/Paramaribo', 'America/Phoenix',
+  'America/Port-au-Prince', 'America/Port_of_Spain', 'America/Porto_Velho', 'America/Puerto_Rico',
+  'America/Punta_Arenas', 'America/Rankin_Inlet', 'America/Recife', 'America/Regina',
+  'America/Resolute', 'America/Rio_Branco', 'America/Santarem', 'America/Santiago',
+  'America/Santo_Domingo', 'America/Sao_Paulo', 'America/Scoresbysund', 'America/Sitka',
+  'America/St_Barthelemy', 'America/St_Johns', 'America/St_Kitts', 'America/St_Lucia',
+  'America/St_Thomas', 'America/St_Vincent', 'America/Swift_Current', 'America/Tegucigalpa',
+  'America/Thule', 'America/Tijuana', 'America/Toronto', 'America/Tortola', 'America/Vancouver',
+  'America/Whitehorse', 'America/Winnipeg', 'America/Yakutat',
+].map((tz) => ({ value: tz, label: tz }));
 
 interface ZoneForm {
   fuelPrice: number;
@@ -83,7 +128,8 @@ export class ZonasEnvio implements OnInit {
   readonly deptModalOpen = signal(false);
   readonly isSavingModal = signal(false);
 
-  countryForm = { name: '', currencyCode: '', currencySymbol: '' };
+  readonly timezoneOptions = TIMEZONE_OPTIONS;
+  countryForm = { id: 0 as number, name: '', currencyCode: '', currencySymbol: '', timezone: '' };
   zoneForm = { id: 0 as number, name: '', sortOrder: 0 };
   deptForm = { id: 0 as number, name: '', zoneId: 0 };
 
@@ -214,7 +260,19 @@ export class ZonasEnvio implements OnInit {
 
   // --- País ---
   openCountryModal(): void {
-    this.countryForm = { name: '', currencyCode: '', currencySymbol: '' };
+    this.countryForm = { id: 0, name: '', currencyCode: '', currencySymbol: '', timezone: '' };
+    this.countryModalOpen.set(true);
+  }
+
+  /** Editar un país ya creado — típicamente para corregir su zona horaria. */
+  openEditCountryModal(country: Country): void {
+    this.countryForm = {
+      id: country.id,
+      name: country.name,
+      currencyCode: country.currencyCode,
+      currencySymbol: country.currencySymbol,
+      timezone: country.timezone,
+    };
     this.countryModalOpen.set(true);
   }
 
@@ -222,21 +280,33 @@ export class ZonasEnvio implements OnInit {
     const name = this.countryForm.name.trim();
     const currencyCode = this.countryForm.currencyCode.trim().toUpperCase();
     const currencySymbol = this.countryForm.currencySymbol.trim();
-    if (!name || !/^[A-Z]{3}$/.test(currencyCode) || !currencySymbol) {
-      this.toast.error('Completa nombre, código de moneda (3 letras) y símbolo');
+    const timezone = this.countryForm.timezone;
+    if (!name || !/^[A-Z]{3}$/.test(currencyCode) || !currencySymbol || !timezone) {
+      this.toast.error('Completa nombre, código de moneda (3 letras), símbolo y zona horaria');
       return;
     }
     this.isSavingModal.set(true);
     try {
-      const created = await this.zonesService.createCountry({ name, currencyCode, currencySymbol });
-      this.countries.update((cs) => [...cs, created].sort((a, b) => a.name.localeCompare(b.name)));
-      this.countryModalOpen.set(false);
-      this.countryId = created.id;
-      this.isLoading.set(true);
-      await this.loadZones();
-      this.toast.success(`País "${name}" creado — ahora agrégale zonas y departamentos`);
+      if (this.countryForm.id) {
+        const updated = await this.zonesService.updateCountry(this.countryForm.id, {
+          name, currencyCode, currencySymbol, timezone,
+        });
+        this.countries.update((cs) =>
+          cs.map((c) => (c.id === updated.id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name)),
+        );
+        this.countryModalOpen.set(false);
+        this.toast.success(`País "${name}" actualizado`);
+      } else {
+        const created = await this.zonesService.createCountry({ name, currencyCode, currencySymbol, timezone });
+        this.countries.update((cs) => [...cs, created].sort((a, b) => a.name.localeCompare(b.name)));
+        this.countryModalOpen.set(false);
+        this.countryId = created.id;
+        this.isLoading.set(true);
+        await this.loadZones();
+        this.toast.success(`País "${name}" creado — ahora agrégale zonas y departamentos`);
+      }
     } catch (err: any) {
-      this.toast.error(err?.error?.message ?? 'No se pudo crear el país');
+      this.toast.error(err?.error?.message ?? 'No se pudo guardar el país');
     } finally {
       this.isSavingModal.set(false);
     }

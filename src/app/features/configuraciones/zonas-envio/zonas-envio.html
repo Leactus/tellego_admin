@@ -28,6 +28,10 @@
       />
       @if (currentCountry(); as c) {
         <span class="currency-chip">Moneda&nbsp;<strong>{{ c.currencySymbol }}</strong> ({{ c.currencyCode }})</span>
+        <span class="currency-chip" title="Zona horaria — de aquí sale si las sucursales de este país están abiertas ahora mismo">{{ c.timezone }}</span>
+        <button class="icon-btn" (click)="openEditCountryModal(c)" aria-label="Editar país">
+          <app-icon name="edit" />
+        </button>
       }
       <span class="spacer"></span>
       <button class="btn-ghost" (click)="openCountryModal()">+ Nuevo país</button>
@@ -236,12 +240,12 @@
   }
 }
 
-<!-- Modal: nuevo país -->
+<!-- Modal: nuevo/editar país -->
 @if (countryModalOpen()) {
   <div class="modal-backdrop">
     <div class="modal">
       <div class="modal-header">
-        <h2>Nuevo país</h2>
+        <h2>{{ countryForm.id ? 'Editar país' : 'Nuevo país' }}</h2>
         <button class="modal-close" (click)="countryModalOpen.set(false)" aria-label="Cerrar">
           <app-icon name="close" />
         </button>
@@ -258,12 +262,22 @@
             <input type="text" [(ngModel)]="countryForm.currencySymbol" name="cSym" maxlength="5" placeholder="$" />
           </label>
         </div>
-        <p class="muted small">Después de crearlo, agregale sus zonas y departamentos.</p>
+        <label>
+          Zona horaria
+          <app-select [(ngModel)]="countryForm.timezone" name="cTz" [options]="timezoneOptions" placeholder="Ej. America/Guatemala" />
+        </label>
+        <p class="muted small">
+          De la zona horaria sale si las sucursales de este país aparecen "Abierto"/"Cerrado" ahora mismo, según
+          su horario de atención.
+          @if (!countryForm.id) {
+            Después de crearlo, agregale sus zonas y departamentos.
+          }
+        </p>
       </div>
       <div class="modal-actions">
         <button class="btn-text" (click)="countryModalOpen.set(false)">Cancelar</button>
         <button class="btn-primary" [disabled]="isSavingModal()" (click)="saveCountry()">
-          {{ isSavingModal() ? 'Guardando…' : 'Crear país' }}
+          {{ isSavingModal() ? 'Guardando…' : (countryForm.id ? 'Guardar' : 'Crear país') }}
         </button>
       </div>
     </div>
