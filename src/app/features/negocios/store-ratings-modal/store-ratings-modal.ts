@@ -5,6 +5,7 @@ import { RatingVisibilityFilter, StoreRating, StoreRatingsPage } from '../../../
 import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
 import { formatShortDate } from '../../../core/utils/format-date';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { Pager } from '../../../shared/pager/pager';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -24,7 +25,7 @@ const FILTERS: { key: RatingVisibilityFilter; label: string }[] = [
 @Component({
   selector: 'app-store-ratings-modal',
   standalone: true,
-  imports: [Icon, Skeleton, Pager],
+  imports: [Icon, EmptyState, Skeleton, Pager],
   templateUrl: './store-ratings-modal.html',
   styleUrl: './store-ratings-modal.scss',
 })

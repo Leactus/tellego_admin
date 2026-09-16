@@ -12,6 +12,7 @@ import { Select, SelectOption } from '../../shared/select/select';
 import { debounce } from '../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
 import { Icon } from '../../shared/icon/icon';
+import { EmptyState } from '../../shared/empty-state/empty-state';
 import { Pager } from '../../shared/pager/pager';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
@@ -25,7 +26,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 @Component({
   selector: 'app-repartidores',
   standalone: true,
-  imports: [DatePipe, FormsModule, Icon, Pager, Select, Skeleton, DriverRatingsModal, DriverDocumentsModal],
+  imports: [DatePipe, FormsModule, Icon, EmptyState, Pager, Select, Skeleton, DriverRatingsModal, DriverDocumentsModal],
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })

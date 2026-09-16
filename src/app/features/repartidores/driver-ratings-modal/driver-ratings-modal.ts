@@ -6,6 +6,7 @@ import { DriverRatingsSummary } from '../../../core/models/driver.model';
 import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
 import { formatShortDate } from '../../../core/utils/format-date';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { Pager } from '../../../shared/pager/pager';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -34,7 +35,7 @@ function toDateInputValue(date: Date): string {
 @Component({
   selector: 'app-driver-ratings-modal',
   standalone: true,
-  imports: [FormsModule, Icon, Skeleton, Pager],
+  imports: [FormsModule, Icon, EmptyState, Skeleton, Pager],
   templateUrl: './driver-ratings-modal.html',
   styleUrl: './driver-ratings-modal.scss',
 })

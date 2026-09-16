@@ -37,17 +37,14 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
-  <p class="empty">
-    @if (search) {
-      No se encontraron repartidores con esos datos.
-    } @else if (tab() === 'pending') {
-      No hay repartidores pendientes de aprobación.
-    } @else if (tab() === 'suspended') {
-      No hay repartidores suspendidos.
-    } @else {
-      Todavía no hay repartidores activos.
-    }
-  </p>
+  @let emptyTitle = search
+    ? 'No se encontraron repartidores con esos datos.'
+    : tab() === 'pending'
+      ? 'No hay repartidores pendientes de aprobación.'
+      : tab() === 'suspended'
+        ? 'No hay repartidores suspendidos.'
+        : 'Todavía no hay repartidores activos.';
+  <app-empty-state [variant]="search ? 'no-results' : 'no-data'" [title]="emptyTitle" icon="truck" />
 } @else {
   <div class="list">
     @for (driver of items(); track driver.id) {

@@ -55,10 +55,12 @@
       </div>
 
       @if (zones().length === 0) {
-        <p class="empty">
-          Este país todavía no tiene zonas. Creá una zona (ej. «Central») y después agregale
-          departamentos.
-        </p>
+        <app-empty-state
+          variant="no-data"
+          title="Este país todavía no tiene zonas."
+          hint="Creá una zona (ej. «Central») y después agregale departamentos."
+          icon="map-pin"
+        />
       }
 
       @for (zone of zones(); track zone.id) {

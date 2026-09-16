@@ -13,6 +13,7 @@ import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/
 import { formatShortDate } from '../../core/utils/format-date';
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { Icon } from '../../shared/icon/icon';
+import { EmptyState } from '../../shared/empty-state/empty-state';
 import { Pager } from '../../shared/pager/pager';
 import { Select, SelectOption } from '../../shared/select/select';
 import { Skeleton } from '../../shared/skeleton/skeleton';
@@ -32,7 +33,7 @@ type Mode = 'store' | 'product';
 @Component({
   selector: 'app-publicidad',
   standalone: true,
-  imports: [FormsModule, Icon, Pager, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Pager, Select, Skeleton],
   templateUrl: './publicidad.html',
   styleUrl: './publicidad.scss',
 })

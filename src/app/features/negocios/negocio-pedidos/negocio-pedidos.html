@@ -27,7 +27,7 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="card" [rows]="4" />
 } @else if (orders().length === 0) {
-  <p class="empty">No hay pedidos en este filtro por ahora.</p>
+  <app-empty-state variant="no-data" title="No hay pedidos en este filtro por ahora." icon="receipt" />
 } @else {
   <div class="order-list">
     @for (order of orders(); track order.id) {

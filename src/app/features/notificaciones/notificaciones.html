@@ -20,7 +20,12 @@
   @if (isLoadingScheduled()) {
     <app-skeleton variant="list" [rows]="2" />
   } @else if (scheduled().length === 0) {
-    <p class="empty">No hay notificaciones programadas. Al crear una, elegí “Programar” en “¿Cuándo enviar?”.</p>
+    <app-empty-state
+      variant="no-data"
+      title="No hay notificaciones programadas."
+      hint="Al crear una, elegí “Programar” en “¿Cuándo enviar?”."
+      icon="clock"
+    />
   } @else {
     <div class="list">
       @for (s of scheduled(); track s.id) {
@@ -83,9 +88,11 @@
   @if (isLoadingHistory() || isRefreshingHistory()) {
     <app-skeleton variant="list" [rows]="4" />
   } @else if (history().length === 0) {
-    <p class="empty">
-      {{ historySearch ? 'No se encontraron notificaciones con ese texto.' : 'Todavía no se han enviado notificaciones.' }}
-    </p>
+    <app-empty-state
+      [variant]="historySearch ? 'no-results' : 'no-data'"
+      [title]="historySearch ? 'No se encontraron notificaciones con ese texto.' : 'Todavía no se han enviado notificaciones.'"
+      icon="bell"
+    />
   } @else {
     <div class="list">
       @for (item of history(); track item.id) {

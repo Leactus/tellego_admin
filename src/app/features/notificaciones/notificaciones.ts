@@ -18,6 +18,7 @@ import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
 import { debounce } from '../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../core/utils/query-param-state';
 import { Icon } from '../../shared/icon/icon';
+import { EmptyState } from '../../shared/empty-state/empty-state';
 import { MultiSelect } from '../../shared/multi-select/multi-select';
 import { Pager } from '../../shared/pager/pager';
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
@@ -49,7 +50,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 @Component({
   selector: 'app-notificaciones',
   standalone: true,
-  imports: [FormsModule, Icon, Select, MultiSelect, Pager, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, MultiSelect, Pager, Skeleton],
   templateUrl: './notificaciones.html',
   styleUrl: './notificaciones.scss',
 })

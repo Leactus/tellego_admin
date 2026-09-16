@@ -19,9 +19,11 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
-  <p class="empty">
-    {{ search ? 'No se encontraron negocios con ese nombre.' : 'Todavía no hay negocios registrados.' }}
-  </p>
+  <app-empty-state
+    [variant]="search ? 'no-results' : 'no-data'"
+    [title]="search ? 'No se encontraron negocios con ese nombre.' : 'Todavía no hay negocios registrados.'"
+    icon="store"
+  />
 } @else {
   <div class="list">
     @for (company of items(); track company.id) {

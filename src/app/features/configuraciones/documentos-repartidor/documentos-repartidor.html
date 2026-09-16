@@ -56,7 +56,7 @@
     </div>
 
     @if (types().length === 0) {
-      <p class="empty">Todavía no hay documentos configurados para este alcance.</p>
+      <app-empty-state variant="no-data" title="Todavía no hay documentos configurados para este alcance." icon="package" />
     } @else {
       <div class="list">
         @for (type of types(); track type.id) {

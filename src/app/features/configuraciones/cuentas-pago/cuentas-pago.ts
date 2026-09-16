@@ -10,6 +10,7 @@ import {
   PlatformBankName,
 } from '../../../core/models/company.model';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
@@ -31,7 +32,7 @@ const ACCOUNT_TYPE_OPTIONS: SelectOption<'checking' | 'savings'>[] = [
 @Component({
   selector: 'app-cuentas-pago',
   standalone: true,
-  imports: [FormsModule, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, Skeleton],
   templateUrl: './cuentas-pago.html',
   styleUrl: './cuentas-pago.scss',
 })

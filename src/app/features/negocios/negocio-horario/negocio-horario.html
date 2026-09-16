@@ -6,7 +6,7 @@
 @if (isLoading()) {
   <app-skeleton variant="list" [rows]="7" [avatar]="false" />
 } @else if (storeOptions().length === 0) {
-  <p class="empty">Este negocio todavía no tiene sucursales.</p>
+  <app-empty-state variant="no-data" title="Este negocio todavía no tiene sucursales." icon="map-pin" />
 } @else {
   <label class="store-picker-label">
     Sucursal

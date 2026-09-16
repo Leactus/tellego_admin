@@ -15,6 +15,7 @@ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLOR_CLASS } from '../../../core/uti
 import { paymentBadge } from '../../../core/utils/order-payment-badge';
 import { formatShortDateTime } from '../../../core/utils/format-date';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
@@ -47,7 +48,7 @@ interface TimelineStep {
 @Component({
   selector: 'app-negocio-pedidos',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, Icon, Pager, Select, Skeleton],
+  imports: [FormsModule, DecimalPipe, Icon, EmptyState, Pager, Select, Skeleton],
   templateUrl: './negocio-pedidos.html',
   styleUrl: './negocio-pedidos.scss',
 })

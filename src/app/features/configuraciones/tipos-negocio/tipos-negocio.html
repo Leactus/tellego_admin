@@ -14,7 +14,7 @@
   @if (isLoadingTypes()) {
     <app-skeleton variant="list" [rows]="4" />
   } @else if (types().length === 0) {
-    <p class="empty">Todavía no hay tipos de negocio.</p>
+    <app-empty-state variant="no-data" title="Todavía no hay tipos de negocio." icon="store" />
   } @else {
     <div class="list">
       @for (type of types(); track type.id) {
@@ -64,7 +64,7 @@
     @if (isLoadingSubcategories()) {
       <app-skeleton variant="list" [rows]="5" />
     } @else if (subcategoryItems().length === 0) {
-      <p class="empty">Todavía no hay subcategorías para {{ type.name }}.</p>
+      <app-empty-state variant="no-data" [title]="'Todavía no hay subcategorías para ' + type.name + '.'" icon="package" />
     } @else {
       <cdk-virtual-scroll-viewport itemSize="78" class="category-viewport">
         <div class="row category-row" *cdkVirtualFor="let subcategory of subcategoryItems(); trackBy: trackBySubcategoryId">

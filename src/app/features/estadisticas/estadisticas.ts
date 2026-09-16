@@ -7,6 +7,7 @@ import { StatsService } from '../../core/services/stats.service';
 import { PlatformStats } from '../../core/models/stats.model';
 import { getQueryParam, syncQueryParams } from '../../core/utils/query-param-state';
 import { Icon } from '../../shared/icon/icon';
+import { EmptyState } from '../../shared/empty-state/empty-state';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToastService } from '../../shared/toast/toast.service';
 
@@ -62,7 +63,7 @@ function currentMonthRange(): { from: string; to: string } {
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, Icon, Skeleton],
+  imports: [FormsModule, DecimalPipe, Icon, EmptyState, Skeleton],
   templateUrl: './estadisticas.html',
   styleUrl: './estadisticas.scss',
 })

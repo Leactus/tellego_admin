@@ -29,17 +29,14 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
-  <p class="empty">
-    @if (search) {
-      No se encontraron negocios con ese nombre.
-    } @else if (paymentTab() === 'overdue') {
-      No hay negocios con pagos pendientes.
-    } @else if (paymentTab() === 'current') {
-      No hay negocios activos al día todavía.
-    } @else {
-      Todavía no hay negocios activos registrados.
-    }
-  </p>
+  @let emptyTitle = search
+    ? 'No se encontraron negocios con ese nombre.'
+    : paymentTab() === 'overdue'
+      ? 'No hay negocios con pagos pendientes.'
+      : paymentTab() === 'current'
+        ? 'No hay negocios activos al día todavía.'
+        : 'Todavía no hay negocios activos registrados.';
+  <app-empty-state [variant]="search ? 'no-results' : 'no-data'" [title]="emptyTitle" icon="store" />
 } @else {
   <div class="list">
     @for (company of items(); track company.id) {

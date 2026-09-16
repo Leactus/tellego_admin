@@ -7,6 +7,7 @@ import { getQueryParam, syncQueryParams } from '../../../core/utils/query-param-
 import { Country } from '../../../core/models/company.model';
 import { Zone, ZonesService, ZoneFeePreview } from '../../../core/services/zones.service';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -31,7 +32,7 @@ interface ZoneForm {
 @Component({
   selector: 'app-zonas-envio',
   standalone: true,
-  imports: [FormsModule, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, Skeleton],
   templateUrl: './zonas-envio.html',
   styleUrl: './zonas-envio.scss',
 })

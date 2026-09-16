@@ -28,4 +28,24 @@ export class StoresService {
       this.http.patch<{ data: Store }>(`${this.base}/admin/stores/${storeId}/status`, { status }),
     ).then((r) => r.data);
   }
+
+  /** Foto de referencia para ubicar la sucursal (fachada, punto de encuentro...) — misma mecánica que el logo/portada del negocio. */
+  uploadReferencePhoto(storeId: number, file: File): Promise<{ id: number; refPhotoUrl: string | null }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return firstValueFrom(
+      this.http.post<{ data: { id: number; refPhotoUrl: string | null } }>(
+        `${this.base}/admin/stores/${storeId}/reference-photo`,
+        formData,
+      ),
+    ).then((r) => r.data);
+  }
+
+  removeReferencePhoto(storeId: number): Promise<{ id: number; refPhotoUrl: string | null }> {
+    return firstValueFrom(
+      this.http.delete<{ data: { id: number; refPhotoUrl: string | null } }>(
+        `${this.base}/admin/stores/${storeId}/reference-photo`,
+      ),
+    ).then((r) => r.data);
+  }
 }

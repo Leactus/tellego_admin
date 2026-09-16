@@ -9,6 +9,7 @@ import { BusinessType } from '../../../core/models/businessType.model';
 import { SubcategoryAvailability } from '../../../core/models/subcategory.model';
 import { Country } from '../../../core/models/company.model';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { scrollToFirstInvalid } from '../../../shared/scroll-to-invalid';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
@@ -25,7 +26,7 @@ import { ConfirmService } from '../../../shared/confirm/confirm.service';
 @Component({
   selector: 'app-tipos-negocio',
   standalone: true,
-  imports: [FormsModule, Icon, Select, ScrollingModule, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, ScrollingModule, Skeleton],
   templateUrl: './tipos-negocio.html',
   styleUrl: './tipos-negocio.scss',
 })

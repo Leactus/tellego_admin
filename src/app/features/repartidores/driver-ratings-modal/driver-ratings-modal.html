@@ -41,13 +41,12 @@
         </div>
 
         @if (data.data.length === 0) {
-          <p class="empty">
-            @if (activePreset !== 'all') {
-              No hay reseñas en este rango de fechas.
-            } @else {
-              Todavía no tiene reseñas.
-            }
-          </p>
+          <app-empty-state
+            [variant]="activePreset !== 'all' ? 'no-results' : 'no-data'"
+            [title]="activePreset !== 'all' ? 'No hay reseñas en este rango de fechas.' : 'Todavía no tiene reseñas.'"
+            icon="star"
+            [compact]="true"
+          />
         } @else {
           <div class="rating-list">
             @for (rating of data.data; track rating.id) {

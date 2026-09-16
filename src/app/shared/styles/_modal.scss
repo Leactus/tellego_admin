@@ -130,6 +130,19 @@
   box-shadow: 0 0 0 1px var(--color-error);
 }
 
+.modal-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 4px 0;
+}
+
+.modal-section-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .invalid-hint {
   display: block;
   margin: -10px 0 14px;

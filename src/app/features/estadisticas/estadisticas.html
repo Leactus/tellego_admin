@@ -108,7 +108,7 @@
       <span class="muted">{{ stats.range.from }} — {{ stats.range.to }}</span>
     </div>
     @if (stats.revenueByDay.length === 0) {
-      <p class="empty">No hubo ventas entregadas en este rango.</p>
+      <app-empty-state variant="no-data" title="No hubo ventas entregadas en este rango." icon="trending-up" />
     } @else if (hasTrendData()) {
       <div class="chart-wrap">
         <svg
@@ -156,7 +156,7 @@
     <div class="panel">
       <h2>Negocios con más ventas</h2>
       @if (stats.topCompanies.length === 0) {
-        <p class="empty">Todavía no hay ventas de negocios en este rango.</p>
+        <app-empty-state variant="no-data" title="Todavía no hay ventas de negocios en este rango." icon="store" />
       } @else {
         <div class="rank-list">
           @for (company of stats.topCompanies; track company.companyId; let i = $index) {
@@ -176,7 +176,7 @@
     <div class="panel">
       <h2>Sucursales con más ventas</h2>
       @if (stats.topStores.length === 0) {
-        <p class="empty">Todavía no hay ventas de sucursales en este rango.</p>
+        <app-empty-state variant="no-data" title="Todavía no hay ventas de sucursales en este rango." icon="map-pin" />
       } @else {
         <div class="rank-list">
           @for (store of stats.topStores; track store.storeId; let i = $index) {
@@ -198,7 +198,7 @@
     <div class="panel">
       <h2>Repartidores con más entregas</h2>
       @if (stats.topDrivers.length === 0) {
-        <p class="empty">Todavía no hay entregas asignadas a un repartidor en este rango.</p>
+        <app-empty-state variant="no-data" title="Todavía no hay entregas asignadas a un repartidor en este rango." icon="truck" />
       } @else {
         <div class="rank-list">
           @for (driver of stats.topDrivers; track driver.driverId; let i = $index) {

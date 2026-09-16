@@ -15,6 +15,9 @@ export interface Store {
   /** Ubicación exacta de la sucursal. Hoy solo se asigna por coordenadas; el selector de mapa (Google Maps) queda pendiente. */
   lat: number | null;
   lng: number | null;
+  /** Foto + descripción de referencia para ubicar la sucursal (para cuando el pin del mapa no alcanza). Sin coordenadas propias, todo opcional. */
+  refPhotoUrl: string | null;
+  refNote: string | null;
   status: StoreStatus;
   ratingAvg: string;
   ratingCount: number;
@@ -42,4 +45,5 @@ export interface StoreInput {
   websiteUrl?: string;
   lat?: number | null;
   lng?: number | null;
+  refNote?: string;
 }

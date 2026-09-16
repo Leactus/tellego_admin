@@ -11,6 +11,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
 import { debounce } from '../../../core/utils/debounce';
 import { getQueryParam, getQueryParamNumber, syncQueryParams } from '../../../core/utils/query-param-state';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
@@ -35,7 +36,7 @@ const POSITION_OPTIONS: SelectOption<string>[] = [
 @Component({
   selector: 'app-negocio-personal',
   standalone: true,
-  imports: [FormsModule, Icon, Pager, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Pager, Select, Skeleton],
   templateUrl: './negocio-personal.html',
   styleUrl: './negocio-personal.scss',
 })

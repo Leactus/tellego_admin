@@ -13,6 +13,7 @@ import { formatLongDate } from '../../core/utils/format-date';
 import { addMonthsToDateOnly } from '../../core/utils/billing';
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { Icon } from '../../shared/icon/icon';
+import { EmptyState } from '../../shared/empty-state/empty-state';
 import { Pager } from '../../shared/pager/pager';
 import { Select, SelectOption } from '../../shared/select/select';
 import { Skeleton } from '../../shared/skeleton/skeleton';
@@ -29,7 +30,7 @@ const METHOD_OPTIONS: SelectOption[] = [
 @Component({
   selector: 'app-pagos',
   standalone: true,
-  imports: [FormsModule, Icon, Pager, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Pager, Select, Skeleton],
   templateUrl: './pagos.html',
   styleUrl: './pagos.scss',
 })

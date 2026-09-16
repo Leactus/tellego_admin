@@ -9,6 +9,7 @@ import { Company } from '../../../core/models/company.model';
 import { Store } from '../../../core/models/store.model';
 import { OptionGroup, Product, ProductCategory } from '../../../core/models/catalog.model';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
@@ -21,7 +22,7 @@ type Tab = 'categorias' | 'productos';
 @Component({
   selector: 'app-negocio-menu',
   standalone: true,
-  imports: [FormsModule, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, Skeleton],
   templateUrl: './negocio-menu.html',
   styleUrl: './negocio-menu.scss',
 })

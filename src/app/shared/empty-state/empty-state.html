@@ -1,0 +1,9 @@
+<div class="empty-state" [class.compact]="compact()">
+  <div class="empty-state-icon">
+    <app-icon [name]="resolvedIcon()" />
+  </div>
+  <p class="empty-state-title">{{ title() }}</p>
+  @if (hint()) {
+    <p class="empty-state-hint">{{ hint() }}</p>
+  }
+</div>

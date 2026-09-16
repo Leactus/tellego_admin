@@ -17,6 +17,7 @@ import { addMonthsToDateOnly } from '../../../core/utils/billing';
 import { Store, StoreInput } from '../../../core/models/store.model';
 import { SubcategoryAvailability } from '../../../core/models/subcategory.model';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { LocationField } from '../../../shared/location-field/location-field';
 import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
@@ -47,7 +48,7 @@ const TABS: Tab[] = ['info', 'cobro', 'sucursales', 'facturacion', 'pagos'];
 @Component({
   selector: 'app-negocio-detalle',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, Select, MultiSelect, Pager, LocationField, Skeleton, StoreRatingsModal],
+  imports: [FormsModule, RouterLink, Icon, EmptyState, Select, MultiSelect, Pager, LocationField, Skeleton, StoreRatingsModal],
   templateUrl: './negocio-detalle.html',
   styleUrl: './negocio-detalle.scss',
 })
@@ -165,6 +166,8 @@ export class NegocioDetalle implements OnInit {
 
   readonly storeModalOpen = signal(false);
   readonly isSavingStore = signal(false);
+  readonly isUploadingStoreRefPhoto = signal(false);
+  readonly isRemovingStoreRefPhoto = signal(false);
   readonly departmentOptions = signal<SelectOption<number>[]>([]);
   editingStore: Store | null = null;
   storeForm: {
@@ -175,6 +178,7 @@ export class NegocioDetalle implements OnInit {
     phone: string;
     lat: number | null;
     lng: number | null;
+    refNote: string;
   } = {
     name: '',
     description: '',
@@ -183,6 +187,7 @@ export class NegocioDetalle implements OnInit {
     phone: '',
     lat: null,
     lng: null,
+    refNote: '',
   };
   /** true recién después de un intento de "Guardar" fallido en el modal de sucursal. */
   readonly storeSubmitted = signal(false);
@@ -732,6 +737,7 @@ export class NegocioDetalle implements OnInit {
       phone: '',
       lat: null,
       lng: null,
+      refNote: '',
     };
     this.storeSubmitted.set(false);
     this.storeModalOpen.set(true);
@@ -747,6 +753,7 @@ export class NegocioDetalle implements OnInit {
       phone: store.phone ?? '',
       lat: store.lat,
       lng: store.lng,
+      refNote: store.refNote ?? '',
     };
     this.storeSubmitted.set(false);
     this.storeModalOpen.set(true);
@@ -754,6 +761,48 @@ export class NegocioDetalle implements OnInit {
 
   closeStoreModal(): void {
     this.storeModalOpen.set(false);
+  }
+
+  async onStoreRefPhotoSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.editingStore) return;
+
+    this.isUploadingStoreRefPhoto.set(true);
+    try {
+      const { refPhotoUrl } = await this.storesService.uploadReferencePhoto(this.editingStore.id, file);
+      this.editingStore = { ...this.editingStore, refPhotoUrl };
+      this.patchBranch(this.editingStore);
+      this.toast.success('Foto de referencia actualizada');
+    } catch {
+      this.toast.error('No se pudo subir la foto de referencia');
+    } finally {
+      this.isUploadingStoreRefPhoto.set(false);
+    }
+  }
+
+  async removeStoreRefPhoto(): Promise<void> {
+    if (!this.editingStore) return;
+    const ok = await this.confirm.confirm({
+      title: 'Quitar foto de referencia',
+      message: 'La foto de referencia se va a borrar. Se puede subir una nueva cuando quieras.',
+      confirmLabel: 'Quitar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    this.isRemovingStoreRefPhoto.set(true);
+    try {
+      const { refPhotoUrl } = await this.storesService.removeReferencePhoto(this.editingStore.id);
+      this.editingStore = { ...this.editingStore, refPhotoUrl };
+      this.patchBranch(this.editingStore);
+      this.toast.success('Foto de referencia quitada');
+    } catch {
+      this.toast.error('No se pudo quitar la foto de referencia');
+    } finally {
+      this.isRemovingStoreRefPhoto.set(false);
+    }
   }
 
   async saveStore(): Promise<void> {
@@ -784,6 +833,7 @@ export class NegocioDetalle implements OnInit {
         phone: this.storeForm.phone.trim(),
         lat: this.storeForm.lat,
         lng: this.storeForm.lng,
+        refNote: this.storeForm.refNote.trim(),
       };
       if (this.editingStore) {
         await this.storesService.update(this.editingStore.id, input);

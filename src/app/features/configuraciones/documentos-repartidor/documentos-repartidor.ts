@@ -13,6 +13,7 @@ import {
   DriverDocumentType,
 } from '../../../core/models/driver-onboarding.model';
 import { Icon } from '../../../shared/icon/icon';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -39,7 +40,7 @@ interface FieldRow {
 @Component({
   selector: 'app-documentos-repartidor',
   standalone: true,
-  imports: [FormsModule, Icon, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, Skeleton],
   templateUrl: './documentos-repartidor.html',
   styleUrl: './documentos-repartidor.scss',
 })

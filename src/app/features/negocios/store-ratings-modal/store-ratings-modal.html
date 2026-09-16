@@ -20,13 +20,12 @@
         <app-skeleton variant="card" [rows]="3" />
       } @else if (result(); as data) {
         @if (data.data.length === 0) {
-          <p class="empty">
-            @switch (filter()) {
-              @case ('hidden') { No hay reseñas ocultas. }
-              @case ('visible') { No hay reseñas visibles. }
-              @default { Este negocio todavía no tiene reseñas. }
-            }
-          </p>
+          @let emptyTitle = filter() === 'hidden'
+            ? 'No hay reseñas ocultas.'
+            : filter() === 'visible'
+              ? 'No hay reseñas visibles.'
+              : 'Este negocio todavía no tiene reseñas.';
+          <app-empty-state variant="no-data" [title]="emptyTitle" icon="star" [compact]="true" />
         } @else {
           <div class="rating-list">
             @for (rating of data.data; track rating.id) {

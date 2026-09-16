@@ -14,7 +14,7 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="5" />
 } @else if (items().length === 0) {
-  <p class="empty">No hay solicitudes en esta categoría.</p>
+  <app-empty-state variant="no-data" title="No hay solicitudes en esta categoría." icon="megaphone" />
 } @else {
   <div class="list">
     @for (ad of items(); track ad.id) {

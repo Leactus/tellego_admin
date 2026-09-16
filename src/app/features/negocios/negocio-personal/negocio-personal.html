@@ -23,9 +23,13 @@
 @if (isLoading() || isRefreshing()) {
   <app-skeleton variant="list" [rows]="4" />
 } @else if (branchOptions().length === 0) {
-  <p class="empty">Este negocio todavía no tiene sucursales.</p>
+  <app-empty-state variant="no-data" title="Este negocio todavía no tiene sucursales." icon="map-pin" />
 } @else if (staff().length === 0) {
-  <p class="empty">{{ searchQuery ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay personal asignado.' }}</p>
+  <app-empty-state
+    [variant]="searchQuery ? 'no-results' : 'no-data'"
+    [title]="searchQuery ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay personal asignado.'"
+    icon="users"
+  />
 } @else {
   <div class="list">
     @for (member of staff(); track member.id) {

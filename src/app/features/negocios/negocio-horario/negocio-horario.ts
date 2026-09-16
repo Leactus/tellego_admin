@@ -11,6 +11,7 @@ import { Store } from '../../../core/models/store.model';
 import { StoreScheduleDay } from '../../../core/models/schedule.model';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
+import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
 
@@ -43,7 +44,7 @@ function toInputTime(value: string | null): string {
 @Component({
   selector: 'app-negocio-horario',
   standalone: true,
-  imports: [FormsModule, ScrollingModule, Select, Skeleton],
+  imports: [FormsModule, ScrollingModule, Select, EmptyState, Skeleton],
   templateUrl: './negocio-horario.html',
   styleUrl: './negocio-horario.scss',
 })

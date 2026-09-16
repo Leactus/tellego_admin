@@ -15,7 +15,7 @@
     <p class="muted hint">Se muestran a los negocios como forma de pago por transferencia. Desactiva una en vez de borrarla si ya no aplica.</p>
 
     @if (accounts().length === 0) {
-      <p class="empty">Todavía no hay cuentas bancarias registradas.</p>
+      <app-empty-state variant="no-data" title="Todavía no hay cuentas bancarias registradas." icon="credit-card" />
     } @else {
       <div class="list">
         @for (account of accounts(); track account.id) {
@@ -99,10 +99,12 @@
         <button type="button" class="btn-secondary" (click)="openApayModal()">Cambiar token APay</button>
       </div>
     } @else {
-      <p class="empty">
-        La plataforma todavía no tiene una cuenta APay configurada; los negocios solo pueden pagar por
-        transferencia hasta que se cargue una aquí.
-      </p>
+      <app-empty-state
+        variant="no-data"
+        title="La plataforma todavía no tiene una cuenta APay configurada."
+        hint="Los negocios solo pueden pagar por transferencia hasta que se cargue una aquí."
+        icon="credit-card"
+      />
       <div class="toolbar">
         <button type="button" class="btn-primary" (click)="openApayModal()">Conectar cuenta APay</button>
       </div>

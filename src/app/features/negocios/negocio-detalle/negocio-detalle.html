@@ -247,7 +247,13 @@
         <button type="button" class="btn-secondary" (click)="openApayModal()">Cambiar token Apay</button>
       </div>
     } @else {
-      <p class="empty">Este negocio todavía no tiene una cuenta APay configurada; no puede cobrar con tarjeta.</p>
+      <app-empty-state
+        variant="no-data"
+        title="Este negocio todavía no tiene una cuenta APay configurada."
+        hint="No puede cobrar con tarjeta hasta que la conecte."
+        icon="credit-card"
+        [compact]="true"
+      />
       <div class="toolbar">
         <button type="button" class="btn-primary" (click)="openApayModal()">Conectar cuenta APay</button>
       </div>
@@ -262,7 +268,7 @@
       <button class="btn-primary" (click)="openNewStoreModal()">+ Nueva sucursal</button>
     </div>
     @if (!c.branches || c.branches.length === 0) {
-      <p class="empty">Sin sucursales.</p>
+      <app-empty-state variant="no-data" title="Sin sucursales." icon="map-pin" [compact]="true" />
     } @else {
       <div class="list">
         @for (branch of c.branches; track branch.id) {
@@ -443,7 +449,7 @@
       <button class="btn-primary" (click)="openPaymentModal()">+ Registrar pago</button>
     </div>
     @if (payments().length === 0) {
-      <p class="empty">Todavía no hay pagos registrados.</p>
+      <app-empty-state variant="no-data" title="Todavía no hay pagos registrados." icon="credit-card" [compact]="true" />
     } @else {
       <div class="list">
         @for (payment of payments(); track payment.id) {
@@ -688,6 +694,67 @@
           Descripción
           <textarea [(ngModel)]="storeForm.description" name="storeDescription" rows="2"></textarea>
         </label>
+
+        <hr class="modal-divider" />
+        <p class="modal-section-title">Punto de referencia (opcional)</p>
+        <p class="muted">
+          Para cuando el pin del mapa de arriba no alcanza para ubicar la sucursal. Una foto y una
+          descripción de cómo llegar — no es una segunda ubicación en el mapa.
+        </p>
+        <label>
+          Cómo llegar
+          <textarea
+            [(ngModel)]="storeForm.refNote"
+            name="storeRefNote"
+            rows="3"
+            placeholder="Ej. Portón negro junto a la farmacia, entrar por el callejón..."
+          ></textarea>
+        </label>
+        @if (editingStore) {
+          <div class="cover-card">
+            <label
+              class="image-dropzone cover-dropzone"
+              [class.has-image]="editingStore.refPhotoUrl"
+              [class.uploading]="isUploadingStoreRefPhoto()"
+            >
+              @if (editingStore.refPhotoUrl) {
+                <img [src]="editingStore.refPhotoUrl" alt="Foto de referencia de la sucursal" />
+                <span class="dropzone-overlay">
+                  <app-icon name="camera" />
+                  {{ isUploadingStoreRefPhoto() ? 'Subiendo…' : 'Cambiar' }}
+                </span>
+              } @else {
+                <span class="dropzone-empty">
+                  <app-icon name="camera" />
+                  {{ isUploadingStoreRefPhoto() ? 'Subiendo…' : 'Subir foto de referencia' }}
+                </span>
+              }
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onStoreRefPhotoSelected($event)"
+                [disabled]="isUploadingStoreRefPhoto()"
+                hidden
+              />
+            </label>
+            <div class="cover-info">
+              <strong>Foto de referencia</strong>
+              <p class="muted">Fachada, punto de encuentro u otra referencia visual para llegar.</p>
+              @if (editingStore.refPhotoUrl) {
+                <button
+                  type="button"
+                  class="btn-text danger-text"
+                  [disabled]="isRemovingStoreRefPhoto()"
+                  (click)="removeStoreRefPhoto()"
+                >
+                  Quitar foto
+                </button>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="muted">Guarda la sucursal primero para poder subirle una foto de referencia.</p>
+        }
       </div>
 
       <div class="modal-actions">
