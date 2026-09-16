@@ -134,6 +134,26 @@ export class CompaniesService {
     ).then(() => undefined);
   }
 
+  /**
+   * Bandeja global de reseñas reportadas por negocios (POST /owner/store/ratings/:id/report, en
+   * delivery-pedidos-admin) — de CUALQUIER negocio a la vez, para no ir negocio por negocio
+   * buscándolas.
+   */
+  listReportedStoreRatings(params?: PageParams): Promise<StoreRatingsPage> {
+    return firstValueFrom(
+      this.http.get<StoreRatingsPage>(`${environment.apiUrl}/admin/store-ratings/reported`, {
+        params: toHttpParams(params),
+      }),
+    );
+  }
+
+  /** Descarta un reporte sin ocultar la reseña (el super-admin decide que está bien como está). */
+  dismissStoreRatingReport(ratingId: number): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/store-ratings/${ratingId}/report`),
+    ).then(() => undefined);
+  }
+
   /** Departamentos del país de esta empresa — para el select de "Región / departamento" de sus sucursales. */
   listDepartments(companyId: number): Promise<Department[]> {
     return firstValueFrom(

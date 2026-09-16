@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../config/environment';
-import { Driver, DriverRatingsSummary, DriverStatus } from '../models/driver.model';
+import { Driver, DriverRating, DriverRatingsSummary, DriverStatus } from '../models/driver.model';
 import { Paginated, PageParams, toHttpParams } from '../models/pagination.model';
 
 /** Pestañas de repartidores.html — 'all' no manda filtro (útil si algún día se agrega esa pestaña). */
@@ -92,6 +92,26 @@ export class DriversService {
         hidden,
         ...(reason ? { reason } : {}),
       }),
+    ).then(() => undefined);
+  }
+
+  /**
+   * Bandeja global de reseñas reportadas por repartidores (POST /driver/ratings/:id/report,
+   * en la app del repartidor) — de CUALQUIER repartidor a la vez, para no tener que ir
+   * repartidor por repartidor buscándolas.
+   */
+  listReportedRatings(params?: PageParams): Promise<Paginated<DriverRating>> {
+    return firstValueFrom(
+      this.http.get<Paginated<DriverRating>>(`${environment.apiUrl}/admin/driver-ratings/reported`, {
+        params: toHttpParams(params),
+      }),
+    );
+  }
+
+  /** Descarta un reporte sin ocultar la reseña (el super-admin decide que está bien como está). */
+  dismissRatingReport(ratingId: number): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/driver-ratings/${ratingId}/report`),
     ).then(() => undefined);
   }
 }

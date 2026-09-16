@@ -2,6 +2,13 @@
 <p class="muted">Aprobación y estado de los repartidores de la plataforma.</p>
 
 <div class="toolbar">
+  <button class="btn-secondary" (click)="openReports()">
+    <app-icon name="flag" />
+    Reportes
+    @if (reportedCount() > 0) {
+      <span class="badge">{{ reportedCount() }}</span>
+    }
+  </button>
   <button class="btn-primary" (click)="openNewModal()">+ Crear repartidor</button>
 </div>
 
@@ -238,4 +245,8 @@
     (close)="closeDocs()"
     (approved)="onDriverApproved()"
   />
+}
+
+@if (reportsModalOpen()) {
+  <app-driver-rating-reports-modal (close)="closeReports()" (resolved)="onReportResolved()" />
 }

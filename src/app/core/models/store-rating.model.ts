@@ -15,6 +15,9 @@ export interface StoreRating {
   hiddenAt: string | null;
   hiddenReason: string | null;
   hiddenBy?: { id: number; name: string } | null;
+  /** Reporte del negocio (ver POST /owner/store/ratings/:id/report): != null = pendiente de revisión. */
+  reportedAt?: string | null;
+  reportedReason?: string | null;
 }
 
 export type StoreRatingsPage = Paginated<StoreRating>;

@@ -17,6 +17,7 @@ import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { TempPasswordModalService } from '../../../shared/temp-password-modal/temp-password-modal.service';
+import { StoreRatingReportsModal } from '../store-rating-reports-modal/store-rating-reports-modal';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,7 +29,7 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
 @Component({
   selector: 'app-negocios-lista',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, EmptyState, Pager, Select, Skeleton],
+  imports: [FormsModule, RouterLink, Icon, EmptyState, Pager, Select, Skeleton, StoreRatingReportsModal],
   templateUrl: './negocios-lista.html',
   styleUrl: './negocios-lista.scss',
 })
@@ -90,7 +91,33 @@ export class NegociosLista implements OnInit, OnDestroy {
     this.page.set(getQueryParamNumber(this.route, 'page', 1));
     this.pageSize.set(getQueryParamNumber(this.route, 'pageSize', DEFAULT_PAGE_SIZE));
     this.search = getQueryParam(this.route, 'search') ?? '';
+    this.loadReportedCount();
     await Promise.all([this.reload(), this.loadCountries()]);
+  }
+
+  readonly reportsModalOpen = signal(false);
+  readonly reportedCount = signal(0);
+
+  openReports(): void {
+    this.reportsModalOpen.set(true);
+  }
+
+  closeReports(): void {
+    this.reportsModalOpen.set(false);
+  }
+
+  /** Recuenta la bandeja tras ocultar/descartar un reporte — para que el badge del botón no quede desactualizado. */
+  async onReportResolved(): Promise<void> {
+    await this.loadReportedCount();
+  }
+
+  private async loadReportedCount(): Promise<void> {
+    try {
+      const { meta } = await this.companies.listReportedStoreRatings({ page: 1, pageSize: 1 });
+      this.reportedCount.set(meta.total);
+    } catch {
+      // Best-effort: si falla, el botón se queda sin badge — no es motivo para tapar la pantalla con un error.
+    }
   }
 
   /** Cancela el debounce pendiente al salir de la pantalla (p.ej. al abrir el detalle de un negocio) —

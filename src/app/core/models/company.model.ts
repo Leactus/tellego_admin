@@ -107,7 +107,8 @@ export interface PlatformPayment {
   id: number;
   companyId: number;
   amount: string;
-  method: 'cash' | 'transfer' | 'card';
+  /** 'none' = cierre automático de un periodo de comisión con $0.00 a cobrar (sin ventas), ver billing.service.ts#settleZeroSalesCommissionPeriods. */
+  method: 'cash' | 'transfer' | 'card' | 'none';
   periodStart: string;
   periodEnd: string;
   note: string | null;

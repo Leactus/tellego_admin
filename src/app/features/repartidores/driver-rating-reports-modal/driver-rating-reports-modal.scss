@@ -1,0 +1,116 @@
+@use '../../../shared/styles/modal' as *;
+
+.muted {
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+.rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rating-card {
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.rating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.driver-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.rating-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.rating-score app-icon {
+  font-size: 1rem;
+}
+
+.rating-comment {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.report-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  background: var(--color-surface);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.report-reason app-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-error);
+}
+
+.rating-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.rating-date {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.rating-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rating-mod-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rating-mod-btn.danger {
+  color: var(--color-error);
+}
+
+.rating-mod-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rating-mod-btn app-icon {
+  font-size: 0.9rem;
+}

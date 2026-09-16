@@ -20,13 +20,25 @@ import { TempPasswordModalService } from '../../shared/temp-password-modal/temp-
 import { scrollToFirstInvalid } from '../../shared/scroll-to-invalid';
 import { DriverRatingsModal } from './driver-ratings-modal/driver-ratings-modal';
 import { DriverDocumentsModal } from './driver-documents-modal/driver-documents-modal';
+import { DriverRatingReportsModal } from './driver-rating-reports-modal/driver-rating-reports-modal';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-repartidores',
   standalone: true,
-  imports: [DatePipe, FormsModule, Icon, EmptyState, Pager, Select, Skeleton, DriverRatingsModal, DriverDocumentsModal],
+  imports: [
+    DatePipe,
+    FormsModule,
+    Icon,
+    EmptyState,
+    Pager,
+    Select,
+    Skeleton,
+    DriverRatingsModal,
+    DriverDocumentsModal,
+    DriverRatingReportsModal,
+  ],
   templateUrl: './repartidores.html',
   styleUrl: './repartidores.scss',
 })
@@ -70,6 +82,31 @@ export class Repartidores implements OnInit, OnDestroy {
 
   closeRatings(): void {
     this.ratingsDriverId.set(null);
+  }
+
+  readonly reportsModalOpen = signal(false);
+  readonly reportedCount = signal(0);
+
+  openReports(): void {
+    this.reportsModalOpen.set(true);
+  }
+
+  closeReports(): void {
+    this.reportsModalOpen.set(false);
+  }
+
+  /** Recuenta la bandeja tras ocultar/descartar un reporte — para que el badge del botón no quede desactualizado. */
+  async onReportResolved(): Promise<void> {
+    await this.loadReportedCount();
+  }
+
+  private async loadReportedCount(): Promise<void> {
+    try {
+      const { meta } = await this.drivers.listReportedRatings({ page: 1, pageSize: 1 });
+      this.reportedCount.set(meta.total);
+    } catch {
+      // Best-effort: si falla, el botón se queda sin badge — no es motivo para tapar la pantalla con un error.
+    }
   }
 
   readonly docsDriverId = signal<number | null>(null);
@@ -144,6 +181,7 @@ export class Repartidores implements OnInit, OnDestroy {
       .listCountries()
       .then((c) => this.countries.set(c))
       .catch(() => undefined);
+    this.loadReportedCount();
     await this.reload();
   }
 

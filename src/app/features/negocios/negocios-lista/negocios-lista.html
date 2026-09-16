@@ -2,6 +2,13 @@
 <p class="muted">Empresas registradas en la plataforma y sus sucursales.</p>
 
 <div class="toolbar">
+  <button class="btn-secondary" (click)="openReports()">
+    <app-icon name="flag" />
+    Reportes
+    @if (reportedCount() > 0) {
+      <span class="badge">{{ reportedCount() }}</span>
+    }
+  </button>
   <button class="btn-primary" (click)="openCreateModal()">+ Crear negocio</button>
 </div>
 
@@ -168,4 +175,8 @@
       </div>
     </div>
   </div>
+}
+
+@if (reportsModalOpen()) {
+  <app-store-rating-reports-modal (close)="closeReports()" (resolved)="onReportResolved()" />
 }

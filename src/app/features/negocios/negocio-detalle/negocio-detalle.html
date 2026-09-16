@@ -456,7 +456,7 @@
           <div class="row">
             <app-icon name="credit-card" class="row-icon" />
             <div class="row-info">
-              <span class="row-title">${{ payment.amount }} · {{ payment.method }}</span>
+              <span class="row-title">${{ payment.amount }} · {{ paymentMethodLabels[payment.method] }}</span>
               <span class="muted">
                 Periodo {{ payment.periodStart }} — {{ payment.periodEnd }}
                 @if (payment.registeredBy) {

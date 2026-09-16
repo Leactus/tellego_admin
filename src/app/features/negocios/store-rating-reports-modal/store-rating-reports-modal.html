@@ -1,0 +1,75 @@
+<div class="modal-backdrop" (click)="close.emit()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Reportes de calificaciones</h2>
+      <button class="modal-close" (click)="close.emit()" aria-label="Cerrar">
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="muted">Reseñas que un negocio marcó como injustas desde delivery-pedidos-admin, pendientes de revisión.</p>
+
+      @if (isLoading() || isRefreshing()) {
+        <app-skeleton variant="card" [rows]="3" />
+      } @else if (items().length === 0) {
+        <app-empty-state variant="no-data" title="No hay reportes pendientes." icon="flag" [compact]="true" />
+      } @else {
+        <div class="rating-list">
+          @for (rating of items(); track rating.id) {
+            <div class="rating-card">
+              <div class="rating-header">
+                <span class="store-name">{{ rating.store?.name || 'Sucursal #' + rating.storeId }}</span>
+                <span class="rating-score">
+                  <app-icon name="star" />
+                  {{ rating.score }}
+                </span>
+              </div>
+              @if (rating.comment) {
+                <p class="rating-comment">{{ rating.comment }}</p>
+              }
+              <p class="report-reason">
+                <app-icon name="flag" />
+                {{ rating.reportedReason || 'Sin motivo detallado' }}
+              </p>
+              <div class="rating-footer">
+                <span class="rating-date">
+                  Reseña del {{ formatShortDate(rating.createdAt) }}
+                  @if (rating.reportedAt) { · reportada el {{ formatShortDate(rating.reportedAt) }} }
+                </span>
+                <div class="rating-actions">
+                  <button
+                    class="rating-mod-btn"
+                    [disabled]="busyRatingIds().has(rating.id)"
+                    (click)="dismiss(rating)"
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    class="rating-mod-btn danger"
+                    [disabled]="busyRatingIds().has(rating.id)"
+                    (click)="hide(rating)"
+                  >
+                    <app-icon name="eye-off" />
+                    Ocultar
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (total() > 0) {
+        <app-pager
+          [page]="page()"
+          [totalPages]="totalPages()"
+          [total]="total()"
+          [pageSize]="pageSize()"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+        />
+      }
+    </div>
+  </div>
+</div>

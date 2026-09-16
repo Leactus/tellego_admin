@@ -35,6 +35,17 @@ const METHOD_OPTIONS: SelectOption[] = [
   { value: 'card', label: 'Tarjeta' },
 ];
 
+/** Para mostrar el método de un pago YA registrado (payments()) — a diferencia de METHOD_OPTIONS
+ * (el selector de "Registrar pago"), esta sí incluye 'none': el cierre automático de un periodo de
+ * comisión con $0.00 a cobrar (ver billing.service.ts#settleZeroSalesCommissionPeriods) no tiene un
+ * método real, y no tiene sentido ofrecerlo como opción al registrar un pago a mano. */
+const PAYMENT_METHOD_LABELS: Record<PlatformPayment['method'], string> = {
+  cash: 'Efectivo',
+  transfer: 'Transferencia',
+  card: 'Tarjeta',
+  none: 'Sin cobro ($0.00)',
+};
+
 const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
   { value: 'commission', label: 'Comisión sobre ventas' },
   { value: 'fee', label: 'Cuota fija mensual' },
@@ -82,6 +93,7 @@ export class NegocioDetalle implements OnInit {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly methodOptions = METHOD_OPTIONS;
+  readonly paymentMethodLabels = PAYMENT_METHOD_LABELS;
   readonly billingTypeOptions = BILLING_TYPE_OPTIONS;
   readonly isLoading = signal(true);
   readonly company = signal<Company | null>(null);
