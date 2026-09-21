@@ -61,9 +61,10 @@ export class Repartidores implements OnInit, OnDestroy {
   readonly totalPages = signal(1);
   readonly total = signal(0);
 
-  /** Pestaña de estado. 'active' es el default: los que se crean desde este panel entran activos;
-   * solo los que se registran solos por la app caen en 'pending'. Se refleja en la URL (?estado=) para
-   * que un refresh (F5) no reinicie la vista. */
+  /** Pestaña de estado. 'active' es el default. Todo freelance nuevo cae en 'pending' —
+   * tanto si se registra solo por la app como si lo da de alta este panel — hasta que
+   * confirme su capital, suba sus documentos y operaciones los revise. Se refleja en la
+   * URL (?estado=) para que un refresh (F5) no reinicie la vista. */
   readonly tab = signal<DriverStatusFilter>('active');
   readonly statusCounts = signal({ active: 0, pending: 0, suspended: 0 });
   readonly tabs: { value: DriverStatusFilter; label: string }[] = [
@@ -309,9 +310,14 @@ export class Repartidores implements OnInit, OnDestroy {
           countryId: this.form.countryId,
         });
         this.closeFormModal();
-        this.tempPasswordModal.show({ title: 'Repartidor creado', email, password: tempPassword });
-        // Se crea activo — asegura que la pestaña actual lo muestre.
-        this.tab.set('active');
+        this.tempPasswordModal.show({
+          title: 'Repartidor creado',
+          email,
+          password: tempPassword,
+          message: 'Queda pendiente hasta que confirme su capital, suba sus documentos y los revises en "Revisar documentos".',
+        });
+        // Se crea pendiente — asegura que la pestaña actual lo muestre.
+        this.tab.set('pending');
       }
       this.page.set(1);
       await this.reload();

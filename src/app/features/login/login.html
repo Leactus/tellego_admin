@@ -35,6 +35,14 @@
         </div>
       </label>
 
+      <div class="login-options">
+        <label class="remember-me">
+          <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
+          Recordar mi correo
+        </label>
+        <a routerLink="/recuperar-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
+      </div>
+
       <button type="submit" class="btn-submit" [disabled]="isLoading()">
         {{ isLoading() ? 'Ingresando…' : 'INICIAR SESIÓN' }}
       </button>

@@ -580,7 +580,7 @@
             <input type="number" min="0" step="0.01" [(ngModel)]="paymentForm.amount" name="amount" [class.invalid]="isPaymentAmountInvalid()" />
           </label>
           @if (isPaymentAmountInvalid()) {
-            <span class="invalid-hint">Ingresa un monto mayor a 0</span>
+            <span class="invalid-hint">Ingresa un monto (0 si no hubo ventas en el periodo)</span>
           }
           <label>
             Método

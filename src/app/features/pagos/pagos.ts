@@ -68,8 +68,10 @@ export class Pagos implements OnInit, OnDestroy {
   /** Solo para cuota fija — con comisión no existe "adelantar", el monto depende de ventas que todavía no pasaron. */
   advanceForm = { months: 1, method: 'cash' as 'cash' | 'transfer' | 'card', note: '' };
 
+  /** amount=0 es válido (negocio por comisión que no vendió nada en el periodo — igual debe quedar
+   * el registro del pago para el histórico/reporte mensual); solo null/negativo es inválido. */
   isAmountInvalid(): boolean {
-    return this.paymentSubmitted() && !this.paymentForm.amount;
+    return this.paymentSubmitted() && (this.paymentForm.amount == null || this.paymentForm.amount < 0);
   }
 
   isPeriodStartInvalid(): boolean {
@@ -251,7 +253,13 @@ export class Pagos implements OnInit, OnDestroy {
   async savePayment(): Promise<void> {
     this.paymentSubmitted.set(true);
     const company = this.paymentModalCompany();
-    if (!company || !this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) {
+    if (
+      !company ||
+      this.paymentForm.amount == null ||
+      this.paymentForm.amount < 0 ||
+      !this.paymentForm.periodStart ||
+      !this.paymentForm.periodEnd
+    ) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }

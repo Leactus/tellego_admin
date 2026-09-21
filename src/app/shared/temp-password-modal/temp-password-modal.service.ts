@@ -4,6 +4,8 @@ export interface TempPasswordInfo {
   title: string;
   email: string;
   password: string;
+  /** Nota extra opcional, ej. "queda pendiente hasta que..." — se muestra bajo la contraseña. */
+  message?: string;
 }
 
 /** Muestra una sola vez la contraseña autogenerada de una cuenta recién creada (dueño, repartidor, etc). */

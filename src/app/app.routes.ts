@@ -9,6 +9,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
   },
   {
+    path: 'recuperar-password',
+    loadComponent: () =>
+      import('./features/recuperar-password/recuperar-password').then((m) => m.RecuperarPassword),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),

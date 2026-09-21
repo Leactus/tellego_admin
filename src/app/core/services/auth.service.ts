@@ -44,6 +44,43 @@ export class AuthService {
     }
   }
 
+  /**
+   * "Olvidé mi contraseña", primer paso: pide un código de verificación al correo (mismo backend
+   * que el registro en delivery-pedidos-admin). El backend responde con el MISMO mensaje exista o
+   * no una cuenta con ese correo — nunca se le confirma a quien llena el formulario si esa cuenta
+   * existe. Devuelve `{ error, retryAfterSeconds }`: error null si salió bien.
+   */
+  async requestPasswordResetCode(email: string): Promise<{ error: string | null; retryAfterSeconds: number }> {
+    try {
+      const res = await firstValueFrom(
+        this.http.post<{ retryAfterSeconds?: number }>(`${environment.apiUrl}/auth/password-reset/request-code`, {
+          email,
+        }),
+      );
+      return { error: null, retryAfterSeconds: res?.retryAfterSeconds ?? 15 };
+    } catch (err: any) {
+      return {
+        error: err?.error?.message ?? 'No se pudo enviar el código de verificación',
+        retryAfterSeconds: err?.error?.retryAfterSeconds ?? 15,
+      };
+    }
+  }
+
+  /**
+   * Segundo paso: confirma el código y cambia la contraseña de una vez. A propósito NO deja la
+   * sesión iniciada — la persona entra por Login con su contraseña nueva.
+   */
+  async confirmPasswordReset(email: string, code: string, newPassword: string): Promise<string | null> {
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth/password-reset/confirm`, { email, code, newPassword }),
+      );
+      return null;
+    } catch (err: any) {
+      return err?.error?.message ?? 'No se pudo restablecer la contraseña';
+    }
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);

@@ -941,8 +941,10 @@ export class NegocioDetalle implements OnInit {
     }
   }
 
+  /** amount=0 es válido (negocio por comisión que no vendió nada en el periodo — igual debe quedar
+   * el registro del pago para el histórico/reporte mensual); solo null/negativo es inválido. */
   isPaymentAmountInvalid(): boolean {
-    return this.paymentSubmitted() && !this.paymentForm.amount;
+    return this.paymentSubmitted() && (this.paymentForm.amount == null || this.paymentForm.amount < 0);
   }
 
   isPaymentPeriodStartInvalid(): boolean {
@@ -959,7 +961,12 @@ export class NegocioDetalle implements OnInit {
 
   async savePayment(): Promise<void> {
     this.paymentSubmitted.set(true);
-    if (!this.paymentForm.amount || !this.paymentForm.periodStart || !this.paymentForm.periodEnd) {
+    if (
+      this.paymentForm.amount == null ||
+      this.paymentForm.amount < 0 ||
+      !this.paymentForm.periodStart ||
+      !this.paymentForm.periodEnd
+    ) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
