@@ -4,15 +4,14 @@
     <button class="btn-primary" (click)="openNewRole()">+ Nuevo rol para este negocio</button>
   </div>
   <p class="muted intro">
-    Los roles globales (del sistema o creados en Configuraciones) ya los ve el negocio — si uno de
-    ellos necesita otros permisos SOLO acá, dale "Editar": se crea una copia a medida de este negocio
-    y se reasigna automáticamente al personal que ya tenía el original. "+ Nuevo rol" arma uno desde
-    cero, también exclusivo de este negocio.
+    Los roles globales (del sistema o creados en Configuraciones) ya los ve el negocio — editarlos
+    acá cambia el permiso para TODOS los negocios que los usan, igual que en Configuraciones. Si en
+    cambio necesitas un rol exclusivo de este negocio, usa "+ Nuevo rol" — ese sí solo lo ve él.
   </p>
 
   <div class="tabs">
     @for (tab of tabs; track tab.value) {
-      <button class="tab" [class.active]="activeTab === tab.value" (click)="setTab(tab.value)">
+      <button class="tab" [class.active]="activeTab() === tab.value" (click)="setTab(tab.value)">
         {{ tab.label }}
       </button>
     }
@@ -39,22 +38,18 @@
           }
           <span class="pill pill-position">{{ permissionCount(role) }} permiso(s)</span>
           <div class="row-actions">
-            @if (isGlobal(role)) {
-              <button class="icon-btn" (click)="openEditRole(role)" title="Personalizar para este negocio">
-                <app-icon name="edit" />
-              </button>
-            } @else {
-              <button
-                class="icon-btn"
-                [disabled]="busy.isPending('toggle-role-' + role.id)"
-                (click)="toggleRoleStatus(role)"
-                [title]="role.status === 'active' ? 'Desactivar' : 'Activar'"
-              >
-                <app-icon [name]="role.status === 'active' ? 'x-circle' : 'check-circle'" />
-              </button>
-              <button class="icon-btn" (click)="openEditRole(role)" title="Editar">
-                <app-icon name="edit" />
-              </button>
+            <button
+              class="icon-btn"
+              [disabled]="busy.isPending('toggle-role-' + role.id)"
+              (click)="toggleRoleStatus(role)"
+              [title]="role.status === 'active' ? 'Desactivar' : 'Activar'"
+            >
+              <app-icon [name]="role.status === 'active' ? 'x-circle' : 'check-circle'" />
+            </button>
+            <button class="icon-btn" (click)="openEditRole(role)" [title]="isGlobal(role) ? 'Editar (afecta a todos los negocios)' : 'Editar'">
+              <app-icon name="edit" />
+            </button>
+            @if (!isGlobal(role)) {
               <button
                 class="icon-btn danger"
                 [disabled]="busy.isPending('delete-role-' + role.id)"
@@ -76,16 +71,16 @@
   <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>{{ forkingFrom ? 'Personalizar rol' : editingRole ? 'Editar rol' : 'Nuevo rol' }}</h2>
+        <h2>{{ editingRole ? 'Editar rol' : 'Nuevo rol' }}</h2>
         <button class="modal-close" (click)="closeRoleModal()" aria-label="Cerrar">
           <app-icon name="close" />
         </button>
       </div>
       <div class="modal-body">
-        @if (forkingFrom) {
+        @if (editingRole && isGlobal(editingRole)) {
           <p class="muted fork-note">
-            Esto NO edita "{{ forkingFrom.name }}" — crea una copia solo para este negocio y mueve a
-            ella al personal que ya tenía asignado el rol original.
+            Este es un rol global — el cambio se va a ver en TODOS los negocios que lo usan, no solo
+            en este.
           </p>
         }
         <label>

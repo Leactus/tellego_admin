@@ -39,14 +39,17 @@ export class RolesPermisos implements OnInit {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly tabs = TABS;
-  activeTab: RoleType = 'empleado';
+  /** Signal (no propiedad plana): rolesForTab/catalogForTab son computed() y solo se re-evalúan
+   * cuando cambia una signal de la que dependen — con una propiedad plana, cambiar de pestaña no
+   * refrescaba la lista (quedaba pegada en el resultado cacheado de la primera pestaña). */
+  readonly activeTab = signal<RoleType>('empleado');
 
   readonly isLoading = signal(true);
   readonly roles = signal<Role[]>([]);
   readonly permissionsCatalog = signal<Permission[]>([]);
 
-  readonly rolesForTab = computed(() => this.roles().filter((r) => r.roleType === this.activeTab));
-  readonly catalogForTab = computed(() => this.permissionsCatalog().filter((p) => p.roleType === this.activeTab));
+  readonly rolesForTab = computed(() => this.roles().filter((r) => r.roleType === this.activeTab()));
+  readonly catalogForTab = computed(() => this.permissionsCatalog().filter((p) => p.roleType === this.activeTab()));
   readonly permissionOptions = computed(() =>
     this.catalogForTab().map((p) => ({ value: p.id, label: p.label })),
   );
@@ -73,7 +76,7 @@ export class RolesPermisos implements OnInit {
   }
 
   setTab(tab: RoleType): void {
-    this.activeTab = tab;
+    this.activeTab.set(tab);
   }
 
   /** `silent`: true para refrescos después de guardar/borrar/activar — no tapa la lista con el esqueleto. */
@@ -143,7 +146,7 @@ export class RolesPermisos implements OnInit {
             this.editingRole.isSystem ? 'Rol actualizado — el cambio se ve en todos los negocios' : 'Rol actualizado',
           );
         } else {
-          await this.rolesService.createGlobalRole({ name, roleType: this.activeTab, permissionCodes });
+          await this.rolesService.createGlobalRole({ name, roleType: this.activeTab(), permissionCodes });
           this.toast.success('Rol creado — ya está disponible para todos los negocios');
         }
         this.closeRoleModal();

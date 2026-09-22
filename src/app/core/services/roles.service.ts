@@ -50,22 +50,8 @@ export class RolesService {
     ).then((r) => r.data);
   }
 
-  /** "Edita" un rol GLOBAL (system o global personalizado) SOLO para este negocio: crea una copia
-   * propia de la empresa con los cambios y reasigna a su personal/repartidores ya asignados — el
-   * original (y los demás negocios que lo usan) queda intacto. NUNCA usar updateRole() para esto. */
-  forkRole(
-    companyId: number,
-    sourceRoleId: number,
-    payload: { name?: string; permissionCodes: string[] },
-  ): Promise<{ role: Role; reassigned: number }> {
-    return firstValueFrom(
-      this.http.post<DataWrapper<Role> & { reassigned: number }>(
-        `${this.base}/companies/${companyId}/roles/${sourceRoleId}/fork`,
-        payload,
-      ),
-    ).then((r) => ({ role: r.data, reassigned: r.reassigned }));
-  }
-
+  /** Edita CUALQUIER rol por id — incluidos los globales: el cambio se ve en todos los negocios que
+   * lo usan, a propósito (ver comentario en admin/roles.controller.ts#update). */
   updateRole(
     id: number,
     payload: { name?: string; status?: 'active' | 'inactive'; permissionCodes?: string[] },

@@ -21,11 +21,12 @@ const TABS: { value: RoleType; label: string }[] = [
  * Pestaña "Roles y permisos" del detalle de un negocio — a diferencia de la vista equivalente en
  * delivery-pedidos-admin (hoy de solo lectura para el dueño), acá el super-admin puede:
  *  - Crear un rol propio de ESTE negocio ("+ Nuevo rol") — companyId = esta empresa, editable/borrable
- *    directo (updateRole/deleteRole).
- *  - "Editar" un rol GLOBAL (companyId NULL — plantilla del sistema o global personalizado creado
- *    desde Configuraciones): esto NUNCA lo edita en sitio (afectaría a TODOS los negocios), sino que
- *    lo clona a un rol propio de este negocio con los cambios pedidos (fork, ver saveRole()) — el
- *    original y los demás negocios que lo usan quedan intactos.
+ *    directo (updateRole/deleteRole), nunca visible para otros negocios.
+ *  - Editar CUALQUIER rol (incluidos los globales — plantillas del sistema o creados desde
+ *    Configuraciones) SIEMPRE en sitio: el cambio se ve en TODOS los negocios que lo usan, a
+ *    propósito (mismo criterio que la pantalla global, ver configuraciones/roles-permisos.ts). Para
+ *    no tocar sin querer un rol compartido, borrar sigue restringido a los roles propios de este
+ *    negocio (ver deleteRole) — borrar uno global se hace desde Configuraciones, con ese contexto.
  */
 @Component({
   selector: 'app-negocio-roles',
@@ -43,14 +44,17 @@ export class NegocioRoles implements OnInit {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly tabs = TABS;
-  activeTab: RoleType = 'empleado';
+  /** Signal (no propiedad plana): rolesForTab/catalogForTab son computed() y solo se re-evalúan
+   * cuando cambia una signal de la que dependen — con una propiedad plana, cambiar de pestaña no
+   * refrescaba la lista (quedaba pegada en el resultado cacheado de la primera pestaña). */
+  readonly activeTab = signal<RoleType>('empleado');
 
   readonly isLoading = signal(true);
   readonly roles = signal<Role[]>([]);
   readonly permissionsCatalog = signal<Permission[]>([]);
 
-  readonly rolesForTab = computed(() => this.roles().filter((r) => r.roleType === this.activeTab));
-  readonly catalogForTab = computed(() => this.permissionsCatalog().filter((p) => p.roleType === this.activeTab));
+  readonly rolesForTab = computed(() => this.roles().filter((r) => r.roleType === this.activeTab()));
+  readonly catalogForTab = computed(() => this.permissionsCatalog().filter((p) => p.roleType === this.activeTab()));
   readonly permissionOptions = computed(() =>
     this.catalogForTab().map((p) => ({ value: p.id, label: p.label })),
   );
@@ -60,14 +64,12 @@ export class NegocioRoles implements OnInit {
 
   readonly roleModalOpen = signal(false);
   editingRole: Role | null = null;
-  /** Rol GLOBAL que se está "editando" — en realidad se va a clonar (fork), nunca a tocar en sitio. */
-  forkingFrom: Role | null = null;
   roleForm = { name: '', permissionIds: [] as number[] };
   /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
   readonly roleSubmitted = signal(false);
 
-  /** companyId NULL = plantilla del sistema o rol global — nunca editable/borrable en sitio desde
-   * acá, solo "editar" vía fork() (ver openEditRole). */
+  /** companyId NULL = plantilla del sistema o rol global — se puede editar en sitio (afecta a
+   * todos), pero no borrar desde acá (ver deleteRole). */
   isGlobal(role: Role): boolean {
     return role.companyId === null;
   }
@@ -85,7 +87,7 @@ export class NegocioRoles implements OnInit {
   }
 
   setTab(tab: RoleType): void {
-    this.activeTab = tab;
+    this.activeTab.set(tab);
   }
 
   /** `silent`: true para refrescos después de guardar/borrar/activar — no tapa la lista con el esqueleto. */
@@ -111,22 +113,13 @@ export class NegocioRoles implements OnInit {
 
   openNewRole(): void {
     this.editingRole = null;
-    this.forkingFrom = null;
     this.roleForm = { name: '', permissionIds: [] };
     this.roleSubmitted.set(false);
     this.roleModalOpen.set(true);
   }
 
-  /** Rol propio de este negocio: edita en sitio. Rol global (isGlobal): "editar" arma un fork —
-   * nombre y permisos parten de los del original, pero al guardar se crea una copia nueva. */
   openEditRole(role: Role): void {
-    if (this.isGlobal(role)) {
-      this.editingRole = null;
-      this.forkingFrom = role;
-    } else {
-      this.editingRole = role;
-      this.forkingFrom = null;
-    }
+    this.editingRole = role;
     this.roleForm = { name: role.name, permissionIds: role.permissions.map((p) => p.id) };
     this.roleSubmitted.set(false);
     this.roleModalOpen.set(true);
@@ -154,21 +147,13 @@ export class NegocioRoles implements OnInit {
     await this.busy.run('save-role', async () => {
       try {
         const permissionCodes = this.codesFor(this.roleForm.permissionIds);
-        if (this.forkingFrom) {
-          const { reassigned } = await this.rolesService.forkRole(this.companyId, this.forkingFrom.id, {
-            name,
-            permissionCodes,
-          });
-          this.toast.success(
-            reassigned > 0
-              ? `Rol personalizado creado — ${reassigned} persona(s) de este negocio se movieron automáticamente`
-              : 'Rol personalizado creado para este negocio',
-          );
-        } else if (this.editingRole) {
+        if (this.editingRole) {
           await this.rolesService.updateRole(this.editingRole.id, { name, permissionCodes });
-          this.toast.success('Rol actualizado');
+          this.toast.success(
+            this.isGlobal(this.editingRole) ? 'Rol actualizado — el cambio se ve en todos los negocios' : 'Rol actualizado',
+          );
         } else {
-          await this.rolesService.createRole(this.companyId, { name, roleType: this.activeTab, permissionCodes });
+          await this.rolesService.createRole(this.companyId, { name, roleType: this.activeTab(), permissionCodes });
           this.toast.success('Rol creado');
         }
         this.closeRoleModal();
@@ -181,7 +166,6 @@ export class NegocioRoles implements OnInit {
   }
 
   async toggleRoleStatus(role: Role): Promise<void> {
-    if (this.isGlobal(role)) return;
     const nextStatus = role.status === 'active' ? 'inactive' : 'active';
     await this.busy.run(`toggle-role-${role.id}`, async () => {
       try {
