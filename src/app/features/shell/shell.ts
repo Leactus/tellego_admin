@@ -32,7 +32,7 @@ export class Shell {
     { path: 'estadisticas', label: 'Estadísticas', icon: 'dashboard' },
     { path: 'negocios', label: 'Negocios', icon: 'store' },
     { path: 'repartidores', label: 'Repartidores', icon: 'truck' },
-    { path: 'pagos', label: 'Pagos', icon: 'credit-card' },
+    { path: 'centro-de-pagos', label: 'Centro de pagos', icon: 'credit-card' },
     { path: 'publicidad/negocios', label: 'Publicidad de negocios', icon: 'megaphone' },
     { path: 'publicidad/productos', label: 'Publicidad de productos', icon: 'package' },
     { path: 'notificaciones', label: 'Notificaciones', icon: 'bell' },
@@ -42,6 +42,7 @@ export class Shell {
   readonly settingsItems: MenuItem[] = [
     { path: 'configuraciones/tipos-negocio', label: 'Tipos de negocio', icon: 'store' },
     { path: 'configuraciones/tipo-pago', label: 'Tipo de pago', icon: 'credit-card' },
+    { path: 'configuraciones/roles-permisos', label: 'Roles y permisos', icon: 'puzzle' },
     { path: 'configuraciones/documentos-repartidor', label: 'Documentos de repartidor', icon: 'truck' },
     { path: 'configuraciones/zonas-envio', label: 'Zonas de envío', icon: 'map-pin' },
     { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },

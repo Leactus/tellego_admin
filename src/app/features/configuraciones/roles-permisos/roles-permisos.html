@@ -1,0 +1,112 @@
+<h1>Roles y permisos</h1>
+<p class="muted">
+  Paquete de roles disponible para <strong>todos</strong> los negocios. Puedes editar el nombre y los
+  permisos de los roles del sistema (Encargado, Cajero/a, Cocinero/a, Mesero/a, Repartidor) — el
+  cambio se ve para todos a la vez, así que úsalo solo para corregir el paquete base; no se pueden
+  borrar. Un rol nuevo que crees acá también se agrega al paquete y queda disponible para todo
+  negocio, nuevo o existente — ese sí se puede borrar después. Si en cambio necesitas un rol a medida
+  de un solo negocio (sin afectar a los demás), eso se hace desde el detalle de ese negocio (pestaña
+  "Roles y permisos").
+</p>
+
+<div class="tabs">
+  @for (tab of tabs; track tab.value) {
+    <button class="tab" [class.active]="activeTab === tab.value" (click)="setTab(tab.value)">
+      {{ tab.label }}
+    </button>
+  }
+</div>
+
+<div class="toolbar">
+  <button class="btn-primary" (click)="openNewRole()">+ Nuevo rol global</button>
+</div>
+
+@if (isLoading()) {
+  <app-skeleton variant="list" [rows]="4" [avatar]="false" />
+} @else if (rolesForTab().length === 0) {
+  <app-empty-state variant="no-data" title="Todavía no hay roles para esta categoría." icon="users" />
+} @else {
+  <div class="list">
+    @for (role of rolesForTab(); track role.id) {
+      <div class="row">
+        <span class="row-title">{{ role.name }}</span>
+        @if (role.isSystem) {
+          <span class="pill">Rol del sistema</span>
+        } @else {
+          <span class="pill pill-custom">Global</span>
+        }
+        @if (role.status === 'inactive') {
+          <span class="pill">Inactivo</span>
+        }
+        <span class="pill pill-position">{{ permissionCount(role) }} permiso(s)</span>
+        <div class="row-actions">
+          <button
+            class="icon-btn"
+            [disabled]="busy.isPending('toggle-role-' + role.id)"
+            (click)="toggleRoleStatus(role)"
+            [title]="role.status === 'active' ? 'Desactivar' : 'Activar'"
+          >
+            <app-icon [name]="role.status === 'active' ? 'x-circle' : 'check-circle'" />
+          </button>
+          <button class="icon-btn" (click)="openEditRole(role)" title="Editar">
+            <app-icon name="edit" />
+          </button>
+          @if (!role.isSystem) {
+            <button
+              class="icon-btn danger"
+              [disabled]="busy.isPending('delete-role-' + role.id)"
+              (click)="deleteRole(role)"
+              title="Borrar"
+            >
+              <app-icon name="trash" />
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Modal: rol global -->
+@if (roleModalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingRole ? 'Editar rol' : 'Nuevo rol global' }}</h2>
+        <button class="modal-close" (click)="closeRoleModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input
+            type="text"
+            [(ngModel)]="roleForm.name"
+            [class.invalid]="isRoleNameInvalid()"
+            placeholder="Ej. Supervisor de turno"
+          />
+        </label>
+        @if (isRoleNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre para el rol</span>
+        }
+        <label>
+          Permisos
+          <app-multi-select
+            [(ngModel)]="roleForm.permissionIds"
+            [options]="permissionOptions()"
+            [invalid]="isPermissionsInvalid()"
+            placeholder="Selecciona los permisos"
+          />
+        </label>
+        @if (isPermissionsInvalid()) {
+          <span class="invalid-hint">Selecciona al menos un permiso</span>
+        }
+      </div>
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeRoleModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="busy.isPending('save-role')" (click)="saveRole()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}

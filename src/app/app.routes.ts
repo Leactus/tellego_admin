@@ -58,7 +58,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/repartidores/repartidores').then((m) => m.Repartidores),
       },
       {
-        path: 'pagos',
+        path: 'centro-de-pagos',
         loadComponent: () => import('./features/pagos/pagos').then((m) => m.Pagos),
       },
       {
@@ -83,6 +83,11 @@ export const routes: Routes = [
       {
         path: 'configuraciones/tipo-pago',
         loadComponent: () => import('./features/configuraciones/tipo-pago/tipo-pago').then((m) => m.TipoPago),
+      },
+      {
+        path: 'configuraciones/roles-permisos',
+        loadComponent: () =>
+          import('./features/configuraciones/roles-permisos/roles-permisos').then((m) => m.RolesPermisos),
       },
       {
         path: 'configuraciones/documentos-repartidor',

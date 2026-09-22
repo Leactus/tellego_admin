@@ -133,11 +133,14 @@ export class MultiSelect implements ControlValueAccessor {
 
   protected toggle(): void {
     if (this.disabled) return;
+    // Debe ir ANTES del branch de cierre: un click que roza el disparador justo después de marcar
+    // una opción (el panel abre a solo 6px del botón, y la primera/última opción quedan pegadas a
+    // él) no debe cerrar el panel, o cada intento de marcar varias opciones lo cierra de un roce.
+    if (Date.now() - this.lastToggleOptionAt < SPURIOUS_TOGGLE_GUARD_MS) return;
     if (this.isOpen()) {
       this.close();
       return;
     }
-    if (Date.now() - this.lastToggleOptionAt < SPURIOUS_TOGGLE_GUARD_MS) return;
     this.isOpen.set(true);
     this.onTouched();
     this.updatePanelPosition();

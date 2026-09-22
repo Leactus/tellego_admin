@@ -1,0 +1,122 @@
+<section class="card">
+  <div class="card-header">
+    <h2>Roles y permisos</h2>
+    <button class="btn-primary" (click)="openNewRole()">+ Nuevo rol para este negocio</button>
+  </div>
+  <p class="muted intro">
+    Los roles globales (del sistema o creados en Configuraciones) ya los ve el negocio — si uno de
+    ellos necesita otros permisos SOLO acá, dale "Editar": se crea una copia a medida de este negocio
+    y se reasigna automáticamente al personal que ya tenía el original. "+ Nuevo rol" arma uno desde
+    cero, también exclusivo de este negocio.
+  </p>
+
+  <div class="tabs">
+    @for (tab of tabs; track tab.value) {
+      <button class="tab" [class.active]="activeTab === tab.value" (click)="setTab(tab.value)">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton variant="list" [rows]="4" [avatar]="false" />
+  } @else if (rolesForTab().length === 0) {
+    <app-empty-state variant="no-data" title="Todavía no hay roles para esta categoría." icon="users" [compact]="true" />
+  } @else {
+    <div class="list">
+      @for (role of rolesForTab(); track role.id) {
+        <div class="row">
+          <span class="row-title">{{ role.name }}</span>
+          @if (role.isSystem) {
+            <span class="pill">Rol del sistema</span>
+          } @else if (isGlobal(role)) {
+            <span class="pill pill-custom">Global</span>
+          } @else {
+            <span class="pill pill-custom">Personalizado para este negocio</span>
+          }
+          @if (role.status === 'inactive') {
+            <span class="pill">Inactivo</span>
+          }
+          <span class="pill pill-position">{{ permissionCount(role) }} permiso(s)</span>
+          <div class="row-actions">
+            @if (isGlobal(role)) {
+              <button class="icon-btn" (click)="openEditRole(role)" title="Personalizar para este negocio">
+                <app-icon name="edit" />
+              </button>
+            } @else {
+              <button
+                class="icon-btn"
+                [disabled]="busy.isPending('toggle-role-' + role.id)"
+                (click)="toggleRoleStatus(role)"
+                [title]="role.status === 'active' ? 'Desactivar' : 'Activar'"
+              >
+                <app-icon [name]="role.status === 'active' ? 'x-circle' : 'check-circle'" />
+              </button>
+              <button class="icon-btn" (click)="openEditRole(role)" title="Editar">
+                <app-icon name="edit" />
+              </button>
+              <button
+                class="icon-btn danger"
+                [disabled]="busy.isPending('delete-role-' + role.id)"
+                (click)="deleteRole(role)"
+                title="Borrar"
+              >
+                <app-icon name="trash" />
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<!-- Modal: rol a medida de este negocio -->
+@if (roleModalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ forkingFrom ? 'Personalizar rol' : editingRole ? 'Editar rol' : 'Nuevo rol' }}</h2>
+        <button class="modal-close" (click)="closeRoleModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (forkingFrom) {
+          <p class="muted fork-note">
+            Esto NO edita "{{ forkingFrom.name }}" — crea una copia solo para este negocio y mueve a
+            ella al personal que ya tenía asignado el rol original.
+          </p>
+        }
+        <label>
+          Nombre
+          <input
+            type="text"
+            [(ngModel)]="roleForm.name"
+            [class.invalid]="isRoleNameInvalid()"
+            placeholder="Ej. Cajero de turno"
+          />
+        </label>
+        @if (isRoleNameInvalid()) {
+          <span class="invalid-hint">Ingresa un nombre para el rol</span>
+        }
+        <label>
+          Permisos
+          <app-multi-select
+            [(ngModel)]="roleForm.permissionIds"
+            [options]="permissionOptions()"
+            [invalid]="isPermissionsInvalid()"
+            placeholder="Selecciona los permisos"
+          />
+        </label>
+        @if (isPermissionsInvalid()) {
+          <span class="invalid-hint">Selecciona al menos un permiso</span>
+        }
+      </div>
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeRoleModal()">Cancelar</button>
+        <button class="btn-primary" [disabled]="busy.isPending('save-role')" (click)="saveRole()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}

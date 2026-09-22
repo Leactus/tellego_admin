@@ -23,6 +23,7 @@ import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { StoreRatingsModal } from '../store-ratings-modal/store-ratings-modal';
+import { NegocioRoles } from '../negocio-roles/negocio-roles';
 import { MultiSelect } from '../../../shared/multi-select/multi-select';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
@@ -53,13 +54,13 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Tab = 'info' | 'cobro' | 'sucursales' | 'facturacion' | 'pagos';
-const TABS: Tab[] = ['info', 'cobro', 'sucursales', 'facturacion', 'pagos'];
+type Tab = 'info' | 'cobro' | 'sucursales' | 'facturacion' | 'pagos' | 'roles';
+const TABS: Tab[] = ['info', 'cobro', 'sucursales', 'facturacion', 'pagos', 'roles'];
 
 @Component({
   selector: 'app-negocio-detalle',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, EmptyState, Select, MultiSelect, Pager, LocationField, Skeleton, StoreRatingsModal],
+  imports: [FormsModule, RouterLink, Icon, EmptyState, Select, MultiSelect, Pager, LocationField, Skeleton, StoreRatingsModal, NegocioRoles],
   templateUrl: './negocio-detalle.html',
   styleUrl: './negocio-detalle.scss',
 })
@@ -222,7 +223,8 @@ export class NegocioDetalle implements OnInit {
   // volver a pedirlo al backend cada vez que cambia el tipo.
   private countrySubcategories: SubcategoryAvailability[] = [];
 
-  private companyId!: number;
+  /** Público: lo lee negocio-roles.html para pasarlo como [companyId] a <app-negocio-roles>. */
+  companyId!: number;
 
   async ngOnInit(): Promise<void> {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));
