@@ -1,0 +1,17 @@
+<div class="permission-groups" [class.invalid]="invalid">
+  @for (group of groups; track group.module) {
+    <div class="permission-group">
+      <h4 class="group-title">{{ group.label }}</h4>
+      @for (permission of group.permissions; track permission.id) {
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [checked]="isChecked(permission)"
+            (change)="toggle(permission, $any($event.target).checked)"
+          />
+          {{ permission.label }}
+        </label>
+      }
+    </div>
+  }
+</div>

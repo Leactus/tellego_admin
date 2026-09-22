@@ -69,7 +69,7 @@
 <!-- Modal: rol a medida de este negocio -->
 @if (roleModalOpen()) {
   <div class="modal-backdrop">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingRole ? 'Editar rol' : 'Nuevo rol' }}</h2>
         <button class="modal-close" (click)="closeRoleModal()" aria-label="Cerrar">
@@ -97,11 +97,10 @@
         }
         <label>
           Permisos
-          <app-multi-select
+          <app-permission-picker
             [(ngModel)]="roleForm.permissionIds"
-            [options]="permissionOptions()"
+            [permissions]="catalogForTab()"
             [invalid]="isPermissionsInvalid()"
-            placeholder="Selecciona los permisos"
           />
         </label>
         @if (isPermissionsInvalid()) {

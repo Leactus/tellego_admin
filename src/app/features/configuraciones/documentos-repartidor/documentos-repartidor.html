@@ -148,6 +148,12 @@
           <input type="checkbox" [(ngModel)]="form.isRequired" name="isRequired" />
           Obligatorio para aprobar al repartidor
         </label>
+        @if (form.isRequired) {
+          <p class="muted small">
+            Aplica también a repartidores ya activos: si les falta este documento (o se lo rechazás), no van a poder
+            iniciar turno hasta subirlo y que lo apruebes.
+          </p>
+        }
         <label class="check">
           <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" />
           Activo (se le pide a los repartidores nuevos)

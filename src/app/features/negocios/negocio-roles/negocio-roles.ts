@@ -6,7 +6,7 @@ import { Permission, Role, RoleType } from '../../../core/models/role.model';
 import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
-import { MultiSelect } from '../../../shared/multi-select/multi-select';
+import { PermissionPicker } from '../../../shared/permission-picker/permission-picker';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { PendingActions } from '../../../shared/pending-actions';
@@ -31,7 +31,7 @@ const TABS: { value: RoleType; label: string }[] = [
 @Component({
   selector: 'app-negocio-roles',
   standalone: true,
-  imports: [FormsModule, Icon, EmptyState, Skeleton, MultiSelect],
+  imports: [FormsModule, Icon, EmptyState, Skeleton, PermissionPicker],
   templateUrl: './negocio-roles.html',
   styleUrl: './negocio-roles.scss',
 })
@@ -55,9 +55,6 @@ export class NegocioRoles implements OnInit {
 
   readonly rolesForTab = computed(() => this.roles().filter((r) => r.roleType === this.activeTab()));
   readonly catalogForTab = computed(() => this.permissionsCatalog().filter((p) => p.roleType === this.activeTab()));
-  readonly permissionOptions = computed(() =>
-    this.catalogForTab().map((p) => ({ value: p.id, label: p.label })),
-  );
 
   /** Evita doble-click en guardar/borrar/activar — ver shared/pending-actions.ts. */
   readonly busy = new PendingActions();
