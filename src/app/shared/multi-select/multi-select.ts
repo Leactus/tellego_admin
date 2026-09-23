@@ -67,6 +67,8 @@ export class MultiSelect implements ControlValueAccessor {
   @Input() invalid = false;
   /** Modo remoto: no filtra localmente — `options` ya viene filtrado por quien lo use, en respuesta a `searchChange` (buscador contra el backend). */
   @Input() remote = false;
+  /** Fuerza el buscador aunque haya pocas opciones (por defecto solo aparece pasado SEARCH_THRESHOLD) — para listas donde escribir para filtrar es más rápido que scrollear igual, aunque hoy tengan pocos ítems. */
+  @Input() alwaysShowSearch = false;
   /** Mientras el padre está resolviendo una búsqueda remota, para no mostrar "Sin resultados" de más. */
   @Input() loading = false;
   @Output() searchChange = new EventEmitter<string>();
@@ -106,7 +108,7 @@ export class MultiSelect implements ControlValueAccessor {
   }
 
   protected get showSearch(): boolean {
-    return this.remote || this.options.length > SEARCH_THRESHOLD;
+    return this.remote || this.alwaysShowSearch || this.options.length > SEARCH_THRESHOLD;
   }
 
   protected get filteredOptions(): SelectOption<number>[] {

@@ -11,6 +11,7 @@ import { OptionGroup, Product, ProductCategory } from '../../../core/models/cata
 import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select, SelectOption } from '../../../shared/select/select';
+import { MultiSelect } from '../../../shared/multi-select/multi-select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -22,7 +23,7 @@ type Tab = 'categorias' | 'productos';
 @Component({
   selector: 'app-negocio-menu',
   standalone: true,
-  imports: [FormsModule, Icon, EmptyState, Select, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, MultiSelect, Skeleton],
   templateUrl: './negocio-menu.html',
   styleUrl: './negocio-menu.scss',
 })
@@ -50,14 +51,14 @@ export class NegocioMenu implements OnInit {
   readonly branches = computed<Store[]>(() => this.company()?.branches ?? []);
   readonly categories = signal<ProductCategory[]>([]);
   readonly products = signal<Product[]>([]);
+  /** Ver el comentario en reload() — evita recalcular un array nuevo en cada change detection para
+   * el [ngModel] del multi-select de "Disponible en". */
+  private readonly productStoreIdsCache = new Map<number, number[]>();
 
   readonly categoryOptions = computed<SelectOption[]>(() => [
     { value: null, label: 'Sin categoría' },
     ...this.categories().map((c) => ({ value: c.id, label: c.name })),
   ]);
-  readonly storeOptions = computed<SelectOption[]>(() =>
-    this.branches().map((b) => ({ value: b.id, label: b.department ? `${b.name} (${b.department})` : b.name })),
-  );
 
   // --- Modal: categoría ---
   readonly categoryModalOpen = signal(false);
@@ -82,8 +83,12 @@ export class NegocioMenu implements OnInit {
     salePrice: 0,
     categoryId: null as number | null,
     isAgeRestricted: false,
-    storeId: null as number | null,
+    storeIds: [] as number[],
   };
+  /** Checkbox "Seleccionar todas las sucursales" — por defecto activo (caso más común); al
+   * desmarcarlo aparece el multi-select con buscador para elegir puntualmente. No se manda al
+   * backend como tal: al guardar se resuelve a la lista completa de branches() (ver saveProduct). */
+  productSelectAllStores = true;
   selectedImageFile: File | null = null;
   selectedImagePreviewUrl: string | null = null;
   /** true recién después de un intento de "Guardar" fallido — antes de eso no se marca nada en rojo. */
@@ -98,8 +103,24 @@ export class NegocioMenu implements OnInit {
   }
 
   isProductStoreInvalid(): boolean {
-    return this.productSubmitted() && !this.editingProduct && !this.productForm.storeId;
+    return (
+      this.productSubmitted() &&
+      this.branches().length > 1 &&
+      !this.productSelectAllStores &&
+      this.productForm.storeIds.length === 0
+    );
   }
+
+  /** undefined con 1 sola sucursal (o ninguna) — ahí no hay nada que elegir y el backend no debe
+   * tocar StoreProduct al guardar, igual que antes de existir este selector. */
+  private resolvedStoreIds(): number[] | undefined {
+    if (this.branches().length <= 1) return undefined;
+    return this.productSelectAllStores ? this.branches().map((b) => b.id) : this.productForm.storeIds;
+  }
+
+  readonly storeOptions = computed<SelectOption<number>[]>(() =>
+    this.branches().map((b) => ({ value: b.id, label: b.department ? `${b.name} (${b.department})` : b.name })),
+  );
 
   // --- Foto rápida desde la lista (clic directo en la miniatura, sin abrir el modal completo) ---
   @ViewChild('quickImageInput') quickImageInput!: ElementRef<HTMLInputElement>;
@@ -145,6 +166,14 @@ export class NegocioMenu implements OnInit {
       this.company.set(company);
       this.categories.set(categories);
       this.products.set(products);
+      // Referencias estables (por producto) para el [ngModel] del multi-select de "Disponible en" —
+      // calcularlo al vuelo en el template (activeStoreIdsFor) devolvía un array NUEVO en cada
+      // change detection y el componente (OnPush) lo veía como "cambiado" sin parar, colgando la
+      // pestaña con muchos productos. Solo se recalcula acá, tras cada reload.
+      this.productStoreIdsCache.clear();
+      for (const p of products) {
+        this.productStoreIdsCache.set(p.id, p.storeProducts.filter((sp) => sp.isAvailable).map((sp) => sp.storeId));
+      }
 
       if (this.optionsProduct) {
         this.optionsProduct = products.find((p) => p.id === this.optionsProduct!.id) ?? null;
@@ -233,8 +262,9 @@ export class NegocioMenu implements OnInit {
       salePrice: 0,
       categoryId: null,
       isAgeRestricted: false,
-      storeId: this.branches()[0]?.id ?? null,
+      storeIds: [],
     };
+    this.productSelectAllStores = true;
     this.selectedImageFile = null;
     this.selectedImagePreviewUrl = null;
     this.productSubmitted.set(false);
@@ -243,6 +273,9 @@ export class NegocioMenu implements OnInit {
 
   openEditProduct(product: Product): void {
     this.editingProduct = product;
+    // Sucursales donde ya está activo — así el selector abre reflejando la realidad, no vacío como al crear.
+    const activeStoreIds = product.storeProducts.filter((sp) => sp.isAvailable).map((sp) => sp.storeId);
+    this.productSelectAllStores = this.branches().length > 0 && activeStoreIds.length === this.branches().length;
     this.productForm = {
       name: product.name,
       description: product.description ?? '',
@@ -251,7 +284,7 @@ export class NegocioMenu implements OnInit {
       salePrice: product.salePrice != null ? Number(product.salePrice) : 0,
       categoryId: product.categoryId,
       isAgeRestricted: product.isAgeRestricted ?? false,
-      storeId: null,
+      storeIds: activeStoreIds,
     };
     this.selectedImageFile = null;
     this.selectedImagePreviewUrl = product.imageUrl;
@@ -274,7 +307,7 @@ export class NegocioMenu implements OnInit {
   async saveProduct(): Promise<void> {
     this.productSubmitted.set(true);
     const name = this.productForm.name.trim();
-    if (!name || this.productForm.price <= 0 || (!this.editingProduct && !this.productForm.storeId)) {
+    if (!name || this.productForm.price <= 0 || this.isProductStoreInvalid()) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
@@ -294,6 +327,7 @@ export class NegocioMenu implements OnInit {
           salePrice: this.productForm.hasSale ? this.productForm.salePrice : null,
           categoryId: this.productForm.categoryId,
           isAgeRestricted: this.productForm.isAgeRestricted,
+          storeIds: this.resolvedStoreIds(),
         });
         productId = updated.id;
       } else {
@@ -304,7 +338,7 @@ export class NegocioMenu implements OnInit {
           salePrice: this.productForm.hasSale ? this.productForm.salePrice : null,
           categoryId: this.productForm.categoryId,
           isAgeRestricted: this.productForm.isAgeRestricted,
-          storeId: this.productForm.storeId!,
+          storeIds: this.resolvedStoreIds(),
         });
         productId = created.id;
       }
@@ -377,6 +411,23 @@ export class NegocioMenu implements OnInit {
     const isAvailable = (event.target as HTMLInputElement).checked;
     try {
       await this.catalog.updateAvailability(product.id, { storeId, isAvailable });
+      await this.reload();
+    } catch {
+      this.toast.error('No se pudo actualizar la disponibilidad');
+    }
+  }
+
+  /** Con más de una sucursal, "Disponible en" usa el multi-select en vez de un checkbox por
+   * sucursal (imposible de escanear pasadas ~5-6) — mismo componente y mismo endpoint (sincroniza
+   * TODAS las sucursales de la empresa) que el selector del modal de editar producto. Lee de
+   * productStoreIdsCache (ver reload()) en vez de recalcular acá mismo. */
+  activeStoreIdsFor(product: Product): number[] {
+    return this.productStoreIdsCache.get(product.id) ?? [];
+  }
+
+  async onAvailabilityChange(product: Product, storeIds: number[]): Promise<void> {
+    try {
+      await this.catalog.updateProduct(product.id, { storeIds });
       await this.reload();
     } catch {
       this.toast.error('No se pudo actualizar la disponibilidad');

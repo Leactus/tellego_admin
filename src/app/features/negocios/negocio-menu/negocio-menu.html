@@ -108,19 +108,29 @@
             </div>
           </div>
 
-          @if (branches().length > 0) {
+          @if (branches().length === 1) {
             <div class="availability-row">
               <span class="muted small">Disponible en:</span>
-              @for (branch of branches(); track branch.id) {
-                <label class="availability-check">
-                  <input
-                    type="checkbox"
-                    [checked]="isAvailableInStore(product, branch.id)"
-                    (change)="toggleStoreAvailability(product, branch.id, $event)"
-                  />
-                  {{ branch.name }}
-                </label>
-              }
+              <label class="availability-check">
+                <input
+                  type="checkbox"
+                  [checked]="isAvailableInStore(product, branches()[0].id)"
+                  (change)="toggleStoreAvailability(product, branches()[0].id, $event)"
+                />
+                {{ branches()[0].name }}
+              </label>
+            </div>
+          } @else if (branches().length > 1) {
+            <div class="availability-row">
+              <span class="muted small">Disponible en:</span>
+              <app-multi-select
+                class="availability-picker"
+                [options]="storeOptions()"
+                [ngModel]="activeStoreIdsFor(product)"
+                (ngModelChange)="onAvailabilityChange(product, $event)"
+                placeholder="Ninguna sucursal"
+                [alwaysShowSearch]="true"
+              />
             </div>
           }
         </div>
@@ -239,18 +249,25 @@
           <input type="checkbox" [(ngModel)]="productForm.isAgeRestricted" name="isAgeRestricted" />
           Solo para mayores de edad (cerveza, licores…)
         </label>
-        @if (!editingProduct) {
-          <label>
-            Sucursal donde se activa primero
-            <app-select
-              [(ngModel)]="productForm.storeId"
-              name="productStore"
-              [options]="storeOptions()"
-              [invalid]="isProductStoreInvalid()"
-            />
+        @if (branches().length > 1) {
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="productSelectAllStores" name="selectAllStores" />
+            Seleccionar todas las sucursales
           </label>
-          @if (isProductStoreInvalid()) {
-            <span class="invalid-hint">Elige la sucursal donde se activa primero</span>
+          @if (!productSelectAllStores) {
+            <label>
+              Sucursales donde se activa
+              <app-multi-select
+                [(ngModel)]="productForm.storeIds"
+                [options]="storeOptions()"
+                placeholder="Elige una o más sucursales"
+                [invalid]="isProductStoreInvalid()"
+                [alwaysShowSearch]="true"
+              />
+            </label>
+            @if (isProductStoreInvalid()) {
+              <span class="invalid-hint">Elige al menos una sucursal donde activarlo</span>
+            }
           }
         }
       </div>

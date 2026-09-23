@@ -112,6 +112,68 @@
                   } @else {
                     <span class="chip chip-pending">Sin subir</span>
                   }
+
+                  <!-- Subida en nombre del repartidor — para cuando no puede
+                       hacerlo él mismo (alta en persona, problema con su
+                       teléfono, etc.). Queda 'pending' igual que si la
+                       hubiera subido él. -->
+                  <input
+                    #fileInput
+                    type="file"
+                    class="hidden-file-input"
+                    [accept]="
+                      type.accepts === 'image' ? 'image/*' : type.accepts === 'pdf' ? 'application/pdf' : 'image/*,application/pdf'
+                    "
+                    (change)="onFileSelected($event)"
+                  />
+                  <button
+                    class="btn-upload"
+                    [disabled]="uploadingKey() === slotKey(type, slot)"
+                    (click)="triggerUpload(type, slot, fileInput)"
+                  >
+                    <app-icon name="camera" />
+                    {{
+                      uploadingKey() === slotKey(type, slot)
+                        ? 'Subiendo…'
+                        : slot.document
+                          ? 'Reemplazar'
+                          : 'Subir por el repartidor'
+                    }}
+                  </button>
+
+                  @if (fieldsFormFor(); as target) {
+                    @if (target.type.id === type.id && target.slot.side === slot.side) {
+                      <div class="fields-form">
+                        <p class="muted small">Antes de subir, completa estos datos del documento:</p>
+                        @for (f of target.type.fields; track f.key) {
+                          <label class="field-label">
+                            {{ f.label }}
+                            @if (f.type === 'select') {
+                              <select
+                                [ngModel]="fieldsFormValues()[f.key]"
+                                (ngModelChange)="setFieldValue(f.key, $event)"
+                              >
+                                <option value="">Selecciona…</option>
+                                @for (opt of f.options ?? []; track opt) {
+                                  <option [value]="opt">{{ opt }}</option>
+                                }
+                              </select>
+                            } @else {
+                              <input
+                                [type]="f.type === 'date' ? 'date' : 'text'"
+                                [ngModel]="fieldsFormValues()[f.key]"
+                                (ngModelChange)="setFieldValue(f.key, $event)"
+                              />
+                            }
+                          </label>
+                        }
+                        <div class="fields-form-actions">
+                          <button class="btn-text" (click)="cancelFieldsForm()">Cancelar</button>
+                          <button class="btn-primary" (click)="confirmFieldsForm()">Subir documento</button>
+                        </div>
+                      </div>
+                    }
+                  }
                 </div>
               }
             </div>
@@ -123,16 +185,28 @@
     </div>
 
     @if (state(); as data) {
-      <div class="modal-actions">
-        <button class="btn-text" (click)="approveDriver(true)">Forzar aprobación</button>
-        <button
-          class="btn-primary"
-          [disabled]="isApproving() || !data.readyForApproval"
-          (click)="approveDriver(false)"
-        >
-          {{ isApproving() ? 'Aprobando…' : 'Aprobar repartidor' }}
-        </button>
-      </div>
+      @if (data.status === 'pending_approval') {
+        <div class="modal-actions">
+          <button class="btn-text" (click)="approveDriver(true)">Forzar aprobación</button>
+          <button
+            class="btn-primary"
+            [disabled]="isApproving() || !data.readyForApproval"
+            (click)="approveDriver(false)"
+          >
+            {{ isApproving() ? 'Aprobando…' : 'Aprobar repartidor' }}
+          </button>
+        </div>
+      } @else if (!data.documentsApproved) {
+        <!-- Cuenta ya activa pero con un documento nuevo/rechazado sin resolver (ej.
+             operaciones agregó un tipo de documento obligatorio después de aprobarlo, o
+             se rechazó uno que ahora espera que lo reemplace) — el backend ya se lo
+             bloquea al repartidor al querer iniciar turno (ver status.controller.ts), esto
+             solo lo hace visible acá también. -->
+        <div class="modal-actions modal-note">
+          <app-icon name="info-circle" />
+          <span>El repartidor no podrá conectarse hasta que todos sus documentos obligatorios queden aprobados.</span>
+        </div>
+      }
     }
   </div>
 </div>

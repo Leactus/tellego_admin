@@ -71,6 +71,7 @@
           class="pill"
           [class.pill-suspended]="driver.status === 'suspended'"
           [class.pill-pending]="driver.status === 'pending_approval'"
+          [title]="driver.status === 'suspended' ? driver.suspensionReason : null"
         >
           @if (driver.status === 'active') {
             Activo
@@ -87,11 +88,9 @@
           <button class="icon-btn" (click)="openEditModal(driver)" aria-label="Editar">
             <app-icon name="edit" />
           </button>
-          @if (driver.status === 'pending_approval') {
-            <button class="icon-btn" (click)="openDocs(driver)" aria-label="Revisar documentos">
-              <app-icon name="receipt" />
-            </button>
-          }
+          <button class="icon-btn" (click)="openDocs(driver)" aria-label="Ver documentos">
+            <app-icon name="receipt" />
+          </button>
           @if (driver.status === 'suspended') {
             <button class="icon-btn" (click)="approve(driver)" aria-label="Reactivar">
               <app-icon name="check-circle" />
@@ -212,6 +211,20 @@
 
       <div class="modal-body">
         <p>{{ suspendingDriver?.User?.name || 'Este repartidor' }} no podrá tomar más pedidos.</p>
+        <label>
+          Motivo de la suspensión
+          <textarea
+            rows="3"
+            [(ngModel)]="suspendReason"
+            name="suspendReason"
+            [class.invalid]="isSuspendReasonInvalid()"
+            placeholder="Ej. reportes repetidos de retraso, documentos vencidos..."
+          ></textarea>
+        </label>
+        @if (isSuspendReasonInvalid()) {
+          <span class="invalid-hint">Indica el motivo — se le avisa al repartidor por notificación</span>
+        }
+        <p class="hint muted">El repartidor recibe una notificación con este motivo y hasta cuándo dura la suspensión.</p>
         <label>
           Días de suspensión
           <input

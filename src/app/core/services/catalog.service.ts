@@ -13,7 +13,7 @@ interface ProductInput {
   categoryId?: number | null;
   isAvailable?: boolean;
   isAgeRestricted?: boolean;
-  storeId?: number;
+  storeIds?: number[];
 }
 
 interface AvailabilityInput {

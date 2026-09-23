@@ -165,6 +165,14 @@ export class Repartidores implements OnInit, OnDestroy {
   suspendingDriver: Driver | null = null;
   /** Días de suspensión desde ahora; vacío = indefinida (ver DriverSuspension.service.ts en el backend). */
   suspendDays: number | null = null;
+  /** Obligatorio — el backend lo rechaza vacío. Se le avisa al repartidor por push. */
+  suspendReason = '';
+  /** true recién después de un intento de "Suspender" fallido por motivo vacío. */
+  readonly suspendSubmitted = signal(false);
+
+  isSuspendReasonInvalid(): boolean {
+    return this.suspendSubmitted() && !this.suspendReason.trim();
+  }
 
   search = '';
   private readonly debouncedSearch = debounce(() => {
@@ -343,6 +351,8 @@ export class Repartidores implements OnInit, OnDestroy {
   openSuspendModal(driver: Driver): void {
     this.suspendingDriver = driver;
     this.suspendDays = null;
+    this.suspendReason = '';
+    this.suspendSubmitted.set(false);
     this.suspendModalOpen.set(true);
   }
 
@@ -354,14 +364,23 @@ export class Repartidores implements OnInit, OnDestroy {
     const driver = this.suspendingDriver;
     if (!driver) return;
 
+    this.suspendSubmitted.set(true);
+    if (!this.suspendReason.trim()) return;
+
     this.isSuspending.set(true);
     try {
-      await this.drivers.updateStatus(driver.id, 'suspended', this.suspendDays ?? undefined);
+      await this.drivers.updateStatus(
+        driver.id,
+        'suspended',
+        this.suspendDays ?? undefined,
+        undefined,
+        this.suspendReason.trim(),
+      );
       this.toast.success('Repartidor suspendido');
       this.closeSuspendModal();
       await this.reload(true);
-    } catch {
-      this.toast.error('No se pudo suspender el repartidor');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo suspender el repartidor');
     } finally {
       this.isSuspending.set(false);
     }

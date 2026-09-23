@@ -243,6 +243,10 @@
   color: var(--color-text);
 }
 
+.availability-row .availability-picker {
+  width: 280px;
+}
+
 .small {
   font-size: 0.78rem;
 }
@@ -345,3 +349,4 @@
   color: var(--color-danger, #c0392b);
   vertical-align: middle;
 }
+

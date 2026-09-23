@@ -61,12 +61,20 @@ export class DriversService {
 
   /**
    * `suspensionDays` solo aplica con status='suspended': ausente/0 = suspensión indefinida.
+   * `reason` es OBLIGATORIO con status='suspended' (el backend responde 400 si falta) — se le
+   * avisa al repartidor por push, para que no se quede sin saber por qué ya no puede conectarse.
    * `force` (solo al aprobar): saltea la validación de onboarding completo (capital + documentos).
    * Si `force` no está y el onboarding no está listo, el backend responde 422.
    */
-  updateStatus(id: number, status: DriverStatus, suspensionDays?: number, force?: boolean): Promise<Driver> {
+  updateStatus(
+    id: number,
+    status: DriverStatus,
+    suspensionDays?: number,
+    force?: boolean,
+    reason?: string,
+  ): Promise<Driver> {
     return firstValueFrom(
-      this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status, suspensionDays, force }),
+      this.http.patch<{ data: Driver }>(`${this.base}/${id}/status`, { status, suspensionDays, force, reason }),
     ).then((r) => r.data);
   }
 

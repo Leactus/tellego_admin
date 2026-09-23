@@ -42,6 +42,31 @@ export class DriverDocumentsService {
     ).then((r) => r.data);
   }
 
+  /**
+   * Sube (o reemplaza) un documento EN NOMBRE del repartidor — para cuando no
+   * puede subirlo él mismo (alta en persona, problema con su teléfono, etc.).
+   * Queda 'pending' igual que si lo hubiera subido él: hace falta aprobarlo
+   * aparte (puede ser en el mismo momento).
+   */
+  uploadDocument(
+    driverId: number,
+    documentTypeId: number,
+    side: 'single' | 'front' | 'back',
+    file: File,
+    fieldValues?: Record<string, unknown>,
+  ): Promise<DriverOnboardingState> {
+    const formData = new FormData();
+    formData.append('documentTypeId', String(documentTypeId));
+    formData.append('side', side);
+    formData.append('file', file);
+    if (fieldValues && Object.keys(fieldValues).length > 0) {
+      formData.append('fieldValues', JSON.stringify(fieldValues));
+    }
+    return firstValueFrom(
+      this.http.post<{ data: DriverOnboardingState }>(`${this.base}/drivers/${driverId}/documents`, formData),
+    ).then((r) => r.data);
+  }
+
   /** Aprueba o rechaza un archivo subido. `reason` obligatorio al rechazar. */
   reviewDocument(
     documentId: number,

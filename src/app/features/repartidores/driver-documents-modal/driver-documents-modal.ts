@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { DriverDocumentsService } from '../../../core/services/driver-documents.service';
 import { DriversService } from '../../../core/services/drivers.service';
@@ -24,7 +25,7 @@ import { ConfirmService } from '../../../shared/confirm/confirm.service';
 @Component({
   selector: 'app-driver-documents-modal',
   standalone: true,
-  imports: [DatePipe, Icon, Skeleton],
+  imports: [DatePipe, FormsModule, Icon, Skeleton],
   templateUrl: './driver-documents-modal.html',
   styleUrl: './driver-documents-modal.scss',
 })
@@ -44,6 +45,14 @@ export class DriverDocumentsModal implements OnInit {
   readonly state = signal<DriverOnboardingState | null>(null);
   readonly busyDocIds = signal<Set<number>>(new Set());
   readonly isApproving = signal(false);
+
+  /** "typeId:side" del slot que se está subiendo ahora mismo, o null. */
+  readonly uploadingKey = signal<string | null>(null);
+  /** Slot para el que se está pidiendo los campos extra (nº de DUI, fecha, ...) antes de subir. */
+  readonly fieldsFormFor = signal<{ type: OnboardingDocType; slot: OnboardingDocSlot } | null>(null);
+  readonly fieldsFormValues = signal<Record<string, string>>({});
+  private pendingUploadFile: File | null = null;
+  private uploadTarget: { type: OnboardingDocType; slot: OnboardingDocSlot } | null = null;
 
   async ngOnInit(): Promise<void> {
     await this.reload();
@@ -71,6 +80,82 @@ export class DriverDocumentsModal implements OnInit {
     return (type.fields ?? [])
       .map((f) => ({ label: f.label, value: values[f.key] != null ? String(values[f.key]) : '' }))
       .filter((e) => e.value !== '');
+  }
+
+  slotKey(type: OnboardingDocType, slot: OnboardingDocSlot): string {
+    return `${type.id}:${slot.side}`;
+  }
+
+  /** Abre el selector de archivos nativo para este slot — el <input> vive oculto en el template. */
+  triggerUpload(type: OnboardingDocType, slot: OnboardingDocSlot, input: HTMLInputElement): void {
+    this.uploadTarget = { type, slot };
+    input.value = ''; // permite volver a elegir el mismo archivo si se cancela el formulario de campos
+    input.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const target = this.uploadTarget;
+    if (!file || !target) return;
+
+    const { type, slot } = target;
+    // Mismo criterio que la app del repartidor: los campos extra (nº de
+    // documento, fecha, ...) solo se piden del lado 'front'/'single' — el
+    // reverso no vuelve a preguntar lo mismo.
+    if (type.fields.length > 0 && slot.side !== 'back') {
+      this.fieldsFormValues.set({});
+      this.fieldsFormFor.set({ type, slot });
+      this.pendingUploadFile = file;
+      return;
+    }
+    this.doUpload(type, slot, file);
+  }
+
+  setFieldValue(key: string, value: string): void {
+    this.fieldsFormValues.update((v) => ({ ...v, [key]: value }));
+  }
+
+  confirmFieldsForm(): void {
+    const target = this.fieldsFormFor();
+    const file = this.pendingUploadFile;
+    if (!target || !file) return;
+
+    for (const f of target.type.fields) {
+      if (f.required && !this.fieldsFormValues()[f.key]?.trim()) {
+        this.toast.error(`Completá el campo "${f.label}"`);
+        return;
+      }
+    }
+
+    this.doUpload(target.type, target.slot, file, this.fieldsFormValues());
+    this.fieldsFormFor.set(null);
+    this.pendingUploadFile = null;
+  }
+
+  cancelFieldsForm(): void {
+    this.fieldsFormFor.set(null);
+    this.pendingUploadFile = null;
+  }
+
+  /** Sube (o reemplaza) un documento en nombre del repartidor — ver DriverDocumentsService.uploadDocument. */
+  private async doUpload(
+    type: OnboardingDocType,
+    slot: OnboardingDocSlot,
+    file: File,
+    fieldValues?: Record<string, string>,
+  ): Promise<void> {
+    const key = this.slotKey(type, slot);
+    this.uploadingKey.set(key);
+    try {
+      const state = await this.service.uploadDocument(this.driverId, type.id, slot.side, file, fieldValues);
+      this.state.set(state);
+      this.toast.success('Documento subido — queda pendiente de revisión');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudo subir el documento');
+    } finally {
+      this.uploadingKey.set(null);
+    }
   }
 
   async review(doc: DriverDocumentFile, status: 'approved' | 'rejected'): Promise<void> {
