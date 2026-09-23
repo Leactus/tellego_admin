@@ -57,3 +57,55 @@ select:focus-visible {
   outline: none;
   border-color: var(--color-primary);
 }
+
+/*
+ * El dropdown de Google Places Autocomplete (buscador de dirección en app-location-map) se
+ * inyecta como hijo directo de <body>, fuera del árbol del componente — no se puede tocar con
+ * ::ng-deep, tiene que ir en un stylesheet global. Se oculta el watermark "powered by Google"
+ * (bloque .pac-logo al fondo del panel): las políticas de Places permiten omitirlo cuando las
+ * predicciones se muestran junto a un Google Map, que es siempre el caso acá (el buscador vive
+ * encima del propio mapa). El resto del panel se re-skinea para que combine con app-select.
+ * Mismo bloque que delivery-pedidos-admin/src/styles.scss.
+ */
+.pac-container {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  margin-top: 6px;
+  padding: 6px 0 !important;
+  padding-bottom: 6px !important;
+  font-family: inherit;
+}
+
+/* El watermark es un pseudo-elemento (imagen de fondo), no texto real — cubrimos las variantes de
+ * clase que usa Google según versión/resolución (pac-logo, hdpi.pac-logo) por si alguna gana por
+ * orden de carga; con !important en todas no debería importar cuál matchea. */
+.pac-container:after,
+.pac-logo:after,
+.pac-container.pac-logo:after,
+.hdpi.pac-logo:after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  height: 0 !important;
+  padding: 0 !important;
+}
+
+.pac-item {
+  padding: 8px 12px;
+  border-top-color: var(--color-border);
+  font-size: 0.92rem;
+}
+
+.pac-item:hover {
+  background: var(--color-surface-variant);
+}
+
+.pac-icon {
+  margin-top: 2px;
+}
+
+.pac-item-query {
+  font-size: 0.92rem;
+  color: var(--color-text);
+}

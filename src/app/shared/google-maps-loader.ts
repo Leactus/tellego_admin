@@ -13,7 +13,7 @@ function loadGoogleMaps(): Promise<void> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('No se pudo cargar Google Maps'));

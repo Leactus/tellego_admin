@@ -2,12 +2,50 @@
   display: block;
 }
 
+.location-map-wrap {
+  position: relative;
+}
+
 .location-map {
   width: 100%;
   height: 320px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-surface-variant);
+}
+
+/* Pin fijo en el centro exacto del mapa — el mapa se arrastra debajo, el pin no (ver location-map.ts). */
+.location-map-center-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* -100% en Y: la PUNTA del pin (no su centro) debe caer en el centro del mapa. */
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+}
+
+/* Se saca del flujo normal apenas carga Google Maps — se empotra como control del mapa (ver location-map.ts).
+ * Es un <input> real (lo exige el API de Autocomplete para la navegación con flechas arriba/abajo
+ * entre sugerencias) — no puede hacer wrap a varias líneas como un textarea. Se compensa con más
+ * ancho, así entra más texto de la dirección sin tener que scrollear el campo para leerlo. */
+.location-map-search {
+  margin: 10px;
+  padding: 12px 14px;
+  width: 300px;
+  max-width: calc(100vw - 40px);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.location-map-search:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .location-map-error {

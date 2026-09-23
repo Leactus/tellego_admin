@@ -1,30 +1,24 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Component, inject, input, output, signal } from '@angular/core';
 
 import { Icon } from '../icon/icon';
 import { LocationMap } from '../location-map/location-map';
 import { ToastService } from '../toast/toast.service';
 
-type LocationMode = 'coords' | 'map';
-
 /**
- * Campo reutilizable de "Ubicación del negocio" — 2 modos:
- *  - Coordenadas: inputs de lat/lng editables + botón de geolocalización + vista previa
- *    de Google Maps (embed público, solo visual — no se puede marcar ahí, solo cambia
- *    si editas los inputs).
- *  - Mapa: selector interactivo (Google Maps, ver `LocationMap`) — click o
- *    arrastrar el pin marca la ubicación exacta.
+ * Campo reutilizable de "Ubicación del negocio" — mapa interactivo (Google Maps, ver
+ * `LocationMap`): busca una dirección, hace click o arrastra el pin para marcar la ubicación
+ * exacta. El botón de geolocalización solo sirve como punto de partida rápido. Mismo componente
+ * que delivery-pedidos-admin — reemplaza el flujo anterior de "Sacar coordenadas" (inputs
+ * lat/lng + iframe de vista previa) / "Ver mapa" por decisión explícita del 2026-09-23.
  */
 @Component({
   selector: 'app-location-field',
   standalone: true,
-  imports: [FormsModule, Icon, LocationMap],
+  imports: [Icon, LocationMap],
   templateUrl: './location-field.html',
   styleUrl: './location-field.scss',
 })
 export class LocationField {
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly toast = inject(ToastService);
 
   readonly lat = input<number | null>(null);
@@ -32,34 +26,16 @@ export class LocationField {
   readonly latChange = output<number | null>();
   readonly lngChange = output<number | null>();
 
-  readonly locationMode = signal<LocationMode>('coords');
   readonly isLocating = signal(false);
-
-  readonly mapPreviewUrl = computed<SafeResourceUrl | null>(() => {
-    const lat = this.lat();
-    const lng = this.lng();
-    if (lat == null || lng == null) return null;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`);
-  });
-
-  setLocationMode(mode: LocationMode): void {
-    this.locationMode.set(mode);
-  }
-
-  onLatChange(value: number | null): void {
-    this.latChange.emit(value);
-  }
-
-  onLngChange(value: number | null): void {
-    this.lngChange.emit(value);
-  }
+  /** Punto azul "estás aquí" en el mapa — resultado crudo de geolocalización, distinto del pin verde del negocio. */
+  readonly myLocation = signal<{ lat: number; lng: number } | null>(null);
 
   onMapLocationChange({ lat, lng }: { lat: number; lng: number }): void {
     this.latChange.emit(lat);
     this.lngChange.emit(lng);
   }
 
-  /** Solo da una posición correcta si el dueño está físicamente en el local (ver aviso en el template). */
+  /** Punto de partida rápido — igual se puede afinar arrastrando el pin en el mapa después. */
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
       this.toast.error('Tu navegador no soporta geolocalización');
@@ -69,8 +45,11 @@ export class LocationField {
     this.isLocating.set(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        this.latChange.emit(Number(position.coords.latitude.toFixed(7)));
-        this.lngChange.emit(Number(position.coords.longitude.toFixed(7)));
+        const lat = Number(position.coords.latitude.toFixed(7));
+        const lng = Number(position.coords.longitude.toFixed(7));
+        this.myLocation.set({ lat, lng });
+        this.latChange.emit(lat);
+        this.lngChange.emit(lng);
         this.isLocating.set(false);
         this.toast.success('Ubicación capturada');
       },
