@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -16,6 +16,8 @@ export class AuthService {
 
   readonly user = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.userSignal() !== null);
+
+  private readonly httpBackend = inject(HttpBackend);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -81,7 +83,19 @@ export class AuthService {
     }
   }
 
+  /**
+   * Cierra la sesión también en el servidor (POST /auth/logout revoca TODOS los tokens de esta
+   * cuenta): así un token copiado desde F12 deja de servir apenas se sale. Va por HttpBackend
+   * (sin interceptores) para que un 401 acá no vuelva a disparar sessionExpiredInterceptor, y sin
+   * esperar la respuesta — la sesión local se limpia igual aunque no haya red.
+   */
   logout(): void {
+    const token = this.tokenSignal();
+    if (token) {
+      new HttpClient(this.httpBackend)
+        .post(`${environment.apiUrl}/auth/logout`, null, { headers: { Authorization: `Bearer ${token}` } })
+        .subscribe({ error: () => undefined });
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.tokenSignal.set(null);

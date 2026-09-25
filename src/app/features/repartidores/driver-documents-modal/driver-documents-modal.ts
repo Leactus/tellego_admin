@@ -161,16 +161,17 @@ export class DriverDocumentsModal implements OnInit {
   async review(doc: DriverDocumentFile, status: 'approved' | 'rejected'): Promise<void> {
     let reason: string | undefined;
     if (status === 'rejected') {
-      const input = window.prompt(
-        'Motivo del rechazo — el repartidor lo verá en su app para saber qué corregir.',
-        doc.reviewReason ?? '',
-      );
+      const input = await this.confirm.prompt({
+        title: 'Rechazar documento',
+        message: 'Motivo del rechazo — el repartidor lo verá en su app para saber qué corregir.',
+        placeholder: 'Ej. La foto sale borrosa, volvé a subirla',
+        initialValue: doc.reviewReason ?? '',
+        confirmLabel: 'Rechazar',
+        variant: 'danger',
+        icon: 'x-circle',
+      });
       if (input === null) return;
-      if (!input.trim()) {
-        this.toast.error('Indica el motivo del rechazo');
-        return;
-      }
-      reason = input.trim();
+      reason = input;
     }
 
     this.busyDocIds.update((s) => new Set(s).add(doc.id));

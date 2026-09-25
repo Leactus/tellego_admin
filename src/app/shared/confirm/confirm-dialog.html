@@ -6,15 +6,39 @@
       </div>
       <h3>{{ state.title }}</h3>
       <p>{{ state.message }}</p>
+
+      @if (state.kind === 'prompt') {
+        <textarea
+          class="confirm-input"
+          rows="3"
+          [placeholder]="state.placeholder"
+          [ngModel]="state.value"
+          (ngModelChange)="confirmService.setPromptValue($event)"
+          (keydown.enter)="$event.stopPropagation()"
+        ></textarea>
+      }
+
       <div class="confirm-actions">
-        <button class="btn-cancel" (click)="confirmService.respond(false)">{{ state.cancelLabel }}</button>
-        <button
-          class="btn-confirm"
-          [class.danger]="state.variant === 'danger'"
-          (click)="confirmService.respond(true)"
-        >
-          {{ state.confirmLabel }}
-        </button>
+        @if (state.kind === 'confirm') {
+          <button class="btn-cancel" (click)="confirmService.respond(false)">{{ state.cancelLabel }}</button>
+          <button
+            class="btn-confirm"
+            [class.danger]="state.variant === 'danger'"
+            (click)="confirmService.respond(true)"
+          >
+            {{ state.confirmLabel }}
+          </button>
+        } @else {
+          <button class="btn-cancel" (click)="confirmService.respondPrompt(false)">{{ state.cancelLabel }}</button>
+          <button
+            class="btn-confirm"
+            [class.danger]="state.variant === 'danger'"
+            [disabled]="state.required && !state.value.trim()"
+            (click)="confirmService.respondPrompt(true)"
+          >
+            {{ state.confirmLabel }}
+          </button>
+        }
       </div>
     </div>
   </div>

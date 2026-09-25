@@ -1,12 +1,20 @@
-<div class="page-head">
-  <div>
-    <h1>Estadísticas</h1>
-    <p class="muted">Ventas, negocios y repartidores más destacados de toda la plataforma.</p>
+<div class="stats-hero">
+  <div class="hero-blob hero-blob-a"></div>
+  <div class="hero-blob hero-blob-b"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <span class="hero-eyebrow">
+        <app-icon name="trending-up" />
+        Panel de estadísticas
+      </span>
+      <h1>Estadísticas de la plataforma</h1>
+      <p>Ventas, negocios y repartidores más destacados de toda la plataforma.</p>
+    </div>
+    <button class="hero-export" (click)="exportCsv()" [disabled]="!data()">
+      <app-icon name="receipt" />
+      Exportar CSV
+    </button>
   </div>
-  <button class="btn-secondary" (click)="exportCsv()" [disabled]="!data()">
-    <app-icon name="receipt" />
-    Exportar CSV
-  </button>
 </div>
 
 <div class="filters-bar">
@@ -65,7 +73,7 @@
   </div>
 
   <div class="summary-grid">
-    <div class="stat-card">
+    <div class="stat-card featured">
       <div class="stat-icon success"><app-icon name="trending-up" /></div>
       <div class="stat-text">
         <span class="stat-label">GMV (ventas de la plataforma)</span>
@@ -161,7 +169,9 @@
         <div class="rank-list">
           @for (company of stats.topCompanies; track company.companyId; let i = $index) {
             <div class="rank-row">
-              <span class="rank-index">{{ i + 1 }}</span>
+              <span class="rank-index" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">
+                {{ i + 1 }}
+              </span>
               <div class="rank-info">
                 <span class="rank-title">{{ company.name }}</span>
                 <span class="rank-sub">{{ company.orders }} pedido(s)</span>
@@ -181,7 +191,9 @@
         <div class="rank-list">
           @for (store of stats.topStores; track store.storeId; let i = $index) {
             <div class="rank-row">
-              <span class="rank-index">{{ i + 1 }}</span>
+              <span class="rank-index" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">
+                {{ i + 1 }}
+              </span>
               <div class="rank-info">
                 <span class="rank-title">{{ store.storeName }}</span>
                 <span class="rank-sub">{{ store.companyName }} · {{ store.orders }} pedido(s)</span>
@@ -203,7 +215,9 @@
         <div class="rank-list">
           @for (driver of stats.topDrivers; track driver.driverId; let i = $index) {
             <div class="rank-row">
-              <span class="rank-index">{{ i + 1 }}</span>
+              <span class="rank-index" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">
+                {{ i + 1 }}
+              </span>
               <div class="rank-info">
                 <span class="rank-title">{{ driver.name }}</span>
                 <span class="rank-sub">{{ driver.deliveries }} entrega(s)</span>
