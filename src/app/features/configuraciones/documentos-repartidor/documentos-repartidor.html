@@ -159,6 +159,43 @@
           Activo (se le pide a los repartidores nuevos)
         </label>
 
+        <hr class="separator" style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
+        
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.autoValidate" name="autoValidate" />
+          <strong>Validar automáticamente con OCR (Inteligencia Artificial)</strong>
+        </label>
+        @if (form.autoValidate) {
+          <p class="muted small" style="margin-top: -5px; margin-bottom: 10px;">
+            El sistema extraerá el texto de la imagen para aprobarlo sin intervención humana si encuentra coincidencias.
+          </p>
+          <div class="validation-fields" style="background: var(--bg-hover); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+            <label>
+              Palabras clave obligatorias
+              <input
+                type="text"
+                [(ngModel)]="form.validationKeywords"
+                name="validationKeywords"
+                placeholder="Ej. REPUBLICA DE EL SALVADOR, DUI"
+              />
+            </label>
+            <p class="muted small">Separa las palabras con comas. Deben encontrarse en la imagen para aprobarse.</p>
+            
+            <label style="margin-top: 0.5rem;">
+              Patrón obligatorio (Expresión Regular)
+              <input
+                type="text"
+                [(ngModel)]="form.validationRegex"
+                name="validationRegex"
+                placeholder="Ej. ^[0-9]{8}-[0-9]$"
+              />
+            </label>
+            <p class="muted small">Si agregas una expresión regular, el sistema buscará una coincidencia de formato.</p>
+          </div>
+        }
+
+        <hr class="separator" style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
+
         <div class="fields-block">
           <div class="fields-head">
             <strong>Campos adicionales</strong>

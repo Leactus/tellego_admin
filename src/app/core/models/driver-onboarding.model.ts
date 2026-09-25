@@ -27,6 +27,9 @@ export interface DriverDocumentType {
   isRequired: boolean;
   sortOrder: number;
   isActive: boolean;
+  autoValidate: boolean;
+  validationKeywords: string | null;
+  validationRegex: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

@@ -107,6 +107,9 @@ export class DocumentosRepartidor implements OnInit {
     accepts: 'image' as DriverDocumentAccepts,
     isRequired: true,
     isActive: true,
+    autoValidate: false,
+    validationKeywords: '',
+    validationRegex: '',
     sortOrder: 0,
   };
   fields: FieldRow[] = [];
@@ -219,6 +222,9 @@ export class DocumentosRepartidor implements OnInit {
       accepts: 'image',
       isRequired: true,
       isActive: true,
+      autoValidate: false,
+      validationKeywords: '',
+      validationRegex: '',
       sortOrder: this.types().length,
     };
     this.fields = [];
@@ -235,6 +241,9 @@ export class DocumentosRepartidor implements OnInit {
       accepts: type.accepts,
       isRequired: type.isRequired,
       isActive: type.isActive,
+      autoValidate: type.autoValidate || false,
+      validationKeywords: type.validationKeywords || '',
+      validationRegex: type.validationRegex || '',
       sortOrder: type.sortOrder,
     };
     this.fields = (type.fields ?? []).map((f) => ({
@@ -275,6 +284,9 @@ export class DocumentosRepartidor implements OnInit {
       fields: this.fieldsToPayload(),
       isRequired: this.form.isRequired,
       isActive: this.form.isActive,
+      autoValidate: this.form.autoValidate,
+      validationKeywords: this.form.validationKeywords.trim() || null,
+      validationRegex: this.form.validationRegex.trim() || null,
       sortOrder: Number(this.form.sortOrder) || 0,
     };
     try {
