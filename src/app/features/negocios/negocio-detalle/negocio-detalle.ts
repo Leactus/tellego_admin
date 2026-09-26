@@ -107,6 +107,31 @@ export class NegocioDetalle implements OnInit {
   ownerForm = { name: '', email: '', phone: '' };
   /** true recién después de un intento de "Guardar datos del dueño" fallido — antes de eso no se marca nada en rojo. */
   readonly ownerSubmitted = signal(false);
+
+  readonly isSavingCompany = signal(false);
+  readonly companySubmitted = signal(false);
+  companyForm = { name: '' };
+
+  isCompanyNameInvalid(): boolean {
+    return this.companySubmitted() && !this.companyForm.name.trim();
+  }
+
+  async saveCompany(): Promise<void> {
+    this.companySubmitted.set(true);
+    const name = this.companyForm.name.trim();
+    if (!name) return;
+
+    this.isSavingCompany.set(true);
+    try {
+      const updated = await this.companiesService.update(this.companyId, { name });
+      this.company.update((c) => (c ? { ...c, name: updated.name } : c));
+      this.toast.success('Datos del negocio actualizados');
+    } catch (err: any) {
+      this.toast.error(err?.error?.message ?? 'No se pudieron actualizar los datos del negocio');
+    } finally {
+      this.isSavingCompany.set(false);
+    }
+  }
   readonly apayCredencial = signal<ApayCredencial | null>(null);
   readonly isSavingApay = signal(false);
   readonly revealedApay = signal<{ apayToken: string; apayBusinessId: string | null } | null>(null);
@@ -279,6 +304,10 @@ export class NegocioDetalle implements OnInit {
         phone: company.owner?.phone ?? '',
       };
       this.ownerSubmitted.set(false);
+      this.companyForm = {
+        name: company.name ?? '',
+      };
+      this.companySubmitted.set(false);
     } catch {
       this.toast.error('No se pudo cargar el negocio');
     } finally {

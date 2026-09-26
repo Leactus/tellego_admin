@@ -68,6 +68,24 @@
   <div class="settings-layout">
   <div class="main-column">
   <section class="card">
+    <h2>Datos del negocio</h2>
+    <div class="billing-form">
+      <label>
+        Nombre del negocio
+        <input type="text" [(ngModel)]="companyForm.name" name="companyName" [class.invalid]="isCompanyNameInvalid()" />
+      </label>
+    </div>
+    @if (isCompanyNameInvalid()) {
+      <span class="invalid-hint">Ingresa un nombre para el negocio</span>
+    }
+    <div class="toolbar">
+      <button class="btn-primary" [disabled]="isSavingCompany()" (click)="saveCompany()">
+        {{ isSavingCompany() ? 'Guardando…' : 'Guardar datos del negocio' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
     <h2>Dueño del negocio</h2>
     <div class="billing-form">
       <label>

@@ -70,6 +70,12 @@ export class CompaniesService {
     return firstValueFrom(this.http.get<{ data: Company }>(`${this.base}/${id}`)).then((r) => r.data);
   }
 
+  update(id: number, payload: { name?: string }): Promise<Company> {
+    return firstValueFrom(
+      this.http.patch<{ data: Company }>(`${this.base}/${id}`, payload),
+    ).then((r) => r.data);
+  }
+
   updateStatus(id: number, status: CompanyStatus): Promise<Company> {
     return firstValueFrom(
       this.http.patch<{ data: Company }>(`${this.base}/${id}/status`, { status }),
