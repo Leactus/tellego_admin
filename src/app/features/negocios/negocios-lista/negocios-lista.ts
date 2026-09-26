@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { CompaniesService } from '../../../core/services/companies.service';
@@ -29,7 +30,7 @@ const BILLING_TYPE_OPTIONS: SelectOption<CompanyBillingType>[] = [
 @Component({
   selector: 'app-negocios-lista',
   standalone: true,
-  imports: [FormsModule, RouterLink, Icon, EmptyState, Pager, Select, Skeleton, StoreRatingReportsModal],
+  imports: [FormsModule, RouterLink, DatePipe, Icon, EmptyState, Pager, Select, Skeleton, StoreRatingReportsModal],
   templateUrl: './negocios-lista.html',
   styleUrl: './negocios-lista.scss',
 })
@@ -69,6 +70,9 @@ export class NegociosLista implements OnInit, OnDestroy {
     monthlyFee: number;
     commissionRate: number;
     freeTrialDays: number;
+    overrideDates: boolean;
+    billingStartsAt: string;
+    nextPaymentDueDate: string;
   } = {
     companyName: '',
     ownerName: '',
@@ -79,7 +83,40 @@ export class NegociosLista implements OnInit, OnDestroy {
     monthlyFee: 0,
     commissionRate: 0,
     freeTrialDays: 0,
+    overrideDates: false,
+    billingStartsAt: '',
+    nextPaymentDueDate: '',
   };
+
+  defaultSalesCutoffDow = 0;
+  defaultCommissionPaymentDueDays = 0;
+
+  get previewBillingStartsAt(): Date {
+    if (this.createForm.overrideDates && this.createForm.billingStartsAt) {
+      // Parseamos con hora a la medianoche local
+      return new Date(this.createForm.billingStartsAt + 'T00:00:00');
+    }
+    const d = new Date();
+    d.setDate(d.getDate() + (this.createForm.freeTrialDays || 0));
+    return d;
+  }
+
+  get previewNextCutoff(): Date {
+    const d = new Date(this.previewBillingStartsAt);
+    const dow = this.defaultSalesCutoffDow;
+    const daysUntilDow = (((dow - d.getDay()) % 7) + 7) % 7;
+    d.setDate(d.getDate() + daysUntilDow);
+    return d;
+  }
+
+  get previewNextPaymentDue(): Date {
+    if (this.createForm.overrideDates && this.createForm.nextPaymentDueDate) {
+      return new Date(this.createForm.nextPaymentDueDate + 'T00:00:00');
+    }
+    const d = new Date(this.previewNextCutoff);
+    d.setDate(d.getDate() + this.defaultCommissionPaymentDueDays);
+    return d;
+  }
 
   search = '';
   private readonly debouncedSearch = debounce(() => {
@@ -188,6 +225,24 @@ export class NegociosLista implements OnInit, OnDestroy {
     return this.createSubmitted() && (!email || !EMAIL_PATTERN.test(email));
   }
 
+  onNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const sanitized = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
+    if (input.value !== sanitized) {
+      input.value = sanitized;
+      this.createForm.ownerName = sanitized;
+    }
+  }
+
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const sanitized = input.value.replace(/[^0-9+\- \(\)]/g, '');
+    if (input.value !== sanitized) {
+      input.value = sanitized;
+      this.createForm.ownerPhone = sanitized;
+    }
+  }
+
   async openCreateModal(): Promise<void> {
     if (this.countryOptions().length === 0) {
       await this.loadCountries();
@@ -200,6 +255,8 @@ export class NegociosLista implements OnInit, OnDestroy {
       const settings = await this.billingSettings.get();
       defaultMonthlyFee = Number(settings.defaultMonthlyFee);
       defaultCommissionRate = Number(settings.defaultCommissionRate);
+      this.defaultSalesCutoffDow = Number(settings.defaultSalesCutoffDow);
+      this.defaultCommissionPaymentDueDays = Number(settings.defaultCommissionPaymentDueDays);
     } catch {
       // Si falla, se deja en 0 y el admin lo escribe a mano.
     }
@@ -213,6 +270,9 @@ export class NegociosLista implements OnInit, OnDestroy {
       monthlyFee: defaultMonthlyFee,
       commissionRate: defaultCommissionRate,
       freeTrialDays: 0,
+      overrideDates: false,
+      billingStartsAt: '',
+      nextPaymentDueDate: '',
     };
     this.createSubmitted.set(false);
     this.createModalOpen.set(true);
@@ -222,10 +282,51 @@ export class NegociosLista implements OnInit, OnDestroy {
     this.createModalOpen.set(false);
   }
 
+  onOverrideDatesChange(checked: boolean): void {
+    this.createForm.overrideDates = checked;
+    if (checked) {
+      // Ajustamos a zona horaria local simulada (-6) para extraer el ISO de la fecha preview correcta
+      const start = new Date(this.previewBillingStartsAt.getTime() - 6 * 3600 * 1000);
+      const due = new Date(this.previewNextPaymentDue.getTime() - 6 * 3600 * 1000);
+      this.createForm.billingStartsAt = start.toISOString().slice(0, 10);
+      this.createForm.nextPaymentDueDate = due.toISOString().slice(0, 10);
+    }
+  }
+
+  onBillingStartsAtChange(newDate: string): void {
+    if (!this.createForm.overrideDates || !newDate) return;
+    
+    const start = new Date(newDate + 'T00:00:00');
+    const dow = this.defaultSalesCutoffDow;
+    const daysUntilDow = (((dow - start.getDay()) % 7) + 7) % 7;
+    
+    const cutoff = new Date(start);
+    cutoff.setDate(cutoff.getDate() + daysUntilDow);
+    
+    const due = new Date(cutoff);
+    due.setDate(due.getDate() + this.defaultCommissionPaymentDueDays);
+    
+    // Simulate -6 offset before stringifying to keep local date stable
+    const localDue = new Date(due.getTime() - 6 * 3600 * 1000);
+    this.createForm.nextPaymentDueDate = localDue.toISOString().slice(0, 10);
+  }
+
   async createCompany(): Promise<void> {
     this.createSubmitted.set(true);
-    const { companyName, ownerName, ownerEmail, ownerPhone, countryId, billingType, monthlyFee, commissionRate, freeTrialDays } =
-      this.createForm;
+    const {
+      companyName,
+      ownerName,
+      ownerEmail,
+      ownerPhone,
+      countryId,
+      billingType,
+      monthlyFee,
+      commissionRate,
+      freeTrialDays,
+      overrideDates,
+      billingStartsAt,
+      nextPaymentDueDate,
+    } = this.createForm;
     if (!companyName.trim() || !ownerName.trim() || !ownerEmail.trim() || !EMAIL_PATTERN.test(ownerEmail.trim())) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
@@ -243,6 +344,8 @@ export class NegociosLista implements OnInit, OnDestroy {
         monthlyFee: billingType === 'fee' ? monthlyFee : undefined,
         commissionRate: billingType === 'commission' ? commissionRate : undefined,
         freeTrialDays: freeTrialDays > 0 ? freeTrialDays : undefined,
+        billingStartsAt: overrideDates && billingStartsAt ? billingStartsAt : undefined,
+        nextPaymentDueDate: overrideDates && nextPaymentDueDate ? nextPaymentDueDate : undefined,
       });
       this.closeCreateModal();
       this.tempPasswordModal.show({ title: 'Negocio creado', email: ownerEmail.trim(), password: tempPassword });

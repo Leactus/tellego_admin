@@ -26,11 +26,12 @@ const METHOD_OPTIONS: SelectOption[] = [
   { value: 'transfer', label: 'Transferencia' },
   { value: 'card', label: 'Tarjeta' },
 ];
+import { CommonModule, DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-pagos',
   standalone: true,
-  imports: [FormsModule, Icon, EmptyState, Pager, Select, Skeleton],
+  imports: [CommonModule, DatePipe, FormsModule, Icon, EmptyState, Pager, Select, Skeleton],
   templateUrl: './pagos.html',
   styleUrl: './pagos.scss',
 })
@@ -194,7 +195,7 @@ export class Pagos implements OnInit, OnDestroy {
     if (company.billingType === 'commission') {
       const start = company.canPay ? company.pendingPeriodStart : company.runningStart;
       const end = company.canPay ? company.pendingPeriodEnd : company.runningEnd;
-      // El backend ahora nos dice exactamente qué periodo está vencido (o corriendo actualmente)
+
       this.paymentForm = { amount: 0, method: 'cash', periodStart: start ?? company.billingStartsAt ?? today, periodEnd: end ?? today, note: '' };
       
       // Solo sugerimos la deuda si el periodo está cerrado (canPay = true),
@@ -232,6 +233,32 @@ export class Pagos implements OnInit, OnDestroy {
     const company = this.paymentModalCompany();
     if (!company) return '';
     return addMonthsToDateOnly(this.advanceStartDate(company), this.advanceForm.months || 0);
+  }
+
+  get previewNewCutoff(): Date | null {
+    const company = this.paymentModalCompany();
+    if (!company || company.billingType !== 'commission' || !this.paymentForm.periodEnd) return null;
+    
+    // El próximo ciclo inicia 1 día después del "periodo hasta" que se está pagando
+    const endDate = new Date(this.paymentForm.periodEnd + 'T00:00:00');
+    endDate.setDate(endDate.getDate() + 1);
+    
+    const dow = company.effectiveSalesCutoffDow ?? 0;
+    const daysUntilDow = (((dow - endDate.getDay()) % 7) + 7) % 7;
+    
+    const cutoff = new Date(endDate);
+    cutoff.setDate(cutoff.getDate() + daysUntilDow);
+    return cutoff;
+  }
+
+  get previewNewPaymentDue(): Date | null {
+    const company = this.paymentModalCompany();
+    if (!company || !this.previewNewCutoff) return null;
+    
+    const due = new Date(this.previewNewCutoff);
+    const dueDays = company.effectiveCommissionPaymentDueDays ?? 1;
+    due.setDate(due.getDate() + dueDays);
+    return due;
   }
 
   closePaymentModal(): void {

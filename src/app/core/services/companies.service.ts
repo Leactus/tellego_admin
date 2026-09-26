@@ -37,6 +37,9 @@ interface CreateCompanyInput {
   subcategoryIds?: number[];
   /** Días de cortesía antes de que este negocio empiece a poder considerarse moroso (billingStartsAt = hoy + freeTrialDays). Omitido o 0 = sin periodo gratis, mismo comportamiento que antes. */
   freeTrialDays?: number;
+  /** Fechas manuales ingresadas por el admin cuando marca 'hacer excepción'. Si vienen, sobrescriben los cálculos automáticos y el freeTrialDays. */
+  billingStartsAt?: string;
+  nextPaymentDueDate?: string;
 }
 
 export type PaymentStatusFilter = 'all' | 'overdue' | 'current';

@@ -170,6 +170,30 @@
             Nota
             <input type="text" [(ngModel)]="paymentForm.note" name="note" />
           </label>
+
+          @if (previewNewCutoff) {
+            <div class="billing-preview-box">
+              <p class="muted hint" style="margin-bottom: 0.75rem;">
+                Si guardas este pago, el nuevo ciclo del negocio será:
+              </p>
+              <div class="preview-details">
+                <div class="preview-row">
+                  <app-icon name="clock" />
+                  <div class="preview-content">
+                    <strong>Próximo corte</strong>
+                    <span>{{ previewNewCutoff | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                </div>
+                <div class="preview-row">
+                  <app-icon name="credit-card" />
+                  <div class="preview-content">
+                    <strong>Próximo pago</strong>
+                    <span>{{ previewNewPaymentDue | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
         </div>
 
         <div class="modal-actions">

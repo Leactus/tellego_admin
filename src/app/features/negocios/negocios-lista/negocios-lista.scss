@@ -81,3 +81,84 @@ a.btn-text {
 .status-suspended:hover {
   background: color-mix(in srgb, var(--color-error) 20%, white);
 }
+
+.billing-preview-box {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background-color: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 15%, transparent);
+  border-radius: 8px;
+
+  .hint {
+    margin-bottom: 1rem;
+  }
+}
+
+.override-checkbox {
+  margin: 0.5rem 0 0;
+  font-weight: 500;
+  color: var(--color-text-strong);
+}
+
+.preview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  line-height: 1.4;
+
+  app-icon {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+}
+
+.preview-content {
+  flex: 1;
+
+  strong {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--color-text-strong);
+  }
+
+  .inline-date-input {
+    margin-top: 0.25rem;
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background-color: white;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 1.5rem;
+}
+
+.full-col {
+  grid-column: 1 / -1;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+}

@@ -77,7 +77,7 @@
 <!-- Modal: crear negocio -->
 @if (createModalOpen()) {
   <div class="modal-backdrop">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Crear negocio</h2>
         <button class="modal-close" (click)="closeCreateModal()" aria-label="Cerrar">
@@ -86,81 +86,154 @@
       </div>
 
       <div class="modal-body">
-        <label>
-          Nombre del negocio
-          <input
-            type="text"
-            [(ngModel)]="createForm.companyName"
-            name="companyName"
-            placeholder="Ej. Sushi Kobe"
-            [class.invalid]="isCompanyNameInvalid()"
-          />
-        </label>
-        @if (isCompanyNameInvalid()) {
-          <span class="invalid-hint">El nombre del negocio es obligatorio</span>
-        }
-        <label>
-          Nombre del dueño
-          <input
-            type="text"
-            [(ngModel)]="createForm.ownerName"
-            name="ownerName"
-            placeholder="Ej. José Martínez"
-            [class.invalid]="isOwnerNameInvalid()"
-          />
-        </label>
-        @if (isOwnerNameInvalid()) {
-          <span class="invalid-hint">El nombre del dueño es obligatorio</span>
-        }
-        <label>
-          Email del dueño
-          <input
-            type="email"
-            [(ngModel)]="createForm.ownerEmail"
-            name="ownerEmail"
-            placeholder="dueno@correo.com"
-            [class.invalid]="isOwnerEmailInvalid()"
-          />
-        </label>
-        @if (isOwnerEmailInvalid()) {
-          <span class="invalid-hint">Ingresa un correo electrónico válido</span>
-        }
-        <label>
-          Teléfono del dueño
-          <input type="text" [(ngModel)]="createForm.ownerPhone" name="ownerPhone" placeholder="Ej. +503 7000-0000" />
-        </label>
-        <label>
-          País
-          <app-select [(ngModel)]="createForm.countryId" name="countryId" [options]="countryOptions()" />
-        </label>
-        <p class="muted hint">La moneda de cobro de este negocio se toma automáticamente del país elegido.</p>
-        <label>
-          Tipo de cobro
-          <app-select [(ngModel)]="createForm.billingType" name="billingType" [options]="billingTypeOptions" />
-        </label>
-        @if (createForm.billingType === 'fee') {
-          <label>
-            Cuota mensual (USD)
-            <input type="number" min="0" step="0.01" [(ngModel)]="createForm.monthlyFee" name="monthlyFee" />
-          </label>
+        <div class="form-grid">
+          
+          <div class="field-group">
+            <label>
+              Nombre del negocio
+              <input
+                type="text"
+                [(ngModel)]="createForm.companyName"
+                name="companyName"
+                placeholder="Ej. Sushi Kobe"
+                [class.invalid]="isCompanyNameInvalid()"
+              />
+            </label>
+            @if (isCompanyNameInvalid()) {
+              <span class="invalid-hint">El nombre del negocio es obligatorio</span>
+            }
+          </div>
+
+          <div class="field-group">
+            <label>
+              Nombre del dueño
+              <input
+                type="text"
+                [(ngModel)]="createForm.ownerName"
+                name="ownerName"
+                placeholder="Ej. José Martínez"
+                [class.invalid]="isOwnerNameInvalid()"
+                (input)="onNameInput($event)"
+              />
+            </label>
+            @if (isOwnerNameInvalid()) {
+              <span class="invalid-hint">El nombre del dueño es obligatorio</span>
+            }
+          </div>
+
+          <div class="field-group">
+            <label>
+              Email del dueño
+              <input
+                type="email"
+                [(ngModel)]="createForm.ownerEmail"
+                name="ownerEmail"
+                placeholder="dueno@correo.com"
+                [class.invalid]="isOwnerEmailInvalid()"
+              />
+            </label>
+            @if (isOwnerEmailInvalid()) {
+              <span class="invalid-hint">Ingresa un correo electrónico válido</span>
+            }
+          </div>
+
+          <div class="field-group">
+            <label>
+              Teléfono del dueño
+              <input
+                type="tel"
+                [(ngModel)]="createForm.ownerPhone"
+                name="ownerPhone"
+                placeholder="Ej. +503 7000-0000"
+                (input)="onPhoneInput($event)"
+              />
+            </label>
+          </div>
+
+          <div class="field-group">
+            <label>
+              País
+              <app-select [(ngModel)]="createForm.countryId" name="countryId" [options]="countryOptions()" />
+            </label>
+            <p class="muted hint" style="margin-top: 0.5rem">La moneda se toma automáticamente del país elegido.</p>
+          </div>
+
+          <div class="field-group">
+            <label>
+              Tipo de cobro
+              <app-select [(ngModel)]="createForm.billingType" name="billingType" [options]="billingTypeOptions" />
+            </label>
+            <p class="muted hint" style="margin-top: 0.5rem">
+              Esto queda fijo para este negocio; si luego cambias el default en Configuraciones, no afectará aquí.
+            </p>
+          </div>
+
+          <div class="field-group">
+            @if (createForm.billingType === 'fee') {
+              <label>
+                Cuota mensual (USD)
+                <input type="number" min="0" step="0.01" [(ngModel)]="createForm.monthlyFee" name="monthlyFee" />
+              </label>
+            } @else {
+              <label>
+                Comisión (%)
+                <input type="number" min="0" max="100" step="0.01" [(ngModel)]="createForm.commissionRate" name="commissionRate" />
+              </label>
+            }
+          </div>
+
+          <div class="field-group">
+            <label>
+              Días gratis (opcional)
+              <input type="number" min="0" step="1" [(ngModel)]="createForm.freeTrialDays" name="freeTrialDays" placeholder="0" />
+            </label>
+          </div>
+
+        </div> <!-- form-grid end -->
+        
+        @if (createForm.billingType === 'commission') {
+          <div class="billing-preview-box">
+            <p class="muted hint">
+              Mientras dure este periodo, el negocio no se considera moroso ni se bloquea.
+            </p>
+            
+            <label class="checkbox-row override-checkbox">
+              <input type="checkbox" [ngModel]="createForm.overrideDates" (ngModelChange)="onOverrideDatesChange($event)" name="overrideDates" />
+              Deseo asignar estas fechas manualmente
+            </label>
+
+            <div class="preview-details form-grid">
+              <div class="preview-row">
+                <app-icon name="clock" />
+                <div class="preview-content">
+                  <strong>Facturación inicia</strong>
+                  @if (!createForm.overrideDates) {
+                    <span>{{ previewBillingStartsAt | date:'dd/MM/yyyy' }}</span>
+                  } @else {
+                    <input type="date" [(ngModel)]="createForm.billingStartsAt" (ngModelChange)="onBillingStartsAtChange($event)" name="overrideBillingStartsAt" class="inline-date-input" />
+                  }
+                </div>
+              </div>
+              
+              <div class="preview-row">
+                <app-icon name="credit-card" />
+                <div class="preview-content">
+                  <strong>Fecha de pago</strong>
+                  @if (!createForm.overrideDates) {
+                    <span>Corta el {{ previewNextCutoff | date:'dd/MM/yyyy' }} y se paga el {{ previewNextPaymentDue | date:'dd/MM/yyyy' }}</span>
+                  } @else {
+                    <input type="date" [(ngModel)]="createForm.nextPaymentDueDate" name="overrideNextPaymentDue" class="inline-date-input" />
+                    <span class="muted hint" style="display: block; margin-top: 0.25rem;">(Corte: {{ previewNextCutoff | date:'dd/MM/yyyy' }})</span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
         } @else {
-          <label>
-            Comisión (%)
-            <input type="number" min="0" max="100" step="0.01" [(ngModel)]="createForm.commissionRate" name="commissionRate" />
-          </label>
+          <p class="muted hint">
+            Mientras dure este periodo, el negocio nunca se considera moroso ni se bloquea. Déjalo en 0 para que arranque a facturar de inmediato.
+          </p>
         }
-        <p class="muted hint">
-          Esto queda fijo para este negocio: si luego cambias el valor por defecto en Configuraciones &gt; Tipo de
-          pago, no afecta lo que ya se le asignó aquí.
-        </p>
-        <label>
-          Días gratis (opcional)
-          <input type="number" min="0" step="1" [(ngModel)]="createForm.freeTrialDays" name="freeTrialDays" placeholder="0" />
-        </label>
-        <p class="muted hint">
-          Mientras dure este periodo, el negocio nunca se considera moroso ni se bloquea, sin importar la fecha de
-          pago. Déjalo en 0 para que arranque a facturar de inmediato.
-        </p>
       </div>
 
       <div class="modal-actions">
