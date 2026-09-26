@@ -12,6 +12,7 @@ import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { MultiSelect } from '../../../shared/multi-select/multi-select';
+import { ToggleSwitch } from '../../../shared/toggle-switch/toggle-switch';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
@@ -23,7 +24,7 @@ type Tab = 'categorias' | 'productos';
 @Component({
   selector: 'app-negocio-menu',
   standalone: true,
-  imports: [FormsModule, Icon, EmptyState, Select, MultiSelect, Skeleton],
+  imports: [FormsModule, Icon, EmptyState, Select, MultiSelect, Skeleton, ToggleSwitch],
   templateUrl: './negocio-menu.html',
   styleUrl: './negocio-menu.scss',
 })
@@ -82,6 +83,7 @@ export class NegocioMenu implements OnInit {
     hasSale: false,
     salePrice: 0,
     categoryId: null as number | null,
+      isAvailable: true,
     isAgeRestricted: false,
     storeIds: [] as number[],
   };
@@ -261,6 +263,7 @@ export class NegocioMenu implements OnInit {
       hasSale: false,
       salePrice: 0,
       categoryId: null,
+        isAvailable: true,
       isAgeRestricted: false,
       storeIds: [],
     };
@@ -283,6 +286,7 @@ export class NegocioMenu implements OnInit {
       hasSale: product.salePrice != null,
       salePrice: product.salePrice != null ? Number(product.salePrice) : 0,
       categoryId: product.categoryId,
+        isAvailable: (product as any).isAvailable ?? true,
       isAgeRestricted: product.isAgeRestricted ?? false,
       storeIds: activeStoreIds,
     };
@@ -291,6 +295,43 @@ export class NegocioMenu implements OnInit {
     this.productSubmitted.set(false);
     this.productModalOpen.set(true);
   }
+
+  onSelectAllStoresChange(value: boolean) {
+    this.productSelectAllStores = value;
+    if (!value) {
+      setTimeout(() => {
+        const el = document.getElementById('branchSelectorContainer');
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'end' }); }
+      }, 50);
+    }
+  }
+
+  showNewCategoryInput = false;
+  newCategoryName = '';
+
+  promptNewCategory(): void {
+    this.showNewCategoryInput = true;
+    this.newCategoryName = '';
+  }
+
+  async saveInlineCategory(): Promise<void> {
+    const name = this.newCategoryName.trim();
+    if (!name) {
+      this.showNewCategoryInput = false;
+      return;
+    }
+    try {
+      const newCat = await this.catalog.createCategory(this.companyId, name);
+      await this.reload(true);
+      this.productForm.categoryId = newCat.id;
+      this.showNewCategoryInput = false;
+      this.toast.success('Categoría creada');
+    } catch {
+      this.toast.error('Error al crear categoría');
+    }
+  }
+
+
 
   closeProductModal(): void {
     this.productModalOpen.set(false);
@@ -525,3 +566,4 @@ export class NegocioMenu implements OnInit {
     return Number(extraPrice) > 0 ? `+$${extraPrice}` : 'Sin costo extra';
   }
 }
+

@@ -350,3 +350,61 @@
   vertical-align: middle;
 }
 
+
+/* Estilos para layout grid del modal de producto */
+.product-modal-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+}
+
+.product-modal-side {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.product-modal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .product-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Opciones laterales (Toggles de estado) */
+.side-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.side-option-box {
+  background: var(--color-surface-variant);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.side-option-box .checkbox-row {
+  margin-bottom: 6px !important;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.side-option-box .hint {
+  margin: 0 !important;
+  line-height: 1.4;
+  font-size: 0.75rem;
+}

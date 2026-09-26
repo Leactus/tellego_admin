@@ -177,7 +177,7 @@
 <!-- Modal: producto -->
 @if (productModalOpen()) {
   <div class="modal-backdrop">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editingProduct ? 'Editar producto' : 'Nuevo producto' }}</h2>
         <button class="modal-close" (click)="closeProductModal()" aria-label="Cerrar">
@@ -185,91 +185,130 @@
         </button>
       </div>
 
-      <div class="modal-body">
-        <div class="image-picker">
-          <label class="image-preview" [class.has-image]="selectedImagePreviewUrl">
-            @if (selectedImagePreviewUrl) {
-              <img [src]="selectedImagePreviewUrl" alt="Foto del producto" />
-              <span class="preview-caption"><app-icon name="camera" /> Cambiar foto</span>
-            } @else {
-              <span class="preview-placeholder"><app-icon name="camera" /> Agregar foto</span>
-            }
-            <input type="file" accept="image/*" (change)="onImageSelected($event)" hidden />
-          </label>
+      <div class="modal-body product-modal-grid">
+        <div class="product-modal-side">
+          <div class="image-picker">
+            <label class="image-preview" [class.has-image]="selectedImagePreviewUrl">
+              @if (selectedImagePreviewUrl) {
+                <img [src]="selectedImagePreviewUrl" alt="Foto del producto" />
+                <span class="preview-caption"><app-icon name="camera" /> Cambiar foto</span>
+              } @else {
+                <span class="preview-placeholder"><app-icon name="camera" /> Agregar foto</span>
+              }
+              <input type="file" accept="image/*" (change)="onImageSelected($event)" hidden />
+            </label>
+          </div>
+          <div class="side-options">
+            <div class="side-option-box">
+              <label class="checkbox-row">
+                <app-toggle-switch [(checked)]="productForm.isAvailable" />
+                <span>Activo en catálogo</span>
+              </label>
+              <p class="muted hint">
+                Apágalo para ocultarlo temporalmente o descontinuarlo.
+              </p>
+            </div>
+
+            <div class="side-option-box">
+              <label class="checkbox-row">
+                <app-toggle-switch [(checked)]="productForm.isAgeRestricted" />
+                <span>Solo +18</span>
+              </label>
+              <p class="muted hint">
+                El cliente confirmará su edad al pedirlo.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <label>
-          Nombre
-          <input
-            type="text"
-            [(ngModel)]="productForm.name"
-            name="productName"
-            [class.invalid]="isProductNameInvalid()"
-            placeholder="Ej. Pizza Pepperoni"
-          />
-        </label>
-        @if (isProductNameInvalid()) {
-          <span class="invalid-hint">Ingresa un nombre para el producto</span>
-        }
-        <label>
-          Descripción
-          <textarea [(ngModel)]="productForm.description" name="productDescription" rows="2"></textarea>
-        </label>
-        <div class="form-row">
+        <div class="product-modal-main">
           <label>
-            Precio (USD)
+            Nombre
             <input
-              type="number"
-              min="0"
-              step="0.01"
-              [(ngModel)]="productForm.price"
-              name="productPrice"
-              [class.invalid]="isProductPriceInvalid()"
+              type="text"
+              [(ngModel)]="productForm.name"
+              name="productName"
+              [class.invalid]="isProductNameInvalid()"
+              placeholder="Ej. Pizza Pepperoni"
             />
           </label>
+          @if (isProductNameInvalid()) {
+            <span class="invalid-hint">Ingresa un nombre para el producto</span>
+          }
           <label>
-            Categoría
-            <app-select [(ngModel)]="productForm.categoryId" name="productCategory" [options]="categoryOptions()" />
+            Descripción
+            <textarea [(ngModel)]="productForm.description" name="productDescription" rows="2"></textarea>
           </label>
-        </div>
-        @if (isProductPriceInvalid()) {
-          <span class="invalid-hint">Ingresa un precio mayor a $0.00</span>
-        }
-        <label class="checkbox-row">
-          <input type="checkbox" [(ngModel)]="productForm.hasSale" name="hasSale" />
-          Tiene precio de oferta
-        </label>
-        @if (productForm.hasSale) {
-          <label>
-            Precio de oferta (USD)
-            <input type="number" min="0" step="0.01" [(ngModel)]="productForm.salePrice" name="salePrice" />
-          </label>
-        }
-        <label class="checkbox-row">
-          <input type="checkbox" [(ngModel)]="productForm.isAgeRestricted" name="isAgeRestricted" />
-          Solo para mayores de edad (cerveza, licores…)
-        </label>
-        @if (branches().length > 1) {
-          <label class="checkbox-row">
-            <input type="checkbox" [(ngModel)]="productSelectAllStores" name="selectAllStores" />
-            Seleccionar todas las sucursales
-          </label>
-          @if (!productSelectAllStores) {
+          <div class="form-row">
             <label>
-              Sucursales donde se activa
-              <app-multi-select
-                [(ngModel)]="productForm.storeIds"
-                [options]="storeOptions()"
-                placeholder="Elige una o más sucursales"
-                [invalid]="isProductStoreInvalid()"
-                [alwaysShowSearch]="true"
+              Precio (USD)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                [(ngModel)]="productForm.price"
+                name="productPrice"
+                [class.invalid]="isProductPriceInvalid()"
               />
             </label>
-            @if (isProductStoreInvalid()) {
-              <span class="invalid-hint">Elige al menos una sucursal donde activarlo</span>
+            <label>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span>Categoría</span>
+                @if (!showNewCategoryInput) {
+                  <button type="button" class="text-button" style="font-size: 0.8rem; padding: 0; color: var(--color-primary); background: none; border: none; cursor: pointer;" (click)="promptNewCategory()">+ Nueva categoría</button>
+                } @else {
+                  <button type="button" class="text-button" style="font-size: 0.8rem; padding: 0; color: var(--color-danger, #ef4444); background: none; border: none; cursor: pointer;" (click)="showNewCategoryInput = false">Cancelar</button>
+                }
+              </div>
+              @if (showNewCategoryInput) {
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                  <input type="text" [(ngModel)]="newCategoryName" placeholder="Nombre de categoría..." style="flex: 1;" (keydown.enter)="$event.preventDefault(); saveInlineCategory()" />
+                  <button type="button" class="btn btn-primary" style="padding: 0 16px; border-radius: 8px;" (click)="saveInlineCategory()">Guardar</button>
+                </div>
+              } @else {
+                <app-select [(ngModel)]="productForm.categoryId" name="productCategory" [options]="categoryOptions()" />
+              }
+            </label>
+          </div>
+          @if (isProductPriceInvalid()) {
+            <span class="invalid-hint">Ingresa un precio mayor a $0.00</span>
+          }
+          <div class="form-row">
+            <label class="checkbox-row" style="margin-top: 10px;">
+              <input type="checkbox" [(ngModel)]="productForm.hasSale" name="hasSale" />
+              Tiene precio de oferta
+            </label>
+            @if (productForm.hasSale) {
+              <label>
+                Precio de oferta (USD)
+                <input type="number" min="0" step="0.01" [(ngModel)]="productForm.salePrice" name="salePrice" />
+              </label>
+            }
+          </div>
+          @if (branches().length > 1) {
+            <label class="checkbox-row" style="margin-top: 4px;">
+              <input type="checkbox" [ngModel]="productSelectAllStores" (ngModelChange)="onSelectAllStoresChange($event)" name="selectAllStores" />
+              Seleccionar todas las sucursales
+            </label>
+            @if (!productSelectAllStores) {
+              <div id="branchSelectorContainer" style="margin-top: 8px;">
+                <label>
+                  Sucursales donde se activa
+                  <app-multi-select
+                    [(ngModel)]="productForm.storeIds"
+                    [options]="storeOptions()"
+                    placeholder="Elige una o más sucursales"
+                    [invalid]="isProductStoreInvalid()"
+                    [alwaysShowSearch]="true"
+                  />
+                </label>
+                @if (isProductStoreInvalid()) {
+                  <span class="invalid-hint">Elige al menos una sucursal donde activarlo</span>
+                }
+              </div>
             }
           }
-        }
+        </div>
       </div>
 
       <div class="modal-actions">
