@@ -30,6 +30,7 @@ export interface DriverDocumentType {
   autoValidate: boolean;
   validationKeywords: string | null;
   validationRegex: string | null;
+  useCameraFrame: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -62,6 +63,7 @@ export interface OnboardingDocType {
   description: string | null;
   twoSided: boolean;
   accepts: DriverDocumentAccepts;
+  useCameraFrame: boolean;
   fields: DriverDocumentFieldDef[];
   isRequired: boolean;
   slots: OnboardingDocSlot[];

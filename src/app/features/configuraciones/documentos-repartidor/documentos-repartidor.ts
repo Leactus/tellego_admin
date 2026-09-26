@@ -110,6 +110,7 @@ export class DocumentosRepartidor implements OnInit {
     autoValidate: false,
     validationKeywords: '',
     validationRegex: '',
+    useCameraFrame: false,
     sortOrder: 0,
   };
   fields: FieldRow[] = [];
@@ -225,6 +226,7 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: false,
       validationKeywords: '',
       validationRegex: '',
+      useCameraFrame: false,
       sortOrder: this.types().length,
     };
     this.fields = [];
@@ -244,6 +246,7 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: type.autoValidate || false,
       validationKeywords: type.validationKeywords || '',
       validationRegex: type.validationRegex || '',
+      useCameraFrame: type.useCameraFrame || false,
       sortOrder: type.sortOrder,
     };
     this.fields = (type.fields ?? []).map((f) => ({
@@ -287,6 +290,7 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: this.form.autoValidate,
       validationKeywords: this.form.validationKeywords.trim() || null,
       validationRegex: this.form.validationRegex.trim() || null,
+      useCameraFrame: this.form.useCameraFrame,
       sortOrder: Number(this.form.sortOrder) || 0,
     };
     try {
