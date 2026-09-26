@@ -51,4 +51,16 @@ export class PaymentsService {
       ),
     );
   }
+
+  listZeroIncomeCandidates(): Promise<{ data: any[] }> {
+    return firstValueFrom(
+      this.http.get<{ data: any[] }>(`${environment.apiUrl}/admin/payments/zero-income-candidates`)
+    );
+  }
+
+  processMassZeroIncome(companyIds: number[]): Promise<{ data: number[] }> {
+    return firstValueFrom(
+      this.http.post<{ data: number[] }>(`${environment.apiUrl}/admin/payments/mass-zero-income`, { companyIds })
+    );
+  }
 }

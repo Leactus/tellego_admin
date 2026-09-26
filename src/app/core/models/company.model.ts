@@ -39,6 +39,11 @@ export interface Company {
   effectiveCommissionPaymentDueDays?: number;
   isBlocked?: boolean;
   blockDate?: string | null;
+  pendingPeriodStart?: string;
+  pendingPeriodEnd?: string;
+  canPay?: boolean;
+  runningStart?: string;
+  runningEnd?: string;
   createdAt: string;
   branches?: Store[];
   country?: Country;

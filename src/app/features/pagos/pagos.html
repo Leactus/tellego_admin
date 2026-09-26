@@ -15,15 +15,21 @@
   </button>
 </div>
 
-<div class="search-bar">
-  <app-icon name="search" />
-  <input
-    type="search"
-    placeholder="Buscar por nombre de negocio..."
-    [(ngModel)]="search"
-    (ngModelChange)="onSearchChange()"
-    spellcheck="false"
-  />
+<div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+  <div class="search-bar" style="margin: 0; flex: 1;">
+    <app-icon name="search" />
+    <input
+      type="search"
+      placeholder="Buscar por nombre de negocio..."
+      [(ngModel)]="search"
+      (ngModelChange)="onSearchChange()"
+      spellcheck="false"
+    />
+  </div>
+  <button class="btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;" (click)="openMassModal()">
+    <app-icon name="check-circle" />
+    Pago comercios con $0
+  </button>
 </div>
 
 @if (isLoading() || isRefreshing()) {
@@ -65,7 +71,13 @@
           } @else {
             <span class="muted">Sin fecha configurada</span>
           }
-          @if (company.billingStartsAt) {
+          @if (company.billingType === 'commission' && company.pendingPeriodStart) {
+            @if (company.canPay) {
+              <span class="muted small">Periodo cerrado: {{ formatDate(company.pendingPeriodStart) }} a {{ formatDate(company.pendingPeriodEnd!) }}</span>
+            } @else {
+              <span class="muted small">Facturando: {{ formatDate(company.runningStart!) }} a {{ formatDate(company.runningEnd!) }}</span>
+            }
+          } @else if (company.billingStartsAt) {
             <span class="muted small">Factura desde {{ formatDate(company.billingStartsAt) }}</span>
           }
         </div>
@@ -246,6 +258,66 @@
         <button class="btn-text" (click)="closeReminderModal()">Cancelar</button>
         <button class="btn-primary" [disabled]="isSendingReminder()" (click)="sendReminder()">
           {{ isSendingReminder() ? 'Enviando…' : 'Enviar recordatorio' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: Pago Masivo $0 -->
+@if (massModalOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>Pago masivo a negocios con $0</h2>
+        <button class="modal-close" (click)="closeMassModal()" aria-label="Cerrar">
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <div class="modal-body" style="max-height: 50vh; overflow-y: auto;">
+        <p class="muted hint">
+          Estos negocios por comisión tienen periodos vencidos pero sus ventas fueron de $0.
+          Puedes cerrarlos masivamente para que no aparezcan como deudores. (Máximo 50 a la vez para no saturar).
+        </p>
+        
+        @if (isLoadingMassCandidates()) {
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 2rem;">
+            <p class="muted hint">Buscando candidatos...</p>
+          </div>
+        } @else if (massCandidates().length === 0) {
+          <app-empty-state variant="no-data" title="No se encontraron negocios pendientes con $0 en ventas" icon="check-circle" />
+        } @else {
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+            @for (candidate of massCandidates(); track candidate.id) {
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; transition: background-color 0.2s;">
+                <input 
+                  type="checkbox" 
+                  [checked]="massSelectedIds().has(candidate.id)" 
+                  (change)="toggleMassCandidate(candidate.id)"
+                  style="margin-top: 0.25rem;"
+                />
+                <div style="flex: 1;">
+                  <strong style="display: block; margin-bottom: 0.25rem;">{{ candidate.name }}</strong>
+                  <span class="muted small" style="display: block; line-height: 1.4;">
+                    {{ formatDate(candidate.periodStart) }} – {{ formatDate(candidate.periodEnd) }}<br/>
+                    Ventas del periodo: ${{ candidate.totalSales }} · Comisión {{ candidate.commissionRate }}% = ${{ candidate.suggestedAmount }}
+                  </span>
+                </div>
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeMassModal()">Cancelar</button>
+        <button 
+          class="btn-primary" 
+          [disabled]="isSavingMass() || massSelectedIds().size === 0 || isLoadingMassCandidates()" 
+          (click)="processMassPayment()"
+        >
+          {{ isSavingMass() ? 'Procesando…' : 'Procesar ' + massSelectedIds().size + ' negocio(s)' }}
         </button>
       </div>
     </div>

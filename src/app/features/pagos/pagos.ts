@@ -100,6 +100,12 @@ export class Pagos implements OnInit, OnDestroy {
     return this.reminderSubmitted() && !this.reminderForm.body.trim();
   }
 
+  readonly massModalOpen = signal(false);
+  readonly isLoadingMassCandidates = signal(false);
+  readonly massCandidates = signal<any[]>([]);
+  readonly massSelectedIds = signal<Set<number>>(new Set());
+  readonly isSavingMass = signal(false);
+
   search = '';
   private readonly debouncedSearch = debounce(() => {
     this.page.set(1);
@@ -186,11 +192,16 @@ export class Pagos implements OnInit, OnDestroy {
     this.salesInfo.set(null);
     const today = new Date().toISOString().slice(0, 10);
     if (company.billingType === 'commission') {
-      // Mismo periodo por defecto que ya se armaba antes (billingStartsAt/hoy) — lo único que cambia
-      // es que ahora, con el periodo ya armado, se sugiere el monto de una vez (ver negocio-detalle.ts,
-      // mismo criterio) en vez de obligar a darle a "Calcular desde ventas" antes de poder guardar.
-      this.paymentForm = { amount: 0, method: 'cash', periodStart: company.billingStartsAt ?? today, periodEnd: today, note: '' };
-      this.calculateFromSales();
+      const start = company.canPay ? company.pendingPeriodStart : company.runningStart;
+      const end = company.canPay ? company.pendingPeriodEnd : company.runningEnd;
+      // El backend ahora nos dice exactamente qué periodo está vencido (o corriendo actualmente)
+      this.paymentForm = { amount: 0, method: 'cash', periodStart: start ?? company.billingStartsAt ?? today, periodEnd: end ?? today, note: '' };
+      
+      // Solo sugerimos la deuda si el periodo está cerrado (canPay = true),
+      // de lo contrario, el negocio está facturando la semana actual que aún no cierra.
+      if (company.canPay) {
+        this.calculateFromSales();
+      }
     } else {
       this.advanceForm = { months: 1, method: 'cash', note: '' };
     }
@@ -358,6 +369,54 @@ export class Pagos implements OnInit, OnDestroy {
       this.toast.error('No se pudo enviar el recordatorio');
     } finally {
       this.isSendingReminder.set(false);
+    }
+  }
+
+  async openMassModal() {
+    this.massModalOpen.set(true);
+    this.isLoadingMassCandidates.set(true);
+    this.massCandidates.set([]);
+    this.massSelectedIds.set(new Set());
+    
+    try {
+      const res = await this.paymentsService.listZeroIncomeCandidates();
+      this.massCandidates.set(res.data);
+      this.massSelectedIds.set(new Set(res.data.map(c => c.id)));
+    } catch {
+      this.toast.error('No se pudieron cargar los candidatos a pago masivo');
+    } finally {
+      this.isLoadingMassCandidates.set(false);
+    }
+  }
+
+  closeMassModal() {
+    this.massModalOpen.set(false);
+  }
+
+  toggleMassCandidate(id: number) {
+    const selected = new Set(this.massSelectedIds());
+    if (selected.has(id)) {
+      selected.delete(id);
+    } else {
+      selected.add(id);
+    }
+    this.massSelectedIds.set(selected);
+  }
+
+  async processMassPayment() {
+    const ids = Array.from(this.massSelectedIds());
+    if (ids.length === 0) return;
+
+    this.isSavingMass.set(true);
+    try {
+      const res = await this.paymentsService.processMassZeroIncome(ids);
+      this.toast.success(`${res.data.length} negocio(s) procesado(s) correctamente`);
+      this.closeMassModal();
+      await this.reload();
+    } catch {
+      this.toast.error('Ocurrió un error al procesar el pago masivo');
+    } finally {
+      this.isSavingMass.set(false);
     }
   }
 }
