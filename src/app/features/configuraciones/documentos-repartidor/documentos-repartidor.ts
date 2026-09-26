@@ -110,6 +110,8 @@ export class DocumentosRepartidor implements OnInit {
     autoValidate: false,
     validationKeywords: '',
     validationRegex: '',
+    validationKeywordsBack: '',
+    validationRegexBack: '',
     useCameraFrame: false,
     sortOrder: 0,
   };
@@ -226,6 +228,8 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: false,
       validationKeywords: '',
       validationRegex: '',
+      validationKeywordsBack: '',
+      validationRegexBack: '',
       useCameraFrame: false,
       sortOrder: this.types().length,
     };
@@ -246,6 +250,8 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: type.autoValidate || false,
       validationKeywords: type.validationKeywords || '',
       validationRegex: type.validationRegex || '',
+      validationKeywordsBack: type.validationKeywordsBack || '',
+      validationRegexBack: type.validationRegexBack || '',
       useCameraFrame: type.useCameraFrame || false,
       sortOrder: type.sortOrder,
     };
@@ -290,6 +296,9 @@ export class DocumentosRepartidor implements OnInit {
       autoValidate: this.form.autoValidate,
       validationKeywords: this.form.validationKeywords.trim() || null,
       validationRegex: this.form.validationRegex.trim() || null,
+      // Reglas del reverso: solo tienen sentido con frente y reverso.
+      validationKeywordsBack: this.form.twoSided ? this.form.validationKeywordsBack.trim() || null : null,
+      validationRegexBack: this.form.twoSided ? this.form.validationRegexBack.trim() || null : null,
       useCameraFrame: this.form.useCameraFrame,
       sortOrder: Number(this.form.sortOrder) || 0,
     };

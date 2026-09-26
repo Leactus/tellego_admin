@@ -30,6 +30,9 @@ export interface DriverDocumentType {
   autoValidate: boolean;
   validationKeywords: string | null;
   validationRegex: string | null;
+  /** Reglas OCR del reverso (solo twoSided). Las de arriba son del frente / foto única. */
+  validationKeywordsBack: string | null;
+  validationRegexBack: string | null;
   useCameraFrame: boolean;
   createdAt: string;
   updatedAt: string;

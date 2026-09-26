@@ -98,145 +98,208 @@
 
 @if (modalOpen()) {
   <div class="modal-backdrop">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal modal-doc" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>{{ editing ? 'Editar documento' : 'Agregar documento' }}</h2>
+        <div class="modal-title">
+          <h2>{{ editing ? 'Editar documento' : 'Agregar documento' }}</h2>
+          @if (!editing) {
+            <span class="muted small">Se agregará a: <strong>{{ scopeName }}</strong></span>
+          }
+        </div>
         <button class="modal-close" (click)="closeModal()" aria-label="Cerrar">
           <app-icon name="close" />
         </button>
       </div>
 
       <div class="modal-body">
-        @if (!editing) {
-          <p class="muted small">Se agregará a: <strong>{{ scopeName }}</strong></p>
-        }
+        <div class="doc-grid">
+          <!-- Columna izquierda: qué es el documento y sus reglas -->
+          <div class="doc-col">
+            <section class="doc-section">
+              <h3 class="doc-section-title">Información</h3>
 
-        <label>
-          Nombre
-          <input
-            type="text"
-            [(ngModel)]="form.label"
-            name="label"
-            placeholder="Ej. DUI"
-            [class.invalid]="isLabelInvalid()"
-          />
-        </label>
-        @if (isLabelInvalid()) {
-          <span class="invalid-hint">El nombre es obligatorio</span>
-        }
+              <div class="name-row">
+                <div class="field">
+                  <label>
+                    Nombre
+                    <input
+                      type="text"
+                      [(ngModel)]="form.label"
+                      name="label"
+                      placeholder="Ej. DUI"
+                      [class.invalid]="isLabelInvalid()"
+                    />
+                  </label>
+                  @if (isLabelInvalid()) {
+                    <span class="field-error">El nombre es obligatorio</span>
+                  }
+                </div>
+                <label>
+                  Orden
+                  <input type="number" min="0" step="1" [(ngModel)]="form.sortOrder" name="sortOrder" />
+                </label>
+              </div>
 
-        <label>
-          Instrucción para el repartidor (opcional)
-          <textarea
-            [(ngModel)]="form.description"
-            name="description"
-            rows="2"
-            placeholder="Ej. Foto legible del documento por ambos lados."
-          ></textarea>
-        </label>
-
-        <label>
-          Formato aceptado
-          <app-select [(ngModel)]="form.accepts" name="accepts" [options]="acceptsOptions" />
-        </label>
-
-        <label class="check">
-          <input type="checkbox" [(ngModel)]="form.twoSided" name="twoSided" />
-          Pedir frente y reverso (dos fotos)
-        </label>
-        <label class="check">
-          <input type="checkbox" [(ngModel)]="form.isRequired" name="isRequired" />
-          Obligatorio para aprobar al repartidor
-        </label>
-        @if (form.isRequired) {
-          <p class="muted small">
-            Aplica también a repartidores ya activos: si les falta este documento (o se lo rechazás), no van a poder
-            iniciar turno hasta subirlo y que lo apruebes.
-          </p>
-        }
-        <label class="check">
-          <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" />
-          Activo (se le pide a los repartidores nuevos)
-        </label>
-
-        <hr class="separator" style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
-        
-        <label class="check">
-          <input type="checkbox" [(ngModel)]="form.autoValidate" name="autoValidate" />
-          <strong>Validar automáticamente con OCR (Inteligencia Artificial)</strong>
-        </label>
-        <label class="check">
-          <input type="checkbox" [(ngModel)]="form.useCameraFrame" name="useCameraFrame" />
-          Usar cámara interna con marco guía (Especial para DUI/Licencia)
-        </label>
-        @if (form.autoValidate) {
-          <p class="muted small" style="margin-top: -5px; margin-bottom: 10px;">
-            El sistema extraerá el texto de la imagen para aprobarlo sin intervención humana si encuentra coincidencias.
-          </p>
-          <div class="validation-fields" style="background: var(--bg-hover); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-            <label>
-              Palabras clave obligatorias
-              <input
-                type="text"
-                [(ngModel)]="form.validationKeywords"
-                name="validationKeywords"
-                placeholder="Ej. REPUBLICA DE EL SALVADOR, DUI"
-              />
-            </label>
-            <p class="muted small">Separa las palabras con comas. Deben encontrarse en la imagen para aprobarse.</p>
-            
-            <label style="margin-top: 0.5rem;">
-              Patrón obligatorio (Expresión Regular)
-              <input
-                type="text"
-                [(ngModel)]="form.validationRegex"
-                name="validationRegex"
-                placeholder="Ej. ^[0-9]{8}-[0-9]$"
-              />
-            </label>
-            <p class="muted small">Si agregas una expresión regular, el sistema buscará una coincidencia de formato.</p>
-          </div>
-        }
-
-        <hr class="separator" style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
-
-        <div class="fields-block">
-          <div class="fields-head">
-            <strong>Campos adicionales</strong>
-            <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
-          </div>
-          <p class="muted small">
-            Datos que el repartidor escribe al subir el documento (nº de documento, fecha de vencimiento…).
-          </p>
-
-          @for (f of fields; track $index) {
-            <div class="field-row">
-              <input type="text" [(ngModel)]="f.label" [name]="'fl' + $index" placeholder="Nombre del campo" />
-              <app-select [(ngModel)]="f.type" [name]="'ft' + $index" [options]="fieldTypeOptions" />
-              <label class="check compact">
-                <input type="checkbox" [(ngModel)]="f.required" [name]="'fr' + $index" />
-                Obligatorio
+              <label>
+                Instrucción para el repartidor (opcional)
+                <textarea
+                  [(ngModel)]="form.description"
+                  name="description"
+                  rows="2"
+                  placeholder="Ej. Foto legible del documento por ambos lados."
+                ></textarea>
               </label>
-              <button type="button" class="icon-btn danger" (click)="removeField($index)" aria-label="Quitar campo">
-                <app-icon name="trash" />
-              </button>
-              @if (f.type === 'select') {
-                <input
-                  class="field-options"
-                  type="text"
-                  [(ngModel)]="f.optionsText"
-                  [name]="'fo' + $index"
-                  placeholder="Opciones separadas por coma (ej. A, B, C)"
-                />
-              }
-            </div>
-          }
-        </div>
 
-        <label>
-          Orden
-          <input type="number" min="0" step="1" [(ngModel)]="form.sortOrder" name="sortOrder" />
-        </label>
+              <label>
+                Formato aceptado
+                <app-select [(ngModel)]="form.accepts" name="accepts" [options]="acceptsOptions" />
+              </label>
+            </section>
+
+            <section class="doc-section">
+              <h3 class="doc-section-title">Reglas</h3>
+
+              <label class="opt">
+                <input type="checkbox" [(ngModel)]="form.twoSided" name="twoSided" />
+                <span class="opt-text">
+                  <span class="opt-title">Frente y reverso</span>
+                  <span class="opt-hint">Pide dos fotos del documento.</span>
+                </span>
+              </label>
+              <label class="opt">
+                <input type="checkbox" [(ngModel)]="form.isRequired" name="isRequired" />
+                <span class="opt-text">
+                  <span class="opt-title">Obligatorio para aprobar</span>
+                  <span class="opt-hint">
+                    @if (form.isRequired) {
+                      También aplica a repartidores activos: si les falta (o se lo rechazás), no inician turno hasta
+                      subirlo y que lo apruebes.
+                    } @else {
+                      El repartidor puede aprobarse sin este documento.
+                    }
+                  </span>
+                </span>
+              </label>
+              <label class="opt">
+                <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" />
+                <span class="opt-text">
+                  <span class="opt-title">Activo</span>
+                  <span class="opt-hint">Se le pide a los repartidores nuevos.</span>
+                </span>
+              </label>
+            </section>
+          </div>
+
+          <!-- Columna derecha: captura / validación automática y campos extra -->
+          <div class="doc-col">
+            <section class="doc-section">
+              <h3 class="doc-section-title">Captura y validación</h3>
+
+              <label class="opt">
+                <input type="checkbox" [(ngModel)]="form.useCameraFrame" name="useCameraFrame" />
+                <span class="opt-text">
+                  <span class="opt-title">Cámara con marco guía</span>
+                  <span class="opt-hint">Cámara interna con recuadro (ideal para DUI/Licencia).</span>
+                </span>
+              </label>
+              <label class="opt">
+                <input type="checkbox" [(ngModel)]="form.autoValidate" name="autoValidate" />
+                <span class="opt-text">
+                  <span class="opt-title">Validar automáticamente con OCR</span>
+                  <span class="opt-hint">La app lee el texto de la foto y no deja subirla si no cumple estas reglas. Igual queda en revisión.</span>
+                </span>
+              </label>
+
+              @if (form.autoValidate) {
+                <div class="ocr-box">
+                  @if (form.twoSided) {
+                    <span class="ocr-side">Frente</span>
+                  }
+                  <label>
+                    Palabras clave obligatorias
+                    <input
+                      type="text"
+                      [(ngModel)]="form.validationKeywords"
+                      name="validationKeywords"
+                      placeholder="Ej. REPUBLICA DE EL SALVADOR"
+                    />
+                    <span class="field-hint">
+                      Separadas por comas. Todas deben aparecer en la foto{{ form.twoSided ? ' del frente' : '' }}.
+                    </span>
+                  </label>
+                  <label>
+                    Patrón obligatorio (expresión regular)
+                    <input
+                      type="text"
+                      [(ngModel)]="form.validationRegex"
+                      name="validationRegex"
+                      placeholder="Ej. [0-9]{8}-[0-9]"
+                    />
+                    <span class="field-hint">Opcional. Un formato, no un valor fijo: [0-9]{8}-[0-9] acepta cualquier DUI.</span>
+                  </label>
+                </div>
+                @if (form.twoSided) {
+                  <div class="ocr-box">
+                    <span class="ocr-side">Reverso</span>
+                    <label>
+                      Palabras clave obligatorias
+                      <input
+                        type="text"
+                        [(ngModel)]="form.validationKeywordsBack"
+                        name="validationKeywordsBack"
+                        placeholder="Ej. ESTADO FAMILIAR"
+                      />
+                      <span class="field-hint">Separadas por comas. Todas deben aparecer en la foto del reverso.</span>
+                    </label>
+                    <label>
+                      Patrón obligatorio (expresión regular)
+                      <input
+                        type="text"
+                        [(ngModel)]="form.validationRegexBack"
+                        name="validationRegexBack"
+                        placeholder="Opcional"
+                      />
+                      <span class="field-hint">
+                        Si dejas el reverso vacío, solo se revisa que no sea otra foto del frente.
+                      </span>
+                    </label>
+                  </div>
+                }
+              }
+            </section>
+
+            <section class="doc-section">
+              <div class="fields-head">
+                <h3 class="doc-section-title">Campos adicionales</h3>
+                <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
+              </div>
+              <p class="field-hint">Datos que el repartidor escribe al subir el documento (nº, vencimiento…).</p>
+
+              @for (f of fields; track $index) {
+                <div class="field-row">
+                  <input type="text" [(ngModel)]="f.label" [name]="'fl' + $index" placeholder="Nombre del campo" />
+                  <app-select [(ngModel)]="f.type" [name]="'ft' + $index" [options]="fieldTypeOptions" />
+                  <label class="check compact">
+                    <input type="checkbox" [(ngModel)]="f.required" [name]="'fr' + $index" />
+                    Oblig.
+                  </label>
+                  <button type="button" class="icon-btn danger" (click)="removeField($index)" aria-label="Quitar campo">
+                    <app-icon name="trash" />
+                  </button>
+                  @if (f.type === 'select') {
+                    <input
+                      class="field-options"
+                      type="text"
+                      [(ngModel)]="f.optionsText"
+                      [name]="'fo' + $index"
+                      placeholder="Opciones separadas por coma (ej. A, B, C)"
+                    />
+                  }
+                </div>
+              }
+            </section>
+          </div>
+        </div>
       </div>
 
       <div class="modal-actions">
