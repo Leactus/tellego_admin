@@ -113,7 +113,7 @@
 
       <div class="modal-body">
         <div class="doc-grid">
-          <!-- Columna izquierda: qué es el documento y sus reglas -->
+          <!-- Columna izquierda: qué es el documento, sus reglas y campos extra -->
           <div class="doc-col">
             <section class="doc-section">
               <h3 class="doc-section-title">Información</h3>
@@ -188,9 +188,40 @@
                 </span>
               </label>
             </section>
+
+            <section class="doc-section">
+              <div class="fields-head">
+                <h3 class="doc-section-title">Campos adicionales</h3>
+                <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
+              </div>
+              <p class="field-hint">Datos que el repartidor escribe al subir el documento (nº, vencimiento…).</p>
+
+              @for (f of fields; track $index) {
+                <div class="field-row">
+                  <input type="text" [(ngModel)]="f.label" [name]="'fl' + $index" placeholder="Nombre del campo" />
+                  <app-select [(ngModel)]="f.type" [name]="'ft' + $index" [options]="fieldTypeOptions" />
+                  <label class="check compact">
+                    <input type="checkbox" [(ngModel)]="f.required" [name]="'fr' + $index" />
+                    Oblig.
+                  </label>
+                  <button type="button" class="icon-btn danger" (click)="removeField($index)" aria-label="Quitar campo">
+                    <app-icon name="trash" />
+                  </button>
+                  @if (f.type === 'select') {
+                    <input
+                      class="field-options"
+                      type="text"
+                      [(ngModel)]="f.optionsText"
+                      [name]="'fo' + $index"
+                      placeholder="Opciones separadas por coma (ej. A, B, C)"
+                    />
+                  }
+                </div>
+              }
+            </section>
           </div>
 
-          <!-- Columna derecha: captura / validación automática y campos extra -->
+          <!-- Columna derecha: captura / validación automática (OCR por lado) -->
           <div class="doc-col">
             <section class="doc-section">
               <h3 class="doc-section-title">Captura y validación</h3>
@@ -235,7 +266,7 @@
                       name="validationRegex"
                       placeholder="Ej. [0-9]{8}-[0-9]"
                     />
-                    <span class="field-hint">Opcional. Un formato, no un valor fijo: [0-9]{8}-[0-9] acepta cualquier DUI.</span>
+                    <span class="field-hint">Opcional. Un formato, no un valor fijo: [0-9]{{ '{' }}8{{ '}' }}-[0-9] acepta cualquier DUI.</span>
                   </label>
                 </div>
                 @if (form.twoSided) {
@@ -265,37 +296,6 @@
                     </label>
                   </div>
                 }
-              }
-            </section>
-
-            <section class="doc-section">
-              <div class="fields-head">
-                <h3 class="doc-section-title">Campos adicionales</h3>
-                <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
-              </div>
-              <p class="field-hint">Datos que el repartidor escribe al subir el documento (nº, vencimiento…).</p>
-
-              @for (f of fields; track $index) {
-                <div class="field-row">
-                  <input type="text" [(ngModel)]="f.label" [name]="'fl' + $index" placeholder="Nombre del campo" />
-                  <app-select [(ngModel)]="f.type" [name]="'ft' + $index" [options]="fieldTypeOptions" />
-                  <label class="check compact">
-                    <input type="checkbox" [(ngModel)]="f.required" [name]="'fr' + $index" />
-                    Oblig.
-                  </label>
-                  <button type="button" class="icon-btn danger" (click)="removeField($index)" aria-label="Quitar campo">
-                    <app-icon name="trash" />
-                  </button>
-                  @if (f.type === 'select') {
-                    <input
-                      class="field-options"
-                      type="text"
-                      [(ngModel)]="f.optionsText"
-                      [name]="'fo' + $index"
-                      placeholder="Opciones separadas por coma (ej. A, B, C)"
-                    />
-                  }
-                </div>
               }
             </section>
           </div>
