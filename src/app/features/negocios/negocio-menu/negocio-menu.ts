@@ -322,12 +322,12 @@ export class NegocioMenu implements OnInit {
     }
     try {
       const newCat = await this.catalog.createCategory(this.companyId, name);
-      await this.reload(true);
+      await this.reload();
       this.productForm.categoryId = newCat.id;
       this.showNewCategoryInput = false;
-      this.toast.success('Categoría creada');
+      this.toast.success('CategorÃ­a creada');
     } catch {
-      this.toast.error('Error al crear categoría');
+      this.toast.error('Error al crear categorÃ­a');
     }
   }
 
