@@ -1,6 +1,9 @@
 /** Formatos que acepta un tipo de documento de repartidor. */
 export type DriverDocumentAccepts = 'image' | 'pdf' | 'image_or_pdf';
 
+/** De dónde puede salir la foto en la app del repartidor. */
+export type DriverDocumentPhotoSource = 'camera' | 'gallery' | 'camera_or_gallery';
+
 export type DriverDocumentFieldType = 'text' | 'date' | 'select';
 
 /** Campo extra que el repartidor llena al subir un documento (nº de DUI, vencimiento, ...). */
@@ -23,6 +26,8 @@ export interface DriverDocumentType {
   description: string | null;
   twoSided: boolean;
   accepts: DriverDocumentAccepts;
+  /** Con autoValidate el backend la fuerza a 'camera'. */
+  photoSource: DriverDocumentPhotoSource;
   fields: DriverDocumentFieldDef[] | null;
   isRequired: boolean;
   sortOrder: number;
@@ -48,6 +53,8 @@ export interface DriverDocumentFile {
   mimeType: string;
   isPdf: boolean;
   fieldValues: Record<string, unknown> | null;
+  /** Cuándo el repartidor autorizó el uso del archivo. null = lo subió un admin. */
+  consentAcceptedAt: string | null;
   status: DriverDocumentStatus;
   reviewReason: string | null;
   reviewedAt: string | null;
@@ -66,6 +73,7 @@ export interface OnboardingDocType {
   description: string | null;
   twoSided: boolean;
   accepts: DriverDocumentAccepts;
+  photoSource: DriverDocumentPhotoSource;
   useCameraFrame: boolean;
   fields: DriverDocumentFieldDef[];
   isRequired: boolean;

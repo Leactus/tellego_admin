@@ -10,6 +10,7 @@ import {
   DriverDocumentAccepts,
   DriverDocumentFieldDef,
   DriverDocumentFieldType,
+  DriverDocumentPhotoSource,
   DriverDocumentType,
 } from '../../../core/models/driver-onboarding.model';
 import { Icon } from '../../../shared/icon/icon';
@@ -72,6 +73,11 @@ export class DocumentosRepartidor implements OnInit {
     { value: 'pdf', label: 'Solo PDF' },
     { value: 'image_or_pdf', label: 'Foto o PDF' },
   ];
+  readonly photoSourceOptions: SelectOption<DriverDocumentPhotoSource>[] = [
+    { value: 'camera_or_gallery', label: 'Cámara o galería' },
+    { value: 'camera', label: 'Solo cámara' },
+    { value: 'gallery', label: 'Solo galería' },
+  ];
   readonly fieldTypeOptions: SelectOption<DriverDocumentFieldType>[] = [
     { value: 'text', label: 'Texto' },
     { value: 'date', label: 'Fecha' },
@@ -105,6 +111,7 @@ export class DocumentosRepartidor implements OnInit {
     description: '',
     twoSided: false,
     accepts: 'image' as DriverDocumentAccepts,
+    photoSource: 'camera_or_gallery' as DriverDocumentPhotoSource,
     isRequired: true,
     isActive: true,
     autoValidate: false,
@@ -165,6 +172,21 @@ export class DocumentosRepartidor implements OnInit {
     return this.acceptsOptions.find((o) => o.value === accepts)?.label ?? accepts;
   }
 
+  photoSourceLabel(source: DriverDocumentPhotoSource): string {
+    return this.photoSourceOptions.find((o) => o.value === source)?.label ?? source;
+  }
+
+  /**
+   * Validar con OCR = solo foto de cámara: una imagen de galería o un PDF se
+   * saltarían la validación. El backend lo fuerza igual; aquí se refleja en el
+   * formulario para que el admin lo vea.
+   */
+  onAutoValidateChange(): void {
+    if (!this.form.autoValidate) return;
+    this.form.accepts = 'image';
+    this.form.photoSource = 'camera';
+  }
+
   async saveCapital(): Promise<void> {
     this.isSavingCapital.set(true);
     try {
@@ -223,6 +245,7 @@ export class DocumentosRepartidor implements OnInit {
       description: '',
       twoSided: false,
       accepts: 'image',
+      photoSource: 'camera_or_gallery',
       isRequired: true,
       isActive: true,
       autoValidate: false,
@@ -245,6 +268,7 @@ export class DocumentosRepartidor implements OnInit {
       description: type.description ?? '',
       twoSided: type.twoSided,
       accepts: type.accepts,
+      photoSource: type.photoSource ?? 'camera_or_gallery',
       isRequired: type.isRequired,
       isActive: type.isActive,
       autoValidate: type.autoValidate || false,
@@ -289,7 +313,8 @@ export class DocumentosRepartidor implements OnInit {
       label: this.form.label.trim(),
       description: this.form.description.trim() || null,
       twoSided: this.form.twoSided,
-      accepts: this.form.accepts,
+      accepts: this.form.autoValidate ? 'image' : this.form.accepts,
+      photoSource: this.form.autoValidate ? 'camera' : this.form.photoSource,
       fields: this.fieldsToPayload(),
       isRequired: this.form.isRequired,
       isActive: this.form.isActive,

@@ -66,6 +66,10 @@
               <div class="tags">
                 <span class="pill" [class.pill-global]="type.countryId == null">{{ scopeLabel(type) }}</span>
                 <span class="pill">{{ acceptsLabel(type.accepts) }}</span>
+                @if (type.accepts !== 'pdf') {
+                  <span class="pill">{{ photoSourceLabel(type.photoSource) }}</span>
+                }
+                @if (type.autoValidate) { <span class="pill">Validación OCR</span> }
                 @if (type.twoSided) { <span class="pill">Frente y reverso</span> }
                 @if (type.fields && type.fields.length) {
                   <span class="pill">{{ type.fields.length }} campo(s)</span>
@@ -152,8 +156,28 @@
 
               <label>
                 Formato aceptado
-                <app-select [(ngModel)]="form.accepts" name="accepts" [options]="acceptsOptions" />
+                <app-select
+                  [(ngModel)]="form.accepts"
+                  name="accepts"
+                  [options]="acceptsOptions"
+                  [disabled]="form.autoValidate"
+                />
               </label>
+
+              @if (form.accepts !== 'pdf') {
+                <label>
+                  Origen de la foto
+                  <app-select
+                    [(ngModel)]="form.photoSource"
+                    name="photoSource"
+                    [options]="photoSourceOptions"
+                    [disabled]="form.autoValidate"
+                  />
+                  @if (form.autoValidate) {
+                    <span class="field-hint">Con validación OCR solo se acepta una foto tomada con la cámara.</span>
+                  }
+                </label>
+              }
             </section>
 
             <section class="doc-section">
@@ -234,10 +258,15 @@
                 </span>
               </label>
               <label class="opt">
-                <input type="checkbox" [(ngModel)]="form.autoValidate" name="autoValidate" />
+                <input
+                  type="checkbox"
+                  [(ngModel)]="form.autoValidate"
+                  (ngModelChange)="onAutoValidateChange()"
+                  name="autoValidate"
+                />
                 <span class="opt-text">
                   <span class="opt-title">Validar automáticamente con OCR</span>
-                  <span class="opt-hint">La app lee el texto de la foto y no deja subirla si no cumple estas reglas. Igual queda en revisión.</span>
+                  <span class="opt-hint">La app lee el texto de la foto y no deja subirla si no cumple estas reglas. Solo permite tomar la foto con la cámara (sin galería ni PDF). Igual queda en revisión.</span>
                 </span>
               </label>
 
