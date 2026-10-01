@@ -174,7 +174,10 @@
                     [disabled]="form.autoValidate"
                   />
                   @if (form.autoValidate) {
-                    <span class="field-hint">Con validación OCR solo se acepta una foto tomada con la cámara.</span>
+                    <span class="field-hint">
+                      Bloqueado: con "Validar automáticamente con OCR" solo se acepta una foto tomada con la cámara.
+                      Desactívalo para elegir otro formato u origen.
+                    </span>
                   }
                 </label>
               }

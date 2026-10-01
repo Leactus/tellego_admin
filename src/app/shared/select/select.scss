@@ -25,7 +25,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.select-trigger:hover {
+.select-trigger:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
 }
 
@@ -35,7 +35,8 @@
 }
 
 .select-trigger:disabled {
-  opacity: 0.6;
+  background: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
   cursor: not-allowed;
 }
 
