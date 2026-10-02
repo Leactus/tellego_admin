@@ -58,6 +58,18 @@
                     {{ rating.score }}
                   </span>
                 </div>
+                @if (rating.liked != null) {
+                  <p class="delivery-thumb">
+                    {{ rating.liked ? '👍 Le gustó la entrega' : '👎 No le gustó la entrega' }}
+                  </p>
+                }
+                @if (rating.tags?.length) {
+                  <div class="tag-list">
+                    @for (tag of rating.tags; track tag) {
+                      <span class="tag" [class.negative]="rating.liked === false">{{ tag }}</span>
+                    }
+                  </div>
+                }
                 @if (rating.comment) {
                   <p class="rating-comment">{{ rating.comment }}</p>
                 }

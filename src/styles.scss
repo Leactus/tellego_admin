@@ -6,21 +6,32 @@
  * esa misma variable con color-mix().
  */
 :root {
-  --color-primary: #0c3533;
-  --color-primary-hover: color-mix(in srgb, var(--color-primary) 85%, black);
+  /* Paleta de marca. Verde oscuro es el primario; Verde torogoz se reserva para
+   * el foco de los inputs y Anaranjado para el hover. */
+  --brand-verde-oscuro: #0c3533;
+  --brand-verde-torogoz: #049788;
+  --brand-celeste-cielo: #26bece;
+  --brand-anaranjado: #ed7224;
+  --brand-amarillo-mango: #fdbd36;
+
+  --color-primary: var(--brand-verde-oscuro);
+  --color-primary-hover: var(--brand-anaranjado);
+  /* Borde/anillo de foco de inputs, selects y textareas. */
+  --color-focus: var(--brand-verde-torogoz);
   --color-primary-container: color-mix(in srgb, var(--color-primary) 12%, white);
   --color-on-primary: #ffffff;
 
-  --color-secondary: #2e7d32;
+  --color-secondary: var(--brand-celeste-cielo);
   --color-success: #2e7d32;
-  --color-warning: #ed6c02;
+  --color-warning: var(--brand-anaranjado);
   --color-error: #b3261e;
   --color-info: #0288d1;
 
-  /* Acentos decorativos de marca — mismos valores que lib/theme/app_colors.dart en las apps Flutter. */
-  --color-accent-lime: #a9d968;
-  --color-accent-cream: #ffe1a3;
-  --color-accent-coral: #ff7667;
+  /* Acentos decorativos de marca — mismos valores que lib/theme/app_colors.dart en las apps Flutter.
+   * --color-accent-cream es Amarillo mango 40% + blanco. */
+  --color-accent-mango: var(--brand-amarillo-mango);
+  --color-accent-cream: #fee5af;
+  --color-accent-orange: var(--brand-anaranjado);
 
   --color-surface: #ffffff;
   --color-surface-variant: #f5f5f5;
@@ -55,7 +66,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-focus);
 }
 
 /*

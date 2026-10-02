@@ -116,10 +116,12 @@ export class DriversService {
     );
   }
 
-  /** Descarta un reporte sin ocultar la reseña (el super-admin decide que está bien como está). */
-  dismissRatingReport(ratingId: number): Promise<void> {
+  /** RECHAZA la apelación: la reseña sigue visible y el repartidor ve el resultado + `note` en su app. */
+  dismissRatingReport(ratingId: number, note?: string): Promise<void> {
     return firstValueFrom(
-      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/driver-ratings/${ratingId}/report`),
+      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/driver-ratings/${ratingId}/report`, {
+        body: { note },
+      }),
     ).then(() => undefined);
   }
 }

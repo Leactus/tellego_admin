@@ -43,7 +43,7 @@
 
 .pager-btn:hover:not(:disabled) {
   background: var(--color-primary-container);
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 .pager-btn:disabled {
@@ -75,5 +75,5 @@
 }
 
 .pager-size-select:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-hover);
 }

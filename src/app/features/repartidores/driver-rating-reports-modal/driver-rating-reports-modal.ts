@@ -86,7 +86,7 @@ export class DriverRatingReportsModal implements OnInit {
     this.busyRatingIds.update((s) => new Set(s).add(rating.id));
     try {
       await this.drivers.setRatingVisibility(rating.id, true, reason || undefined);
-      this.toast.success('Reseña ocultada');
+      this.toast.success('Apelación aceptada — reseña ocultada');
       this.resolved.emit();
       await this.reload();
     } catch {
@@ -101,14 +101,20 @@ export class DriverRatingReportsModal implements OnInit {
   }
 
   async dismiss(rating: DriverRating): Promise<void> {
+    const note = window.prompt(
+      'Rechazar la apelación: la reseña sigue visible y el repartidor ya no podrá volver a apelarla.\n\nMensaje para el repartidor (opcional):',
+      '',
+    );
+    if (note === null) return; // canceló
+
     this.busyRatingIds.update((s) => new Set(s).add(rating.id));
     try {
-      await this.drivers.dismissRatingReport(rating.id);
-      this.toast.success('Reporte descartado — la reseña sigue visible');
+      await this.drivers.dismissRatingReport(rating.id, note.trim() || undefined);
+      this.toast.success('Apelación rechazada — la reseña sigue visible');
       this.resolved.emit();
       await this.reload();
     } catch {
-      this.toast.error('No se pudo descartar el reporte');
+      this.toast.error('No se pudo rechazar la apelación');
     } finally {
       this.busyRatingIds.update((s) => {
         const next = new Set(s);

@@ -62,7 +62,14 @@
               <span>
                 A domicilio
                 @if (order.driver?.user?.name) {
-                  · {{ order.driver?.user?.name }}
+                  ·
+                  <app-user-avatar
+                    class="inline-avatar"
+                    [src]="order.driver?.user?.avatarUrl"
+                    [name]="order.driver?.user?.name"
+                    [size]="22"
+                  />
+                  {{ order.driver?.user?.name }}
                   <span class="muted">({{ order.driver?.type === 'propio' ? 'propio' : 'freelance' }})</span>
                 } @else if (order.driverId) {
                   · Repartidor #{{ order.driverId }}
@@ -134,11 +141,14 @@
               }
             }
             @if (o.driver; as d) {
-              <p>
-                Repartidor: {{ d.user?.name ?? ('#' + d.id) }}
-                <span class="muted">({{ d.type === 'propio' ? 'propio del negocio' : 'freelance' }})</span>
-                @if (d.user?.phone) { · {{ d.user?.phone }} }
-              </p>
+              <div class="driver-row">
+                <app-user-avatar [src]="d.user?.avatarUrl" [name]="d.user?.name" [size]="40" />
+                <p>
+                  Repartidor: {{ d.user?.name ?? ('#' + d.id) }}
+                  <span class="muted">({{ d.type === 'propio' ? 'propio del negocio' : 'freelance' }})</span>
+                  @if (d.user?.phone) { · {{ d.user?.phone }} }
+                </p>
+              </div>
               @if (d.vehicleType || d.plateNumber) {
                 <p class="muted">
                   {{ d.vehicleType }}@if (d.vehicleType && d.plateNumber) { · }{{ d.plateNumber }}
@@ -276,6 +286,12 @@
             }
             @if (toNumber(o.discount) > 0) {
               <div class="totals-row"><span>Descuento</span><span>-${{ o.discount | number: '1.2-2' }}</span></div>
+            }
+            @if (toNumber(o.tip) > 0) {
+              <div class="totals-row">
+                <span>Propina al repartidor ({{ o.tipMethod === 'cash' ? 'efectivo' : 'tarjeta' }})</span>
+                <span>${{ o.tip | number: '1.2-2' }}</span>
+              </div>
             }
             <div class="totals-row totals-final"><span>Total</span><span>${{ o.total | number: '1.2-2' }}</span></div>
           </div>

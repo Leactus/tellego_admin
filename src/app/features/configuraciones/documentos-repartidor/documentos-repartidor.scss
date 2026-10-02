@@ -264,7 +264,7 @@ label.check input {
 }
 
 .modal label.opt:hover {
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-variant));
+  background: color-mix(in srgb, var(--color-primary-hover) 6%, var(--color-surface-variant));
 }
 
 .modal label.opt input {

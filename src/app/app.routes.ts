@@ -62,6 +62,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pagos/pagos').then((m) => m.Pagos),
       },
       {
+        path: 'desembolsos',
+        loadComponent: () => import('./features/desembolsos/desembolsos').then((m) => m.Desembolsos),
+      },
+      {
+        path: 'tienda/productos',
+        loadComponent: () =>
+          import('./features/tienda/productos/tienda-productos').then((m) => m.TiendaProductos),
+      },
+      {
+        path: 'tienda/solicitudes',
+        loadComponent: () =>
+          import('./features/tienda/solicitudes/tienda-solicitudes').then((m) => m.TiendaSolicitudes),
+      },
+      {
         path: 'notificaciones',
         loadComponent: () => import('./features/notificaciones/notificaciones').then((m) => m.Notificaciones),
       },

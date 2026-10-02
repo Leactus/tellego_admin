@@ -152,7 +152,12 @@
           </div>
           @if (salesInfo(); as sales) {
             <p class="muted hint">
-              Ventas del periodo: ${{ sales.totalSales }} · Comisión {{ sales.commissionRate }}% = ${{ sales.suggestedAmount }}
+              Ventas del periodo: ${{ sales.totalSales }} · Comisión {{ sales.commissionRate }}% = ${{ sales.commissionAmount ?? sales.suggestedAmount }}
+              @if (sales.driverRecovery && sales.driverRecovery.amount > 0) {
+                <br />+ ${{ sales.driverRecovery.amount }} de envíos (${{ sales.driverRecovery.deliveryFees }}) y propinas
+                (${{ sales.driverRecovery.tips }}) cobrados con tarjeta en pedidos de repartidores freelance
+                <br />Total a cobrar: <strong>${{ sales.suggestedAmount }}</strong>
+              }
             </p>
           }
           <label>

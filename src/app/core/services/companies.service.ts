@@ -156,10 +156,12 @@ export class CompaniesService {
     );
   }
 
-  /** Descarta un reporte sin ocultar la reseña (el super-admin decide que está bien como está). */
-  dismissStoreRatingReport(ratingId: number): Promise<void> {
+  /** RECHAZA la apelación: la reseña sigue visible y el negocio ve el resultado + `note` en su panel. */
+  dismissStoreRatingReport(ratingId: number, note?: string): Promise<void> {
     return firstValueFrom(
-      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/store-ratings/${ratingId}/report`),
+      this.http.delete<{ data: unknown }>(`${environment.apiUrl}/admin/store-ratings/${ratingId}/report`, {
+        body: { note },
+      }),
     ).then(() => undefined);
   }
 

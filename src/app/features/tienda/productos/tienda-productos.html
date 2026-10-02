@@ -1,0 +1,395 @@
+<div class="page-head">
+  <div>
+    <h1>Tienda Tellego · Productos</h1>
+    <p class="muted">
+      Las mochilas y equipo que la plataforma vende a los negocios y a los repartidores freelance. Sube fotos llamativas,
+      ponle precio "antes" y arma promociones como "Compra 4 y te regalamos 2".
+    </p>
+  </div>
+  <button class="btn-primary add-btn" (click)="openNew()"><app-icon name="plus" /> Nuevo producto</button>
+</div>
+
+@if (!loading() && products().length > 0) {
+  <div class="stats-row">
+    <span class="stat"><strong>{{ activeCount() }}</strong> visibles en la tienda</span>
+    <span class="stat"><strong>{{ products().length - activeCount() }}</strong> ocultos</span>
+    <span class="stat promo"><app-icon name="gift" /> <strong>{{ livePromoCount() }}</strong> promociones vigentes</span>
+  </div>
+}
+
+@if (loading()) {
+  <app-skeleton variant="card" [rows]="6" />
+} @else if (products().length === 0) {
+  <app-empty-state
+    title="Todavía no hay productos en la tienda"
+    hint="Crea el primero: por ejemplo, la mochila térmica de reparto."
+    icon="shopping-bag"
+  />
+} @else {
+  <div class="product-grid">
+    @for (product of products(); track product.id) {
+      <article class="product-card" [class.inactive]="product.status === 'inactive'" (click)="openEdit(product)">
+        <div class="cover">
+          @if (product.imageUrl) {
+            <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+          } @else {
+            <div class="cover-empty"><app-icon name="photo" /><span>Sin fotos</span></div>
+          }
+          @if (product.badge) {
+            <span class="badge">{{ product.badge }}</span>
+          }
+          @if (discountPercent(product.price, product.compareAtPrice); as pct) {
+            <span class="discount">-{{ pct }}%</span>
+          }
+          @if (livePromo(product); as promo) {
+            <span class="promo-ribbon"><app-icon name="gift" /> {{ promo.label }}</span>
+          }
+          @if (product.images.length > 1) {
+            <span class="photo-count"><app-icon name="photo" /> {{ product.images.length }}</span>
+          }
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3>{{ product.name }}</h3>
+            <span (click)="$event.stopPropagation()">
+              <app-toggle-switch
+                [checked]="product.status === 'active'"
+                (checkedChange)="toggleActive(product, $event)"
+                [attr.title]="product.status === 'active' ? 'Visible en la tienda' : 'Oculto'"
+              />
+            </span>
+          </div>
+          <div class="price-row">
+            <span class="price">{{ money(product.price) }}</span>
+            @if (product.compareAtPrice && product.compareAtPrice > product.price) {
+              <span class="compare">{{ money(product.compareAtPrice) }}</span>
+            }
+          </div>
+          <div class="meta">
+            <span class="pill">{{ audienceLabel(product.audience) }}</span>
+            @if (product.stock === null) {
+              <span class="pill">Sin límite de stock</span>
+            } @else if (product.stock === 0) {
+              <span class="pill pill-danger">Agotado</span>
+            } @else {
+              <span class="pill" [class.pill-warning]="product.stock <= 5">{{ product.stock }} en stock</span>
+            }
+            @if (product.status === 'inactive') {
+              <span class="pill">Oculto</span>
+            }
+          </div>
+          <p class="sales muted">
+            {{ product.sales.paid }} vendidas · {{ product.sales.free }} regaladas · {{ money(product.sales.revenue) }}
+          </p>
+        </div>
+      </article>
+    }
+  </div>
+}
+
+<!-- Editor de producto -->
+@if (editorOpen()) {
+  <div class="modal-backdrop" (click)="closeEditor()">
+    <div class="modal modal-editor" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ editing() ? 'Editar producto' : 'Nuevo producto' }}</h2>
+          @if (editing(); as p) {
+            <span class="muted small">{{ p.sales.paid }} vendidas · {{ p.sales.free }} regaladas</span>
+          }
+        </div>
+        <button class="modal-close" (click)="closeEditor()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+
+      <div class="modal-body editor-body">
+        <div class="editor-main">
+          <!-- Fotos -->
+          <section>
+            <h3 class="section-title">Fotos</h3>
+            @if (!editing()) {
+              <p class="muted small hint-box">
+                <app-icon name="info-circle" /> Guarda el producto primero y luego podrás subirle hasta 8 fotos.
+              </p>
+            } @else {
+              <p class="muted small">
+                La primera es la portada. Usa fotos claras, con buena luz y fondo limpio — se ven en la tienda en formato
+                cuadrado.
+              </p>
+              <div class="gallery">
+                @for (img of editing()!.images; track img.id; let i = $index; let last = $last) {
+                  <div class="thumb" [class.cover-thumb]="i === 0">
+                    <img [src]="img.imageUrl" alt="" (click)="previewIndex.set(i)" />
+                    @if (i === 0) {
+                      <span class="cover-tag">Portada</span>
+                    }
+                    <div class="thumb-actions">
+                      <button type="button" class="thumb-btn" title="Mover a la izquierda" [disabled]="i === 0" (click)="moveImage(i, -1)">
+                        <app-icon name="chevron-left" />
+                      </button>
+                      @if (i !== 0) {
+                        <button type="button" class="thumb-btn text" title="Usar como portada" (click)="makeCover(i)">Portada</button>
+                      }
+                      <button type="button" class="thumb-btn" title="Mover a la derecha" [disabled]="last" (click)="moveImage(i, 1)">
+                        <app-icon name="chevron-right" />
+                      </button>
+                      <button type="button" class="thumb-btn danger" title="Quitar foto" (click)="removeImage(img.id)">
+                        <app-icon name="trash" />
+                      </button>
+                    </div>
+                  </div>
+                }
+                @for (slot of uploadingSlots(); track $index) {
+                  <div class="thumb uploading"><span class="spinner"></span></div>
+                }
+                @if (editing()!.images.length + uploading() < 8) {
+                  <label class="thumb add-thumb">
+                    <app-icon name="camera" />
+                    <span>Agregar fotos</span>
+                    <input type="file" accept="image/*" multiple (change)="onFilesSelected($event)" hidden />
+                  </label>
+                }
+              </div>
+            }
+          </section>
+
+          <!-- Datos -->
+          <section>
+            <h3 class="section-title">Datos del producto</h3>
+            <div class="fields">
+              <label class="full">
+                Nombre
+                <input type="text" maxlength="120" [(ngModel)]="form.name" name="name" placeholder="Ej: Mochila térmica Tellego 45L" />
+              </label>
+              <label class="full">
+                Descripción
+                <textarea
+                  rows="4"
+                  maxlength="5000"
+                  [(ngModel)]="form.description"
+                  name="description"
+                  placeholder="Medidas, material, capacidad, si es impermeable, qué incluye…"
+                ></textarea>
+              </label>
+              <label>
+                Precio
+                <input type="number" min="0" step="0.01" [(ngModel)]="form.price" name="price" placeholder="0.00" />
+              </label>
+              <label>
+                Precio antes (opcional)
+                <input type="number" min="0" step="0.01" [(ngModel)]="form.compareAtPrice" name="compareAtPrice" placeholder="Se muestra tachado" />
+              </label>
+              <label class="full">
+                Etiqueta destacada (opcional)
+                <input type="text" maxlength="40" [(ngModel)]="form.badge" name="badge" placeholder="Ej: Más vendida" />
+              </label>
+              <div class="chips full">
+                @for (s of badgeSuggestions; track s) {
+                  <button type="button" class="chip" [class.on]="form.badge === s" (click)="form.badge = form.badge === s ? '' : s">
+                    {{ s }}
+                  </button>
+                }
+              </div>
+              <label>
+                ¿Quién puede comprarlo?
+                <app-select [(ngModel)]="form.audience" name="audience" [options]="audienceOptions" />
+              </label>
+              <label>
+                Stock (vacío = sin límite)
+                <input type="number" min="0" step="1" [(ngModel)]="form.stock" name="stock" placeholder="Sin límite" />
+              </label>
+              <label>
+                Orden en la tienda
+                <input type="number" step="1" [(ngModel)]="form.sortOrder" name="sortOrder" />
+              </label>
+              <div class="switch-field">
+                <app-toggle-switch [checked]="form.active" (checkedChange)="form.active = $event" />
+                <span>{{ form.active ? 'Visible en la tienda' : 'Oculto' }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Promociones -->
+          <section>
+            <div class="section-head">
+              <h3 class="section-title">Promociones</h3>
+              @if (editing() && !promoFormOpen()) {
+                <div class="promo-add">
+                  <button type="button" class="btn-secondary small-btn" (click)="openNewPromo('buy_x_get_y')">
+                    <app-icon name="plus" /> Compra X, regala Y
+                  </button>
+                  <button type="button" class="btn-secondary small-btn" (click)="openNewPromo('free')">
+                    <app-icon name="gift" /> Regalo
+                  </button>
+                </div>
+              }
+            </div>
+
+            @if (!editing()) {
+              <p class="muted small">Guarda el producto para agregarle promociones.</p>
+            } @else {
+              @if (editing()!.promotions.length === 0 && !promoFormOpen()) {
+                <p class="muted small">
+                  Sin promociones. Ejemplos: "Compra 4 y te regalamos 2" para que los negocios compren más, o "Te regalamos
+                  la mochila" para los primeros negocios.
+                </p>
+              }
+              <div class="promo-list">
+                @for (promo of editing()!.promotions; track promo.id) {
+                  <div class="promo-row" [class.off]="!promo.isLive">
+                    <span class="promo-icon" [class.free]="promo.type === 'free'"><app-icon name="gift" /></span>
+                    <div class="promo-info">
+                      <strong>{{ promo.label }}</strong>
+                      <span class="muted small">{{ promoSummary(promo) }}</span>
+                      <span class="muted small">
+                        {{ audienceLabel(promo.audience) }} · {{ promoDates(promo) }}
+                        @if (promo.timing === 'scheduled') {
+                          · <span class="tag-scheduled">Programada</span>
+                        } @else if (promo.timing === 'ended') {
+                          · <span class="tag-ended">Terminó</span>
+                        } @else if (promo.isLive) {
+                          · <span class="tag-live">Vigente</span>
+                        }
+                      </span>
+                    </div>
+                    <app-toggle-switch [checked]="promo.status === 'active'" (checkedChange)="togglePromo(promo, $event)" />
+                    <button type="button" class="icon-btn" title="Editar" (click)="openEditPromo(promo)"><app-icon name="edit" /></button>
+                    <button type="button" class="icon-btn danger" title="Eliminar" (click)="removePromo(promo)"><app-icon name="trash" /></button>
+                  </div>
+                }
+              </div>
+
+              @if (promoFormOpen()) {
+                <div class="promo-form">
+                  <div class="type-picker">
+                    <button type="button" class="type-card" [class.on]="promoForm.type === 'buy_x_get_y'" (click)="setPromoType('buy_x_get_y')">
+                      <strong>Compra X, te regalamos Y</strong>
+                      <span class="muted small">Ej: compra 4 y llévate 2 gratis. Se repite: 8 → 4 gratis.</span>
+                    </button>
+                    <button type="button" class="type-card" [class.on]="promoForm.type === 'free'" (click)="setPromoType('free')">
+                      <strong>Regalo</strong>
+                      <span class="muted small">Ej: te regalamos la mochila. Una vez por comprador.</span>
+                    </button>
+                  </div>
+
+                  <div class="fields">
+                    @if (promoForm.type === 'buy_x_get_y') {
+                      <label>
+                        Compra
+                        <input type="number" min="1" step="1" [(ngModel)]="promoForm.buyQty" name="buyQty" />
+                      </label>
+                      <label>
+                        Te regalamos
+                        <input type="number" min="1" step="1" [(ngModel)]="promoForm.freeQty" name="freeQty" />
+                      </label>
+                      <label>
+                        Tope de gratis por comprador (opcional)
+                        <input type="number" min="1" step="1" [(ngModel)]="promoForm.maxPerBuyer" name="maxPerBuyer" placeholder="Sin tope" />
+                      </label>
+                    } @else {
+                      <label>
+                        Unidades gratis por comprador
+                        <input type="number" min="1" step="1" [(ngModel)]="promoForm.freeQty" name="freeQtyGift" />
+                      </label>
+                    }
+                    <label>
+                      Tope total de regalos (opcional)
+                      <input type="number" min="1" step="1" [(ngModel)]="promoForm.totalLimit" name="totalLimit" placeholder="Ej: primeros 50" />
+                    </label>
+                    <label>
+                      Para
+                      <app-select [(ngModel)]="promoForm.audience" name="promoAudience" [options]="promoAudienceOptions" />
+                    </label>
+                    <label>
+                      Desde (opcional)
+                      <input type="date" [(ngModel)]="promoForm.startsAt" name="startsAt" />
+                    </label>
+                    <label>
+                      Hasta (opcional, incluye ese día)
+                      <input type="date" [(ngModel)]="promoForm.endsAt" name="endsAt" />
+                    </label>
+                    <label class="full">
+                      Título llamativo (opcional)
+                      <input type="text" maxlength="120" [(ngModel)]="promoForm.title" name="promoTitle" [placeholder]="promoPreviewLabel()" />
+                    </label>
+                    <div class="switch-field">
+                      <app-toggle-switch [checked]="promoForm.active" (checkedChange)="promoForm.active = $event" />
+                      <span>{{ promoForm.active ? 'Activa' : 'Pausada' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="promo-preview">
+                    <span class="muted small">Así se verá:</span>
+                    <span class="promo-ribbon static"><app-icon name="gift" /> {{ promoPreviewLabel() }}</span>
+                  </div>
+
+                  <div class="promo-form-actions">
+                    <button type="button" class="btn-secondary" [disabled]="savingPromo()" (click)="promoFormOpen.set(false)">Cancelar</button>
+                    <button type="button" class="btn-primary" [disabled]="savingPromo()" (click)="savePromo()">
+                      {{ savingPromo() ? 'Guardando…' : promoForm.id ? 'Guardar promoción' : 'Crear promoción' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        </div>
+
+        <!-- Vista previa: así lo ve el negocio / repartidor -->
+        <aside class="editor-preview">
+          <span class="preview-label">Vista previa en la tienda</span>
+          <div class="preview-card">
+            <div class="preview-cover">
+              @if (previewImages().length > 0) {
+                <img [src]="previewImages()[previewIndex()]" alt="" />
+                @if (previewImages().length > 1) {
+                  <button type="button" class="nav prev" (click)="stepPreview(-1)" aria-label="Anterior"><app-icon name="chevron-left" /></button>
+                  <button type="button" class="nav next" (click)="stepPreview(1)" aria-label="Siguiente"><app-icon name="chevron-right" /></button>
+                  <div class="dots">
+                    @for (src of previewImages(); track $index) {
+                      <span class="dot" [class.on]="$index === previewIndex()"></span>
+                    }
+                  </div>
+                }
+              } @else {
+                <div class="cover-empty"><app-icon name="shopping-bag" /><span>Tu foto aquí</span></div>
+              }
+              @if (form.badge.trim()) {
+                <span class="badge">{{ form.badge.trim() }}</span>
+              }
+              @if (discountPercent(form.price, form.compareAtPrice); as pct) {
+                <span class="discount">-{{ pct }}%</span>
+              }
+            </div>
+            <div class="preview-body">
+              @if (previewPromo(); as promo) {
+                <span class="promo-ribbon static"><app-icon name="gift" /> {{ promo.label }}</span>
+              }
+              <strong class="preview-name">{{ form.name.trim() || 'Nombre del producto' }}</strong>
+              <div class="price-row">
+                <span class="price">{{ money(form.price) }}</span>
+                @if (form.compareAtPrice && form.price !== null && form.compareAtPrice > form.price) {
+                  <span class="compare">{{ money(form.compareAtPrice) }}</span>
+                }
+              </div>
+              @if (form.description.trim()) {
+                <p class="preview-desc">{{ form.description.trim() }}</p>
+              }
+              <span class="preview-btn"><app-icon name="shopping-bag" /> Agregar al carrito</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="modal-actions">
+        @if (editing()) {
+          <button class="btn-text danger-text" [disabled]="saving()" (click)="removeProduct()">Eliminar producto</button>
+        }
+        <span class="spacer"></span>
+        <button class="btn-secondary" [disabled]="saving()" (click)="closeEditor()">Cerrar</button>
+        <button class="btn-primary" [disabled]="saving()" (click)="saveProduct()">
+          {{ saving() ? 'Guardando…' : editing() ? 'Guardar cambios' : 'Crear producto' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

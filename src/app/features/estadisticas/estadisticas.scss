@@ -23,7 +23,7 @@
   height: 260px;
   top: -120px;
   right: -60px;
-  background: color-mix(in srgb, var(--color-accent-lime) 30%, transparent);
+  background: color-mix(in srgb, var(--color-accent-mango) 30%, transparent);
 }
 
 .hero-blob-b {
@@ -53,7 +53,7 @@
   padding: 4px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
-  color: color-mix(in srgb, var(--color-accent-lime) 70%, white);
+  color: color-mix(in srgb, var(--color-accent-mango) 70%, white);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -219,13 +219,13 @@
 }
 
 .mini-icon.lime {
-  background: color-mix(in srgb, var(--color-accent-lime) 30%, white);
-  color: color-mix(in srgb, var(--color-accent-lime) 45%, black);
+  background: color-mix(in srgb, var(--color-accent-mango) 30%, white);
+  color: color-mix(in srgb, var(--color-accent-mango) 45%, black);
 }
 
 .mini-icon.coral {
-  background: color-mix(in srgb, var(--color-accent-coral) 18%, white);
-  color: color-mix(in srgb, var(--color-accent-coral) 65%, black);
+  background: color-mix(in srgb, var(--color-accent-orange) 18%, white);
+  color: color-mix(in srgb, var(--color-accent-orange) 65%, black);
 }
 
 .mini-icon.neutral {
@@ -297,7 +297,7 @@
 
 .stat-card.featured .stat-icon.success {
   background: rgba(255, 255, 255, 0.16);
-  color: color-mix(in srgb, var(--color-accent-lime) 70%, white);
+  color: color-mix(in srgb, var(--color-accent-mango) 70%, white);
 }
 
 .stat-card.featured .stat-label {

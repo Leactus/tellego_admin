@@ -88,12 +88,20 @@ export interface PlatformSettings {
   defaultCommissionPaymentDueDays: number;
   /** Capital mínimo (declarado, no depositado) que confirma un repartidor nuevo antes de aprobarlo. No toca repartidores ya activos. */
   driverMinCapital: string;
+  /** Día en que se desembolsa a los repartidores freelance (0=domingo … 6=sábado). Por defecto 1 = lunes. */
+  driverPayoutDow?: number;
 }
 
 export interface CompanySales {
+  /** Ventas del negocio SIN propinas (la propina es del repartidor, no paga comisión). */
   totalSales: number;
   commissionRate: number;
   suggestedAmount: number;
+  /** Solo la comisión (% sobre ventas sin propinas). suggestedAmount = esto + driverRecovery.amount. */
+  commissionAmount?: number;
+  /** Envíos + propinas de pedidos con tarjeta/transferencia que llevó un repartidor freelance: esa plata
+   * entró a la cuenta APay del negocio pero es del repartidor — la plataforma se la cobra y se la deposita. */
+  driverRecovery?: { deliveryFees: number; tips: number; amount: number };
 }
 
 /** Ni el token ni el id_business viajan completos al frontend — solo los últimos 4 caracteres de cada uno, para poder identificarlos. */

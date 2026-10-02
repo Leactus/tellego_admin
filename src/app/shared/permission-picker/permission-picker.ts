@@ -18,6 +18,7 @@ const MODULE_LABELS: Record<string, string> = {
   calificaciones: 'Calificaciones',
   estadisticas: 'Estadísticas',
   impulsa: 'Impulsa tus ventas',
+  tienda: 'Tienda Tellego',
   ajustes: 'Ajustes del negocio',
   pedidos_asignados: 'Pedidos asignados',
   entrega: 'Entrega',

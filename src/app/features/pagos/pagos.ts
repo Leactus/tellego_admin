@@ -279,7 +279,10 @@ export class Pagos implements OnInit, OnDestroy {
       this.paymentForm.amount = sales.suggestedAmount;
       // Deja constancia del cálculo en el historial, sin pisar una nota que el admin ya haya escrito a mano.
       if (!this.paymentForm.note.trim()) {
-        this.paymentForm.note = `Comisión ${sales.commissionRate}% sobre $${sales.totalSales} en ventas`;
+        const recovery = sales.driverRecovery?.amount ?? 0;
+        this.paymentForm.note =
+          `Comisión ${sales.commissionRate}% sobre $${sales.totalSales} en ventas` +
+          (recovery > 0 ? ` + $${recovery.toFixed(2)} envíos/propinas con tarjeta (repartidores freelance)` : '');
       }
     } catch {
       this.toast.error('No se pudieron calcular las ventas del periodo');

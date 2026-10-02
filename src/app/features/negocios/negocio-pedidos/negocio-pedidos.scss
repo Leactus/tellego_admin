@@ -96,6 +96,22 @@
   flex-shrink: 0;
 }
 
+.inline-avatar {
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.driver-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.driver-row p {
+  margin: 0;
+}
+
 .order-items {
   margin: 4px 0 0;
   color: var(--color-text-muted);

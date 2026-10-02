@@ -37,6 +37,28 @@
                   </span>
                   <span class="rating-score"><app-icon name="star" /> {{ rating.score }}</span>
                 </div>
+                @if (rating.items?.length) {
+                  <ul class="rating-items">
+                    @for (item of rating.items; track item.orderItemId) {
+                      <li>
+                        <div class="item-head">
+                          <span class="item-name">{{ item.orderItem?.productName ?? 'Producto' }}</span>
+                          <span class="item-score"><app-icon name="star" /> {{ item.score }}</span>
+                        </div>
+                        @if (item.tags?.length) {
+                          <div class="tag-list">
+                            @for (tag of item.tags; track tag) {
+                              <span class="tag" [class.negative]="item.score <= 3">{{ tag }}</span>
+                            }
+                          </div>
+                        }
+                        @if (item.comment) {
+                          <p class="rating-comment">“{{ item.comment }}”</p>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
                 @if (rating.comment) {
                   <p class="rating-comment">{{ rating.comment }}</p>
                 }

@@ -20,6 +20,7 @@ import { Pager } from '../../../shared/pager/pager';
 import { Select, SelectOption } from '../../../shared/select/select';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
+import { UserAvatar } from '../../../shared/user-avatar/user-avatar';
 
 const STATUS_FILTER_OPTIONS: SelectOption<OrderStatus | 'active' | 'all'>[] = [
   { value: 'active', label: 'En curso' },
@@ -48,7 +49,7 @@ interface TimelineStep {
 @Component({
   selector: 'app-negocio-pedidos',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, Icon, EmptyState, Pager, Select, Skeleton],
+  imports: [FormsModule, DecimalPipe, Icon, EmptyState, Pager, Select, Skeleton, UserAvatar],
   templateUrl: './negocio-pedidos.html',
   styleUrl: './negocio-pedidos.scss',
 })
@@ -180,8 +181,8 @@ export class NegocioPedidos implements OnInit {
     return order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ');
   }
 
-  toNumber(value: string): number {
-    return Number(value);
+  toNumber(value: string | null | undefined): number {
+    return Number(value ?? 0);
   }
 
   readonly regeneratingCode = signal(false);

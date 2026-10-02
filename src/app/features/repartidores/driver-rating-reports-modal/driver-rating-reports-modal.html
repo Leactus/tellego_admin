@@ -25,6 +25,18 @@
                   {{ rating.score }}
                 </span>
               </div>
+              @if (rating.liked != null) {
+                <p class="delivery-thumb">
+                  {{ rating.liked ? '👍 Le gustó la entrega' : '👎 No le gustó la entrega' }}
+                </p>
+              }
+              @if (rating.tags?.length) {
+                <div class="tag-list">
+                  @for (tag of rating.tags; track tag) {
+                    <span class="tag" [class.negative]="rating.liked === false">{{ tag }}</span>
+                  }
+                </div>
+              }
               @if (rating.comment) {
                 <p class="rating-comment">{{ rating.comment }}</p>
               }
@@ -35,7 +47,7 @@
               <div class="rating-footer">
                 <span class="rating-date">
                   Reseña del {{ formatShortDate(rating.createdAt) }}
-                  @if (rating.reportedAt) { · reportada el {{ formatShortDate(rating.reportedAt) }} }
+                  @if (rating.reportedAt) { · apelada el {{ formatShortDate(rating.reportedAt) }} }
                 </span>
                 <div class="rating-actions">
                   <button
@@ -43,7 +55,7 @@
                     [disabled]="busyRatingIds().has(rating.id)"
                     (click)="dismiss(rating)"
                   >
-                    Descartar
+                    Rechazar apelación
                   </button>
                   <button
                     class="rating-mod-btn danger"
@@ -51,7 +63,7 @@
                     (click)="hide(rating)"
                   >
                     <app-icon name="eye-off" />
-                    Ocultar
+                    Aceptar y ocultar
                   </button>
                 </div>
               </div>

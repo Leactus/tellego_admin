@@ -1,0 +1,246 @@
+<h1>Tienda Tellego · Solicitudes</h1>
+<p class="muted">
+  Compras de negocios y repartidores freelance. Confirma la solicitud, coordina el cobro (efectivo o transferencia),
+  regístralo y marca la entrega. El comprador recibe un aviso en cada paso.
+</p>
+
+<div class="filters">
+  <div class="status-tabs">
+    @for (tab of statusTabs; track tab.value) {
+      <button type="button" class="tab" [class.active]="status() === tab.value" (click)="setStatus(tab.value)">
+        {{ tab.label }}
+        @if (countFor(tab.value); as n) {
+          <span class="tab-count" [class.alert]="tab.value === 'pending'">{{ n }}</span>
+        }
+      </button>
+    }
+  </div>
+  <app-select class="buyer-select" [(ngModel)]="buyerType" name="buyerType" [options]="buyerOptions" (ngModelChange)="onBuyerChange()" />
+</div>
+
+@if (counts(); as c) {
+  @if (c.unpaid > 0) {
+    <div class="warning-bar">
+      <app-icon name="credit-card" />
+      {{ c.unpaid }} {{ c.unpaid === 1 ? 'solicitud confirmada/entregada sigue' : 'solicitudes confirmadas/entregadas siguen' }}
+      sin pago registrado.
+    </div>
+  }
+}
+
+@if (loading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (orders().length === 0) {
+  <app-empty-state
+    [variant]="status() === 'all' && !buyerType ? 'no-data' : 'no-results'"
+    title="No hay solicitudes aquí"
+    icon="shopping-bag"
+  />
+} @else {
+  <div class="list">
+    @for (order of orders(); track order.id) {
+      <div class="row order-row clickable" (click)="open(order)">
+        <span class="buyer-avatar" [class.driver]="order.buyerType === 'driver'">
+          <app-icon [name]="order.buyerType === 'company' ? 'store' : 'truck'" />
+        </span>
+        <div class="row-info">
+          <span class="row-title">#{{ order.id }} · {{ buyerName(order) }}</span>
+          <span class="muted small">{{ buyerSub(order) }} · {{ formatShortDateTime(order.createdAt) }}</span>
+          <span class="items-line">{{ itemsSummary(order) }}</span>
+        </div>
+        <div class="amount-col">
+          <span class="amount">{{ money(order.total) }}</span>
+          @switch (paymentState(order)) {
+            @case ('free') {
+              <span class="pill pill-gift">Sin costo</span>
+            }
+            @case ('paid') {
+              <span class="pill pill-ok">Pagado</span>
+            }
+            @default {
+              <span class="pill pill-warning">Por cobrar</span>
+            }
+          }
+        </div>
+        <span class="status-pill" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
+      </div>
+    }
+  </div>
+}
+
+@if (total() > 0) {
+  <app-pager
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [total]="total()"
+    [pageSize]="pageSize()"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+}
+
+<!-- Detalle de una solicitud -->
+@if (selected(); as o) {
+  <div class="modal-backdrop" (click)="close()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>Solicitud #{{ o.id }}</h2>
+          <span class="muted small">{{ formatShortDateTime(o.createdAt) }} · <span class="status-pill inline" [attr.data-status]="o.status">{{ statusLabel(o.status) }}</span></span>
+        </div>
+        <button class="modal-close" (click)="close()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Comprador -->
+        <div class="info-grid">
+          <div class="info-box">
+            <span class="info-label">{{ o.buyerType === 'company' ? 'Negocio' : 'Repartidor freelance' }}</span>
+            <strong>{{ buyerName(o) }}</strong>
+            @if (o.buyerType === 'company' && o.store) {
+              <span class="muted small">Sucursal {{ o.store.name }}</span>
+            }
+            @if (o.requestedBy) {
+              <span class="muted small">Pidió: {{ o.requestedBy.name }} · {{ o.requestedBy.email }}</span>
+            }
+          </div>
+          <div class="info-box">
+            <span class="info-label">Contacto para la entrega</span>
+            <strong>{{ o.contactName }}</strong>
+            <span class="contact-line">
+              {{ o.contactPhone }}
+              <button class="icon-btn" title="Copiar teléfono" (click)="copy(o.contactPhone)"><app-icon name="phone" /></button>
+            </span>
+            @if (o.deliveryAddress) {
+              <span class="muted small"><app-icon name="map-pin" /> {{ o.deliveryAddress }}</span>
+            }
+          </div>
+        </div>
+
+        @if (o.buyerNote) {
+          <div class="note-box"><strong>Nota del comprador:</strong> {{ o.buyerNote }}</div>
+        }
+
+        <!-- Productos -->
+        <div class="items">
+          @for (item of o.items; track item.id) {
+            <div class="item">
+              @if (item.imageUrl) {
+                <img [src]="item.imageUrl" alt="" />
+              } @else {
+                <span class="item-img-empty"><app-icon name="shopping-bag" /></span>
+              }
+              <div class="item-info">
+                <strong>{{ item.productName }}</strong>
+                <span class="muted small">
+                  @if (item.quantity > 0) {
+                    {{ item.quantity }} × {{ money(item.unitPrice) }}
+                  }
+                  @if (item.freeQuantity > 0) {
+                    <span class="free-tag"><app-icon name="gift" /> +{{ item.freeQuantity }} gratis</span>
+                  }
+                </span>
+                @if (item.promotionLabel) {
+                  <span class="promo-text">{{ item.promotionLabel }}</span>
+                }
+              </div>
+              <strong>{{ money(item.subtotal) }}</strong>
+            </div>
+          }
+        </div>
+
+        <div class="totals-box">
+          @if (o.savings > 0) {
+            <div class="total-line savings"><span>Regalado en promociones</span><span>-{{ money(o.savings) }}</span></div>
+          }
+          <div class="total-line grand"><span>Total a cobrar</span><span>{{ money(o.total) }}</span></div>
+        </div>
+
+        <!-- Pago -->
+        @if (o.status !== 'cancelled' && o.total > 0) {
+          <div class="pay-box" [class.paid]="!!o.paidAt">
+            @if (o.paidAt) {
+              <div class="pay-row">
+                <app-icon name="check-circle" />
+                <span>
+                  Pagado el {{ formatShortDate(o.paidAt) }} · {{ o.paymentMethod === 'cash' ? 'Efectivo' : 'Transferencia' }}
+                  @if (o.paymentReference) {
+                    · Ref. {{ o.paymentReference }}
+                  }
+                </span>
+                <button class="btn-text" [disabled]="busy()" (click)="undoPayment()">Quitar</button>
+              </div>
+            } @else if (!payFormOpen()) {
+              <div class="pay-row">
+                <app-icon name="credit-card" />
+                <span>Pago pendiente de {{ money(o.total) }}</span>
+                <button class="btn-secondary" [disabled]="busy()" (click)="openPayForm()">Registrar pago</button>
+              </div>
+            } @else {
+              <div class="pay-form">
+                <div class="method-picker">
+                  <button type="button" class="chip" [class.on]="payForm.method === 'transfer'" (click)="payForm.method = 'transfer'">Transferencia</button>
+                  <button type="button" class="chip" [class.on]="payForm.method === 'cash'" (click)="payForm.method = 'cash'">Efectivo</button>
+                </div>
+                <label>
+                  Fecha
+                  <input type="date" [(ngModel)]="payForm.paidAt" name="paidAt" />
+                </label>
+                <label>
+                  Referencia (opcional)
+                  <input type="text" maxlength="100" [(ngModel)]="payForm.reference" name="reference" placeholder="Nº de transferencia / recibo" />
+                </label>
+                <div class="pay-actions">
+                  <button class="btn-secondary" [disabled]="busy()" (click)="payFormOpen.set(false)">Cancelar</button>
+                  <button class="btn-primary" [disabled]="busy()" (click)="savePayment()">Guardar pago de {{ money(o.total) }}</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (o.status === 'cancelled') {
+          <div class="note-box cancelled">
+            <strong>Cancelada {{ o.cancelledBy === 'buyer' ? 'por el comprador' : 'por la plataforma' }}</strong>
+            @if (o.cancelledAt) {
+              el {{ formatShortDateTime(o.cancelledAt) }}
+            }
+            @if (o.cancelReason) {
+              — {{ o.cancelReason }}
+            }
+          </div>
+        } @else {
+          <label>
+            Nota para el comprador (opcional)
+            <textarea rows="2" maxlength="500" [(ngModel)]="adminNote" name="adminNote" placeholder="Ej: te la llevamos el jueves en la mañana"></textarea>
+          </label>
+          @if (adminNote.trim() !== (o.adminNote ?? '')) {
+            <button class="btn-text save-note" [disabled]="busy()" (click)="saveNote()">Guardar nota</button>
+          }
+        }
+
+        <div class="timeline muted small">
+          <span>Creada {{ formatShortDateTime(o.createdAt) }}</span>
+          @if (o.confirmedAt) {
+            <span>· Confirmada {{ formatShortDateTime(o.confirmedAt) }}</span>
+          }
+          @if (o.deliveredAt) {
+            <span>· Entregada {{ formatShortDateTime(o.deliveredAt) }}</span>
+          }
+        </div>
+      </div>
+
+      @if (o.status === 'pending' || o.status === 'confirmed') {
+        <div class="modal-actions">
+          <button class="btn-text danger-text" [disabled]="busy()" (click)="changeStatus('cancelled')">Cancelar solicitud</button>
+          <span class="spacer"></span>
+          @if (o.status === 'pending') {
+            <button class="btn-primary" [disabled]="busy()" (click)="changeStatus('confirmed')">Confirmar solicitud</button>
+          } @else {
+            <button class="btn-primary" [disabled]="busy()" (click)="changeStatus('delivered')">Marcar entregada</button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -26,7 +26,7 @@
 }
 
 .select-trigger:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-primary-hover) 45%, var(--color-border));
 }
 
 .app-select.open .select-trigger {

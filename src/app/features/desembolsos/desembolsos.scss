@@ -1,0 +1,286 @@
+@use '../../shared/styles/page' as *;
+@use '../../shared/styles/modal' as *;
+
+.small {
+  font-size: 0.78rem;
+}
+
+.schedule-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 4px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-variant);
+}
+
+.schedule-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1 1 320px;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
+.schedule-info app-icon {
+  margin-top: 2px;
+  color: var(--color-primary);
+}
+
+.schedule-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-edit app-select {
+  min-width: 150px;
+}
+
+.payout-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  border-color: var(--color-primary-hover);
+  color: var(--color-text);
+}
+
+.tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-muted) 16%, white);
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+.tab-count.alert {
+  background: color-mix(in srgb, var(--color-warning) 22%, white);
+}
+
+.tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--color-on-primary);
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.total-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.total-card.ready {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+}
+
+.total-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.total-amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.warning-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-warning) 12%, white);
+  color: var(--color-text);
+  font-size: 0.86rem;
+}
+
+.pill-warning {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--color-warning) 18%, white);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.row-icon {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+}
+
+.row-icon.ok {
+  color: var(--color-success, #2e7d32);
+}
+
+.payout-row.clickable {
+  cursor: pointer;
+}
+
+.payout-row.clickable:hover {
+  box-shadow: 0 0 0 1px var(--color-border), var(--shadow-card);
+}
+
+.amount-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.amount {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.amount.zero {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.small-amount {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.muted-col .amount {
+  color: var(--color-text-muted);
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.pay-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+}
+
+.pay-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.bank-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.bank-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.bank-line span {
+  width: 64px;
+  color: var(--color-text-muted);
+}
+
+.bank-line .icon-btn {
+  padding: 2px 6px;
+  font-size: 0.95rem;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.orders-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.orders-table td .small {
+  display: block;
+}
+
+.orders-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .amount-col {
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .payout-row .btn-primary {
+    width: 100%;
+  }
+}

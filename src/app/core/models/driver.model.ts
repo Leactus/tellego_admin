@@ -36,9 +36,17 @@ export interface DriverRating {
   hiddenAt: string | null;
   hiddenReason: string | null;
   hiddenBy?: { id: number; name: string } | null;
-  /** Reporte del repartidor (ver POST /driver/ratings/:id/report): != null = pendiente de revisión. */
+  /** Apelación del repartidor (ver POST /driver/ratings/:id/report). */
   reportedAt?: string | null;
   reportedReason?: string | null;
+  /** Resultado de la apelación: pending = en la bandeja, accepted = se ocultó, rejected = quedó visible. */
+  reportStatus?: 'pending' | 'accepted' | 'rejected' | null;
+  reportResolvedAt?: string | null;
+  reportResolutionNote?: string | null;
+  /** Pulgar de la entrega (reseñas nuevas): true/false. null = reseña vieja con estrellas. score = 5/1. */
+  liked?: boolean | null;
+  /** Sugerencias que marcó el cliente ("Puntualidad", "Llegó dañado"...). */
+  tags?: string[] | null;
   /** Solo viene en GET /admin/driver-ratings/reported — la bandeja global no sabe de antemano de qué repartidor es cada fila. */
   driver?: { id: number; userId: number; user?: { id: number; name: string } };
 }

@@ -142,3 +142,69 @@
 .rating-mod-btn app-icon {
   font-size: 0.9rem;
 }
+
+/* Detalle de la reseña nueva: productos con sugerencias / pulgar de la entrega. */
+.rating-items {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rating-items li {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-variant);
+}
+
+.item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.item-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--color-primary);
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.tag.negative {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+  color: var(--color-error);
+}
+
+.delivery-thumb {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}

@@ -399,7 +399,7 @@
 }
 
 .image-dropzone:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-hover);
   background: var(--color-primary-container);
 }
 
@@ -409,7 +409,7 @@
 }
 
 .image-dropzone.has-image:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-hover);
   background: var(--color-surface-variant);
 }
 
@@ -438,7 +438,7 @@
 }
 
 .image-dropzone:hover .dropzone-empty {
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 .dropzone-empty app-icon {

@@ -58,6 +58,10 @@ export interface Order {
   subtotal: string;
   deliveryFee: string;
   discount: string;
+  /** Propina para el repartidor (incluida en total). No es venta del negocio. */
+  tip?: string;
+  /** cash = la cobra el repartidor en mano; card/transfer = se le paga en su desembolso semanal. */
+  tipMethod?: 'cash' | 'card' | 'transfer' | null;
   total: string;
   /** Código de retiro de 4 dígitos — se genera cuando un repartidor FREELANCE acepta la oferta. null = repartidor propio o sin repartidor / no se generó. El super-admin lo puede regenerar. */
   pickupCode: string | null;
@@ -83,7 +87,8 @@ export interface Order {
     type: 'propio' | 'freelance';
     vehicleType: string | null;
     plateNumber: string | null;
-    user: { name: string; phone: string | null } | null;
+    /** Usuario que aceptó / tiene asignado el pedido. avatarUrl null = sin foto (se muestra el avatar por defecto). */
+    user: { id: number; name: string; phone: string | null; avatarUrl: string | null } | null;
   } | null;
 }
 

@@ -15,9 +15,24 @@ export interface StoreRating {
   hiddenAt: string | null;
   hiddenReason: string | null;
   hiddenBy?: { id: number; name: string } | null;
-  /** Reporte del negocio (ver POST /owner/store/ratings/:id/report): != null = pendiente de revisión. */
+  /** Apelación del negocio (ver POST /owner/store/ratings/:id/report). */
   reportedAt?: string | null;
   reportedReason?: string | null;
+  /** Resultado de la apelación: pending = en la bandeja, accepted = se ocultó, rejected = quedó visible. */
+  reportStatus?: 'pending' | 'accepted' | 'rejected' | null;
+  reportResolvedAt?: string | null;
+  reportResolutionNote?: string | null;
+  /** Qué opinó el cliente de cada producto (reseñas nuevas — las viejas solo traen score/comment). */
+  items?: StoreRatingItem[];
+}
+
+export interface StoreRatingItem {
+  orderItemId: number;
+  score: number;
+  /** Sugerencias que marcó el cliente ("Buen sabor", "Porción pequeña"...). */
+  tags: string[] | null;
+  comment: string | null;
+  orderItem?: { productName: string; quantity: number };
 }
 
 export type StoreRatingsPage = Paginated<StoreRating>;

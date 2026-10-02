@@ -1,0 +1,277 @@
+<h1>Desembolsos a repartidores</h1>
+<p class="muted">
+  Lo que se le paga a cada repartidor freelance: ganancia de envío + propinas de sus pedidos pagados con tarjeta o
+  transferencia. Lo cobrado en efectivo ya lo tiene en mano y no aparece aquí.
+</p>
+
+@if (pending(); as p) {
+  <div class="schedule-bar">
+    <div class="schedule-info">
+      <app-icon name="clock" />
+      <span>
+        Se paga cada <strong>{{ dowLabel(p.schedule.payoutDow) }}</strong> todo lo entregado hasta el día anterior.
+        Último corte: <strong>{{ formatLongDate(p.schedule.readyCutoff) }}</strong> · próximo:
+        {{ formatLongDate(p.schedule.nextPayoutDate) }}.
+      </span>
+    </div>
+    <div class="schedule-edit">
+      <app-select [(ngModel)]="payoutDow" name="payoutDow" [options]="dowOptions" />
+      <button class="btn-secondary" [disabled]="savingDow() || payoutDow === p.schedule.payoutDow" (click)="saveDow()">
+        {{ savingDow() ? 'Guardando…' : 'Cambiar día' }}
+      </button>
+    </div>
+  </div>
+}
+
+<div class="payout-tabs">
+  <button type="button" class="tab" [class.active]="tab() === 'pendientes'" (click)="setTab('pendientes')">
+    Pendientes
+    <span class="tab-count" [class.alert]="readyCount() > 0">{{ readyCount() }}</span>
+  </button>
+  <button type="button" class="tab" [class.active]="tab() === 'realizados'" (click)="setTab('realizados')">
+    Realizados
+    <span class="tab-count">{{ historyTotal() }}</span>
+  </button>
+</div>
+
+@if (tab() === 'pendientes') {
+  @if (pendingLoading()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (pending(); as p) {
+    <div class="totals">
+      <div class="total-card ready">
+        <span class="total-label">Listo para pagar</span>
+        <span class="total-amount">{{ money(p.totals.ready.amount) }}</span>
+        <span class="muted small">
+          {{ p.totals.ready.count }} pedidos · envíos {{ money(p.totals.ready.earnings) }} · propinas
+          {{ money(p.totals.ready.tips) }}
+        </span>
+      </div>
+      <div class="total-card">
+        <span class="total-label">Semana en curso</span>
+        <span class="total-amount">{{ money(p.totals.running.amount) }}</span>
+        <span class="muted small">Se paga el {{ formatShortDate(p.schedule.nextPayoutDate) }}</span>
+      </div>
+    </div>
+
+    @if (missingBankCount() > 0) {
+      <div class="warning-bar">
+        <app-icon name="info-circle" />
+        {{ missingBankCount() }} {{ missingBankCount() === 1 ? 'repartidor tiene' : 'repartidores tienen' }} saldo
+        pero todavía no registró su cuenta bancaria en la app — no se le puede pagar hasta que lo haga.
+      </div>
+    }
+
+    @if (p.data.length === 0) {
+      <app-empty-state variant="no-data" title="No hay montos pendientes de desembolso." icon="truck" />
+    } @else {
+      <div class="list">
+        @for (row of p.data; track row.driver.id) {
+          <div class="row payout-row">
+            <app-icon name="truck" class="row-icon" />
+            <div class="row-info">
+              <span class="row-title">{{ row.driver.name }}</span>
+              @if (row.bankAccount; as bank) {
+                <span class="muted small">
+                  {{ bank.bankName }} · {{ accountTypeLabel(bank.accountType) }} ·
+                  •••• {{ bank.accountNumber.slice(-4) }}
+                </span>
+              } @else {
+                <span class="pill pill-warning">Sin cuenta bancaria</span>
+              }
+            </div>
+
+            <div class="amount-col">
+              <span class="amount" [class.zero]="row.ready.amount === 0">{{ money(row.ready.amount) }}</span>
+              @if (row.ready.amount > 0) {
+                <button class="link-btn" (click)="openPendingOrders(row, 'ready')">
+                  {{ row.ready.count }} pedidos · propinas {{ money(row.ready.tips) }}
+                </button>
+              } @else {
+                <span class="muted small">Nada listo todavía</span>
+              }
+            </div>
+
+            <div class="amount-col muted-col">
+              <span class="amount small-amount">{{ money(row.running.amount) }}</span>
+              @if (row.running.amount > 0) {
+                <button class="link-btn" (click)="openPendingOrders(row, 'running')">
+                  esta semana · {{ row.running.count }}
+                </button>
+              } @else {
+                <span class="muted small">esta semana</span>
+              }
+            </div>
+
+            <button
+              class="btn-primary"
+              [disabled]="row.ready.amount === 0 || !row.bankAccount"
+              [title]="!row.bankAccount ? 'El repartidor no registró su cuenta bancaria' : ''"
+              (click)="openPay(row)"
+            >
+              Registrar desembolso
+            </button>
+          </div>
+        }
+      </div>
+    }
+  }
+} @else {
+  @if (historyLoading()) {
+    <app-skeleton variant="list" [rows]="5" />
+  } @else if (history().length === 0) {
+    <app-empty-state variant="no-data" title="Todavía no se registró ningún desembolso." icon="credit-card" />
+  } @else {
+    <p class="muted small">Total desembolsado: <strong>{{ money(historyAmount()) }}</strong></p>
+    <div class="list">
+      @for (payout of history(); track payout.id) {
+        <div class="row payout-row clickable" (click)="openPayoutOrders(payout)">
+          <app-icon name="check-circle" class="row-icon ok" />
+          <div class="row-info">
+            <span class="row-title">{{ payout.driver?.user?.name ?? 'Repartidor #' + payout.driverId }}</span>
+            <span class="muted small">
+              {{ payout.bankName }} •••• {{ payout.accountNumber.slice(-4) }}
+              @if (payout.reference) {
+                · Ref. {{ payout.reference }}
+              }
+              @if (payout.registeredBy) {
+                · registró {{ payout.registeredBy.name }}
+              }
+            </span>
+          </div>
+          <div class="amount-col">
+            <span class="amount">{{ money(payout.amount) }}</span>
+            <span class="muted small">{{ payout.ordersCount }} pedidos · propinas {{ money(payout.tipsAmount) }}</span>
+          </div>
+          <div class="amount-col">
+            <span class="row-title">{{ formatShortDate(payout.paidAt) }}</span>
+            <span class="muted small">hasta el {{ formatShortDate(previousDay(payout.periodEnd)) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (historyTotal() > 0) {
+    <app-pager
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="historyTotal()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+}
+
+<!-- Registrar desembolso -->
+@if (payTarget(); as row) {
+  <div class="modal-backdrop" (click)="closePay()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Registrar desembolso</h2>
+        <button class="modal-close" (click)="closePay()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        <div class="pay-summary">
+          <span class="muted">{{ row.driver.name }}</span>
+          <span class="pay-amount">{{ money(row.ready.amount) }}</span>
+          <span class="muted small">
+            {{ row.ready.count }} pedidos entregados hasta el
+            {{ formatShortDate(previousDay(pending()!.schedule.readyCutoff)) }} · envíos {{ money(row.ready.earnings) }} ·
+            propinas {{ money(row.ready.tips) }}
+          </span>
+        </div>
+
+        @if (row.bankAccount; as bank) {
+          <div class="bank-box">
+            <div class="bank-line"><span>Banco</span><strong>{{ bank.bankName }}</strong></div>
+            <div class="bank-line"><span>Tipo</span><strong>{{ accountTypeLabel(bank.accountType) }}</strong></div>
+            <div class="bank-line">
+              <span>Cuenta</span>
+              <strong>{{ bank.accountNumber }}</strong>
+              <button class="icon-btn" title="Copiar" (click)="copy(bank.accountNumber)"><app-icon name="receipt" /></button>
+            </div>
+            <div class="bank-line"><span>Titular</span><strong>{{ bank.accountHolder }}</strong></div>
+            @if (bank.holderDocument) {
+              <div class="bank-line"><span>DUI</span><strong>{{ bank.holderDocument }}</strong></div>
+            }
+          </div>
+        }
+
+        <label>
+          Fecha del depósito
+          <input type="date" [(ngModel)]="payForm.paidAt" name="paidAt" />
+        </label>
+        <label>
+          Referencia / nº de transferencia (opcional)
+          <input type="text" maxlength="100" [(ngModel)]="payForm.reference" name="reference" />
+        </label>
+        <label>
+          Nota (opcional)
+          <input type="text" maxlength="255" [(ngModel)]="payForm.note" name="note" />
+        </label>
+        <p class="muted small">
+          Al confirmar, estos pedidos quedan marcados como pagados y ya no se pueden volver a desembolsar. El repartidor
+          recibe un aviso en su app.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" [disabled]="paying()" (click)="closePay()">Cancelar</button>
+        <button class="btn-primary" [disabled]="paying()" (click)="confirmPay()">
+          {{ paying() ? 'Registrando…' : 'Confirmar ' + money(row.ready.amount) }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Pedidos de un pendiente / de un desembolso -->
+@if (ordersModal(); as m) {
+  <div class="modal-backdrop" (click)="closeOrders()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ m.title }}</h2>
+          <span class="muted small">{{ m.subtitle }}</span>
+        </div>
+        <button class="modal-close" (click)="closeOrders()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        @if (m.orders === null) {
+          <app-skeleton variant="list" [rows]="4" />
+        } @else if (m.orders.length === 0) {
+          <p class="muted">Sin pedidos.</p>
+        } @else {
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Entregado</th>
+                <th>Pago</th>
+                <th class="num">Envío</th>
+                <th class="num">Propina</th>
+                <th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of m.orders; track o.orderId) {
+                <tr>
+                  <td>
+                    #{{ o.orderPublicId }}
+                    <span class="muted small">{{ o.storeName }}</span>
+                  </td>
+                  <td>{{ formatShortDateTime(o.deliveredAt) }}</td>
+                  <td>{{ o.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia' }}</td>
+                  <td class="num">{{ money(o.driverEarning) }}</td>
+                  <td class="num">{{ money(o.tip) }}</td>
+                  <td class="num"><strong>{{ money(o.amount) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </div>
+}
