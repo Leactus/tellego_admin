@@ -11,32 +11,34 @@
     </div>
 
     <nav class="menu">
-      @for (item of menuItems; track item.path) {
-        <a class="menu-item" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">
-          <app-icon class="menu-icon" [name]="item.icon" />
-          <span class="menu-label">{{ item.label }}</span>
-        </a>
-      }
-
-      <button
-        type="button"
-        class="menu-item menu-group-toggle"
-        [class.active]="settingsOpen()"
-        (click)="toggleSettings()"
-      >
-        <app-icon class="menu-icon" name="settings" />
-        <span class="menu-label">Configuraciones</span>
-        <app-icon class="menu-chevron" name="chevron-down" [class.rotated]="settingsOpen()" />
-      </button>
-      @if (settingsOpen()) {
-        <div class="menu-submenu">
-          @for (item of settingsItems; track item.path) {
-            <a class="menu-item menu-subitem" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">
-              <app-icon class="menu-icon" [name]="item.icon" />
-              <span class="menu-label">{{ item.label }}</span>
-            </a>
+      @for (entry of menu; track entry.key) {
+        @if (entry.children) {
+          <button
+            type="button"
+            class="menu-item menu-group-toggle"
+            [class.active]="isGroupOpen(entry.key)"
+            (click)="toggleGroup(entry.key)"
+          >
+            <app-icon class="menu-icon" [name]="entry.icon" />
+            <span class="menu-label">{{ entry.label }}</span>
+            <app-icon class="menu-chevron" name="chevron-down" [class.rotated]="isGroupOpen(entry.key)" />
+          </button>
+          @if (isGroupOpen(entry.key)) {
+            <div class="menu-submenu">
+              @for (item of entry.children; track item.path) {
+                <a class="menu-item menu-subitem" [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">
+                  <app-icon class="menu-icon" [name]="item.icon" />
+                  <span class="menu-label">{{ item.label }}</span>
+                </a>
+              }
+            </div>
           }
-        </div>
+        } @else {
+          <a class="menu-item" [routerLink]="entry.path" routerLinkActive="active" (click)="closeSidebar()">
+            <app-icon class="menu-icon" [name]="entry.icon" />
+            <span class="menu-label">{{ entry.label }}</span>
+          </a>
+        }
       }
     </nav>
 

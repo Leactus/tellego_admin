@@ -120,3 +120,20 @@ select:focus-visible {
   font-size: 0.92rem;
   color: var(--color-text);
 }
+
+/* Nombre de usuario que abre su tarjeta de perfil (ver shared/user-avatar → openViewer). */
+.user-name-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.user-name-link:hover,
+.user-name-link:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}

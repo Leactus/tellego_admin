@@ -11,6 +11,16 @@ interface MenuItem {
   icon: IconName;
 }
 
+interface MenuEntry {
+  key: string;
+  label: string;
+  icon: IconName;
+  /** Link directo (entradas sin `children`). */
+  path?: string;
+  /** Si existe, la entrada se pinta como acordeón. */
+  children?: MenuItem[];
+}
+
 /** Shell del panel super-admin: sidebar + topbar + <router-outlet>, mismo
  * patrón visual que business-shell.ts en delivery-pedidos-admin. */
 @Component({
@@ -28,30 +38,56 @@ export class Shell {
   readonly user = this.auth.user;
   readonly userInitial = computed(() => (this.user()?.name?.trim()?.charAt(0) ?? '?').toUpperCase());
 
-  readonly menuItems: MenuItem[] = [
-    { path: 'estadisticas', label: 'Estadísticas', icon: 'dashboard' },
-    { path: 'negocios', label: 'Negocios', icon: 'store' },
-    { path: 'repartidores', label: 'Repartidores', icon: 'truck' },
-    { path: 'centro-de-pagos', label: 'Centro de pagos', icon: 'credit-card' },
-    { path: 'desembolsos', label: 'Desembolsos', icon: 'send' },
-    { path: 'tienda/productos', label: 'Tienda · Productos', icon: 'shopping-bag' },
-    { path: 'tienda/solicitudes', label: 'Tienda · Solicitudes', icon: 'gift' },
-    { path: 'publicidad/negocios', label: 'Publicidad de negocios', icon: 'megaphone' },
-    { path: 'publicidad/productos', label: 'Publicidad de productos', icon: 'package' },
-    { path: 'notificaciones', label: 'Notificaciones', icon: 'bell' },
+  /** Entradas del sidebar: un link directo o un acordeón con sub-links (`children`). */
+  readonly menu: MenuEntry[] = [
+    { key: 'estadisticas', path: 'estadisticas', label: 'Estadísticas', icon: 'dashboard' },
+    { key: 'negocios', path: 'negocios', label: 'Negocios', icon: 'store' },
+    { key: 'repartidores', path: 'repartidores', label: 'Repartidores', icon: 'truck' },
+    { key: 'centro-de-pagos', path: 'centro-de-pagos', label: 'Centro de pagos', icon: 'credit-card' },
+    { key: 'desembolsos', path: 'desembolsos', label: 'Desembolsos', icon: 'send' },
+    {
+      key: 'tienda',
+      label: 'Tienda',
+      icon: 'shopping-bag',
+      children: [
+        { path: 'tienda/productos', label: 'Productos', icon: 'shopping-bag' },
+        { path: 'tienda/solicitudes', label: 'Solicitudes', icon: 'gift' },
+      ],
+    },
+    {
+      key: 'publicidad',
+      label: 'Publicidad',
+      icon: 'megaphone',
+      children: [
+        { path: 'publicidad/negocios', label: 'De negocios', icon: 'store' },
+        { path: 'publicidad/productos', label: 'De productos', icon: 'package' },
+      ],
+    },
+    { key: 'notificaciones', path: 'notificaciones', label: 'Notificaciones', icon: 'bell' },
+    {
+      key: 'configuraciones',
+      label: 'Configuraciones',
+      icon: 'settings',
+      children: [
+        { path: 'configuraciones/tipos-negocio', label: 'Tipos de negocio', icon: 'store' },
+        { path: 'configuraciones/tipo-pago', label: 'Tipo de pago', icon: 'credit-card' },
+        { path: 'configuraciones/roles-permisos', label: 'Roles y permisos', icon: 'puzzle' },
+        { path: 'configuraciones/documentos-repartidor', label: 'Documentos de repartidor', icon: 'truck' },
+        { path: 'configuraciones/zonas-envio', label: 'Zonas de envío', icon: 'map-pin' },
+        { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },
+        { path: 'configuraciones/terminos-privacidad', label: 'Términos y privacidad', icon: 'receipt' },
+      ],
+    },
   ];
 
-  /** Acordeón de ajustes de plataforma. */
-  readonly settingsItems: MenuItem[] = [
-    { path: 'configuraciones/tipos-negocio', label: 'Tipos de negocio', icon: 'store' },
-    { path: 'configuraciones/tipo-pago', label: 'Tipo de pago', icon: 'credit-card' },
-    { path: 'configuraciones/roles-permisos', label: 'Roles y permisos', icon: 'puzzle' },
-    { path: 'configuraciones/documentos-repartidor', label: 'Documentos de repartidor', icon: 'truck' },
-    { path: 'configuraciones/zonas-envio', label: 'Zonas de envío', icon: 'map-pin' },
-    { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },
-    { path: 'configuraciones/terminos-privacidad', label: 'Términos y privacidad', icon: 'receipt' },
-  ];
-  readonly settingsOpen = signal(this.router.url.includes('/configuraciones'));
+  /** Acordeones abiertos; arranca abierto el grupo de la ruta actual. */
+  private readonly openGroups = signal<ReadonlySet<string>>(
+    new Set(
+      this.menu
+        .filter((entry) => entry.children?.some((child) => this.router.url.includes(`/${child.path}`)))
+        .map((entry) => entry.key),
+    ),
+  );
 
   /** Sidebar como panel deslizable en pantallas angostas (ver breakpoint en shell.scss). */
   readonly sidebarOpen = signal(false);
@@ -59,8 +95,17 @@ export class Shell {
   /** En escritorio el sidebar se puede ocultar/mostrar con el mismo botón hamburguesa. */
   readonly sidebarCollapsed = signal(false);
 
-  toggleSettings(): void {
-    this.settingsOpen.update((open) => !open);
+  isGroupOpen(key: string): boolean {
+    return this.openGroups().has(key);
+  }
+
+  toggleGroup(key: string): void {
+    this.openGroups.update((open) => {
+      const next = new Set(open);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   toggleSidebar(): void {

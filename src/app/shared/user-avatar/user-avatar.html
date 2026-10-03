@@ -1,13 +1,56 @@
 <span
   class="user-avatar"
+  [class.zoomable]="isTrigger()"
   [style.width.px]="size()"
   [style.height.px]="size()"
   [style.font-size.px]="size() * 0.5"
-  [attr.title]="name() || null"
+  [attr.title]="isTrigger() ? 'Ver perfil' : null"
+  [attr.role]="isTrigger() ? 'button' : null"
+  [attr.tabindex]="isTrigger() ? 0 : null"
+  (click)="isTrigger() && openViewer($event)"
+  (keydown.enter)="isTrigger() && openViewer($event)"
+  (keydown.space)="isTrigger() && openViewer($event)"
 >
   @if (showImage()) {
-    <img [src]="src()" [alt]="name() ? 'Foto de ' + name() : 'Foto de perfil'" loading="lazy" (error)="onError()" />
+    <img [src]="src()" [alt]="altText()" loading="lazy" (error)="onError()" />
   } @else {
     <app-icon name="user" />
   }
 </span>
+
+@if (zoomable()) {
+  <dialog #viewer class="profile-viewer" (click)="onDialogClick($event)" [attr.aria-label]="altText()">
+    <div class="profile-card">
+      <button type="button" class="viewer-close" (click)="close()" aria-label="Cerrar">
+        <app-icon name="close" />
+      </button>
+
+      <!-- Marco de tamaño fijo: una foto gigante (o muy alta/ancha) se ajusta adentro sin agrandar el modal. -->
+      <div class="photo-frame">
+        @if (showImage()) {
+          <img class="photo-backdrop" [src]="src()" alt="" aria-hidden="true" />
+          <img class="photo" [src]="src()" [alt]="altText()" (error)="onError()" />
+        } @else {
+          <span class="photo-placeholder"><app-icon name="user" /></span>
+        }
+      </div>
+
+      <div class="profile-info">
+        <p class="profile-name">{{ name() || 'Usuario' }}</p>
+        @if (subtitle()) {
+          <span class="profile-chip">{{ subtitle() }}</span>
+        }
+        @if (phone()) {
+          <a class="profile-phone" [href]="'tel:' + phone()">{{ phone() }}</a>
+        }
+        @if (showImage()) {
+          <a class="profile-link" [href]="src()" target="_blank" rel="noopener">
+            <app-icon name="eye" /> Ver foto en tamaño original
+          </a>
+        } @else {
+          <p class="profile-muted">Este usuario todavía no tiene foto de perfil.</p>
+        }
+      </div>
+    </div>
+  </dialog>
+}

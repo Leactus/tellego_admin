@@ -65,6 +65,12 @@ export interface Order {
   total: string;
   /** Código de retiro de 4 dígitos — se genera cuando un repartidor FREELANCE acepta la oferta. null = repartidor propio o sin repartidor / no se generó. El super-admin lo puede regenerar. */
   pickupCode: string | null;
+  /** El pedido tiene código de entrega (repartidor → cliente). Lo mandan todos los endpoints. */
+  requiresDeliveryCode?: boolean;
+  /** Código de entrega: solo lo trae el detalle (/admin/orders/:id), para soporte. Lo ve el cliente en su app; el repartidor lo pide al entregar. */
+  deliveryCode?: string | null;
+  /** Intentos fallidos del repartidor con el código (al llegar a 5 se bloquea — la sucursal marca la entrega a mano). */
+  deliveryCodeAttempts?: number;
   paymentMethod: 'cash' | 'transfer' | 'card';
   paymentStatus: OrderPaymentStatus;
   notes: string | null;

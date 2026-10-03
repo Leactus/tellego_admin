@@ -64,12 +64,17 @@
                 @if (order.driver?.user?.name) {
                   ·
                   <app-user-avatar
+                    #driverAvatar
                     class="inline-avatar"
                     [src]="order.driver?.user?.avatarUrl"
                     [name]="order.driver?.user?.name"
+                    [subtitle]="order.driver?.type === 'propio' ? 'Repartidor propio' : 'Repartidor freelance'"
+                    [phone]="order.driver?.user?.phone"
                     [size]="22"
                   />
-                  {{ order.driver?.user?.name }}
+                  <button type="button" class="user-name-link" (click)="driverAvatar.openViewer($event)">
+                    {{ order.driver?.user?.name }}
+                  </button>
                   <span class="muted">({{ order.driver?.type === 'propio' ? 'propio' : 'freelance' }})</span>
                 } @else if (order.driverId) {
                   · Repartidor #{{ order.driverId }}
@@ -142,9 +147,19 @@
             }
             @if (o.driver; as d) {
               <div class="driver-row">
-                <app-user-avatar [src]="d.user?.avatarUrl" [name]="d.user?.name" [size]="40" />
+                <app-user-avatar
+                  #detailDriverAvatar
+                  [src]="d.user?.avatarUrl"
+                  [name]="d.user?.name"
+                  [subtitle]="d.type === 'propio' ? 'Repartidor propio' : 'Repartidor freelance'"
+                  [phone]="d.user?.phone"
+                  [size]="40"
+                />
                 <p>
-                  Repartidor: {{ d.user?.name ?? ('#' + d.id) }}
+                  Repartidor:
+                  <button type="button" class="user-name-link" (click)="detailDriverAvatar.openViewer($event)">
+                    {{ d.user?.name ?? ('#' + d.id) }}
+                  </button>
                   <span class="muted">({{ d.type === 'propio' ? 'propio del negocio' : 'freelance' }})</span>
                   @if (d.user?.phone) { · {{ d.user?.phone }} }
                 </p>
@@ -181,6 +196,24 @@
             >
               {{ regeneratingCode() ? 'Generando…' : o.pickupCode ? 'Regenerar código' : 'Generar código' }}
             </button>
+          </div>
+        }
+
+        @if (o.deliveryCode) {
+          <div class="detail-section">
+            <h3><app-icon name="check-circle" /> Código de entrega</h3>
+            <p class="muted">
+              Lo ve solo el cliente en su app; el repartidor se lo pide al entregar para poder marcar el
+              pedido como entregado. Ni la sucursal ni el repartidor lo ven.
+            </p>
+            <div class="pickup-code">{{ o.deliveryCode }}</div>
+            @if ((o.deliveryCodeAttempts ?? 0) >= 5) {
+              <p class="warn-text">
+                Bloqueado por {{ o.deliveryCodeAttempts }} intentos fallidos — la sucursal tiene que marcar la entrega desde su panel.
+              </p>
+            } @else if ((o.deliveryCodeAttempts ?? 0) > 0) {
+              <p class="muted">{{ o.deliveryCodeAttempts }} intento(s) fallido(s) del repartidor.</p>
+            }
           </div>
         }
 
