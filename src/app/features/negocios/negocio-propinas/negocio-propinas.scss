@@ -1,0 +1,407 @@
+@use '../../../shared/styles/page' as *;
+@use '../../../shared/styles/modal' as *;
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--color-text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.filter-select {
+  min-width: 220px;
+}
+
+.small-amount {
+  font-size: 0.95rem;
+}
+
+.small {
+  font-size: 0.78rem;
+}
+
+.intro {
+  max-width: 820px;
+  line-height: 1.5;
+}
+
+/* --- KPIs (mismo estilo que Ingresos) --- */
+
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin: 20px 0 14px;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+}
+
+.summary-card.success .summary-icon {
+  background: color-mix(in srgb, var(--color-success) 16%, white);
+  color: var(--color-success);
+}
+
+.summary-card.warning .summary-icon {
+  background: color-mix(in srgb, var(--color-warning) 16%, white);
+  color: var(--color-warning);
+}
+
+.summary-card.error .summary-icon {
+  background: color-mix(in srgb, var(--color-error) 12%, white);
+  color: var(--color-error);
+}
+
+.summary-card.info .summary-icon {
+  background: color-mix(in srgb, var(--color-info) 14%, white);
+  color: var(--color-info);
+}
+
+.summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.summary-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.summary-count {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.warning-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-warning) 12%, white);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.warning-bar app-icon {
+  margin-top: 2px;
+  color: var(--color-warning);
+}
+
+/* --- Pestañas --- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-muted) 16%, white);
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+.tab-count.alert {
+  background: color-mix(in srgb, var(--color-warning) 22%, white);
+}
+
+.tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--color-on-primary);
+}
+
+.section-title {
+  margin: 22px 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* --- Filas --- */
+
+.tip-row {
+  gap: 16px;
+}
+
+.tip-row.has-pending {
+  box-shadow: inset 3px 0 0 var(--color-warning), var(--shadow-card);
+}
+
+.tip-row.clickable {
+  cursor: pointer;
+}
+
+.tip-row.clickable:hover {
+  box-shadow: 0 0 0 1px var(--color-border), var(--shadow-card);
+}
+
+/* Foto + nombre: un solo botón que abre la tarjeta de perfil del repartidor. */
+.driver-ident {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 240px;
+  min-width: 0;
+  padding: 4px 8px 4px 4px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.driver-ident:hover,
+.driver-ident:focus-visible {
+  outline: none;
+  background: var(--color-surface-variant);
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.driver-ident .row-info {
+  flex: 1 1 auto;
+}
+
+.bank-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 1 200px;
+  min-width: 160px;
+}
+
+.bank-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.bank-ok app-icon {
+  color: var(--color-success);
+}
+
+.pill-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--color-warning) 18%, white);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.amount-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.amount {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.amount.zero {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.amount.ok {
+  color: var(--color-success);
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.pay-btn {
+  flex-shrink: 0;
+}
+
+/* --- Modal de pago --- */
+
+.pay-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  text-align: center;
+}
+
+.pay-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.bank-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.bank-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.bank-line span {
+  width: 64px;
+  color: var(--color-text-muted);
+}
+
+.bank-line .icon-btn {
+  padding: 2px 6px;
+  font-size: 0.95rem;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.orders-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.orders-table td .small {
+  display: block;
+}
+
+.orders-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .amount-col {
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .pay-btn {
+    width: 100%;
+  }
+}

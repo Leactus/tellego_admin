@@ -36,6 +36,16 @@
   color: var(--color-text-muted);
 }
 
+.row-bank-logo {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
 .billing-form {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

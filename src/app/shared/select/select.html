@@ -9,7 +9,12 @@
     aria-haspopup="listbox"
     (click)="toggle()"
   >
-    <span class="select-value" [class.placeholder]="!selectedLabel">{{ selectedLabel ?? placeholder }}</span>
+    <span class="select-value" [class.placeholder]="!selectedLabel">
+      @if (selectedLabel && selectedImage) {
+        <img class="select-option-image" [src]="selectedImage" alt="" />
+      }
+      <span class="select-option-label">{{ selectedLabel ?? placeholder }}</span>
+    </span>
     <app-icon name="chevron-down" class="select-chevron" />
   </button>
 
@@ -51,7 +56,10 @@
             [class.selected]="isSelected(option)"
             (click)="selectOption(option)"
           >
-            {{ option.label }}
+            @if (option.image) {
+              <img class="select-option-image" [src]="option.image" alt="" loading="lazy" />
+            }
+            <span class="select-option-label">{{ option.label }}</span>
           </div>
         </cdk-virtual-scroll-viewport>
       } @else {
@@ -64,7 +72,10 @@
               [class.selected]="isSelected(option)"
               (click)="selectOption(option)"
             >
-              {{ option.label }}
+              @if (option.image) {
+                <img class="select-option-image" [src]="option.image" alt="" loading="lazy" />
+              }
+              <span class="select-option-label">{{ option.label }}</span>
             </div>
           }
         </div>

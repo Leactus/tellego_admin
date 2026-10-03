@@ -8,6 +8,7 @@ import {
   PlatformApayCredencial,
   PlatformBankAccount,
   PlatformBankName,
+  bankLogoUrl,
 } from '../../../core/models/company.model';
 import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
@@ -17,7 +18,11 @@ import { ConfirmService } from '../../../shared/confirm/confirm.service';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { PendingActions } from '../../../shared/pending-actions';
 
-const BANK_OPTIONS: SelectOption<PlatformBankName>[] = PLATFORM_BANK_NAMES.map((name) => ({ value: name, label: name }));
+const BANK_OPTIONS: SelectOption<PlatformBankName>[] = PLATFORM_BANK_NAMES.map((name) => ({
+  value: name,
+  label: name,
+  image: bankLogoUrl(name),
+}));
 const ACCOUNT_TYPE_OPTIONS: SelectOption<'checking' | 'savings'>[] = [
   { value: 'checking', label: 'Cuenta corriente' },
   { value: 'savings', label: 'Cuenta de ahorro' },
@@ -42,6 +47,7 @@ export class CuentasPago implements OnInit {
   private readonly confirm = inject(ConfirmService);
 
   readonly bankOptions = BANK_OPTIONS;
+  readonly bankLogoUrl = bankLogoUrl;
   readonly accountTypeOptions = ACCOUNT_TYPE_OPTIONS;
   /** Fijo por deploy (environment.apiUrl) — se pega en el campo "Endpoint" del perfil de APay de la
    * cuenta de la plataforma. Es EL MISMO endpoint que usan las cuentas APay de cada negocio (ver

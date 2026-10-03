@@ -144,6 +144,28 @@ export const PLATFORM_BANK_NAMES = [
 ] as const;
 export type PlatformBankName = (typeof PLATFORM_BANK_NAMES)[number];
 
+/** Bucket público (nuestro) con los logos de los bancos de El Salvador — mismo que usa la app de repartidor. */
+const BANK_LOGO_BASE_URL = 'https://storage.googleapis.com/aventu-pay/aventupay/bancos';
+
+/** Archivo del logo en el bucket de cada banco del catálogo. */
+const BANK_LOGO_FILENAMES: Partial<Record<string, string>> = {
+  'Banco Agrícola': 'agricola.png',
+  'BAC Credomatic': 'bac.png',
+  'Banco Cuscatlán': 'cusca.jpeg',
+  'Banco Davivienda Salvadoreño': 'davivienda.jpeg',
+  'Banco Promerica': 'promerica.png',
+  'Banco Azul': 'bazul.png',
+  'Banco Hipotecario': 'hipotecario.jpeg',
+  'Banco de Fomento Agropecuario (BFA)': 'bfa.jpeg',
+  'Banco Industrial El Salvador': 'bi.png',
+};
+
+/** null si el banco no tiene logo (ej. Banco G&T Continental) — quien lo use muestra un ícono genérico. */
+export function bankLogoUrl(bankName: string): string | null {
+  const filename = BANK_LOGO_FILENAMES[bankName];
+  return filename ? `${BANK_LOGO_BASE_URL}/${filename}` : null;
+}
+
 /** Cuenta bancaria de la EMPRESA MADRE — se muestra a los negocios en /negocio/pagos como forma de pago por transferencia. */
 export interface PlatformBankAccount {
   id: number;

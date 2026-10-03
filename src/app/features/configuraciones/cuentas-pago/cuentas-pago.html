@@ -20,7 +20,11 @@
       <div class="list">
         @for (account of accounts(); track account.id) {
           <div class="row">
-            <app-icon name="credit-card" class="row-icon" />
+            @if (bankLogoUrl(account.bankName); as logo) {
+              <img class="row-bank-logo" [src]="logo" alt="" />
+            } @else {
+              <app-icon name="credit-card" class="row-icon" />
+            }
             <div class="row-info">
               <span class="row-title">{{ account.bankName }} · {{ accountTypeLabel(account.accountType) }}</span>
               <span class="muted">{{ account.accountNumber }} — {{ account.accountHolder }}</span>

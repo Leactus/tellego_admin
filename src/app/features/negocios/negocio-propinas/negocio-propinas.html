@@ -1,0 +1,278 @@
+<button type="button" class="back-link" (click)="goBack()">&larr; Volver al negocio</button>
+
+<h1>Propinas de repartidores</h1>
+<p class="muted intro">
+  {{ company()?.name }} — propinas pagadas con <strong>tarjeta o transferencia</strong> en pedidos que entregaron
+  <strong>sus propios repartidores</strong>. Ese dinero entra a la cuenta del negocio y es el negocio quien se las paga
+  (lo registra desde su panel). Solo lectura, para revisar reclamos. Las propinas de repartidores freelance las paga la
+  plataforma en <strong>Desembolsos</strong> y no aparecen aquí.
+</p>
+
+@if (showStoreFilter()) {
+  <div class="filters">
+    <app-select
+      class="filter-select"
+      [(ngModel)]="storeFilter"
+      (ngModelChange)="onStoreChange()"
+      [options]="storeFilterOptions()"
+    />
+  </div>
+}
+
+@if (boardLoading()) {
+  <app-skeleton variant="list" [rows]="4" />
+} @else if (board(); as b) {
+  <div class="summary-row">
+    <div class="summary-card warning">
+      <div class="summary-icon"><app-icon name="clock" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Pendiente de pagar</span>
+        <span class="summary-amount">{{ money(b.totals.pendingTips) }}</span>
+        <span class="summary-count">{{ b.totals.pendingOrders }} pedido(s) con propina</span>
+      </div>
+    </div>
+    <div class="summary-card info">
+      <div class="summary-icon"><app-icon name="users" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Repartidores con saldo</span>
+        <span class="summary-amount">{{ b.totals.driversWithPending }}</span>
+        <span class="summary-count">de {{ b.data.length }} repartidor(es)</span>
+      </div>
+    </div>
+    <div class="summary-card" [class.error]="b.totals.missingBankAccount > 0" [class.success]="b.totals.missingBankAccount === 0">
+      <div class="summary-icon"><app-icon name="credit-card" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Sin cuenta bancaria</span>
+        <span class="summary-amount">{{ b.totals.missingBankAccount }}</span>
+        <span class="summary-count">
+          {{ b.totals.missingBankAccount === 0 ? 'Todos registraron su cuenta' : 'el negocio no les puede pagar aún' }}
+        </span>
+      </div>
+    </div>
+    <div class="summary-card success">
+      <div class="summary-icon"><app-icon name="check-circle" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Pagado este mes</span>
+        <span class="summary-amount">{{ money(b.totals.paidThisMonth) }}</span>
+        <span class="summary-count">Total histórico: {{ money(historyAmount()) }}</span>
+      </div>
+    </div>
+  </div>
+
+  @if (b.totals.missingBankWithPending > 0) {
+    <div class="warning-bar">
+      <app-icon name="info-circle" />
+      <span>
+        {{ b.totals.missingBankWithPending }}
+        {{ b.totals.missingBankWithPending === 1 ? 'repartidor tiene' : 'repartidores tienen' }} propinas pendientes pero
+        sin cuenta bancaria registrada — el negocio no puede registrarle el pago hasta que la agregue en su app
+        (<strong>Perfil › Mis pagos y cuenta bancaria</strong>).
+      </span>
+    </div>
+  }
+}
+
+<div class="tabs">
+  <button type="button" class="tab" [class.active]="tab() === 'pendientes'" (click)="setTab('pendientes')">
+    Por pagar
+    <span class="tab-count" [class.alert]="withPending().length > 0">{{ withPending().length }}</span>
+  </button>
+  <button type="button" class="tab" [class.active]="tab() === 'pagos'" (click)="setTab('pagos')">
+    Pagos realizados
+    <span class="tab-count">{{ historyTotal() }}</span>
+  </button>
+</div>
+
+@if (tab() === 'pendientes') {
+  @if (boardLoading()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if ((board()?.data ?? []).length === 0) {
+    <app-empty-state
+      variant="no-data"
+      title="Este negocio no tiene repartidores propios."
+      hint="Si sus pedidos los llevan repartidores freelance, sus propinas se revisan en Desembolsos."
+      icon="truck"
+    />
+  } @else {
+    @if (withPending().length === 0) {
+      <app-empty-state variant="no-data" title="El negocio está al día: no debe propinas a ningún repartidor." icon="check-circle" />
+    }
+
+    <div class="list">
+      @for (row of withPending(); track row.driver.id) {
+        <ng-container *ngTemplateOutlet="driverRow; context: { $implicit: row }" />
+      }
+    </div>
+
+    @if (withoutPending().length > 0) {
+      <h2 class="section-title">Sin saldo pendiente</h2>
+      <div class="list">
+        @for (row of withoutPending(); track row.driver.id) {
+          <ng-container *ngTemplateOutlet="driverRow; context: { $implicit: row }" />
+        }
+      </div>
+    }
+  }
+} @else {
+  @if (historyLoading()) {
+    <app-skeleton variant="list" [rows]="5" />
+  } @else if (history().length === 0) {
+    <app-empty-state variant="no-data" title="El negocio todavía no registró ningún pago de propinas." icon="credit-card" />
+  } @else {
+    <p class="muted small">Total pagado por el negocio: <strong>{{ money(historyAmount()) }}</strong></p>
+    <div class="list">
+      @for (payout of history(); track payout.id) {
+        <div class="row tip-row clickable" (click)="openPayoutOrders(payout)">
+          <app-user-avatar
+            [src]="payout.driver?.user?.avatarUrl"
+            [name]="payout.driver?.user?.name"
+            [size]="40"
+            [zoomable]="false"
+          />
+          <div class="row-info">
+            <span class="row-title">{{ payout.driver?.user?.name ?? 'Repartidor #' + payout.driverId }}</span>
+            <span class="muted small">
+              {{ payout.bankName }} •••• {{ last4(payout.accountNumber) }}
+              @if (payout.reference) {
+                · Ref. {{ payout.reference }}
+              }
+              @if (payout.registeredBy) {
+                · registró {{ payout.registeredBy.name }}
+              }
+            </span>
+            @if (payout.note) {
+              <span class="muted small">{{ payout.note }}</span>
+            }
+          </div>
+          <div class="amount-col">
+            <span class="amount ok">{{ money(payout.amount) }}</span>
+            <span class="muted small">{{ payout.ordersCount }} pedido(s)</span>
+          </div>
+          <div class="amount-col">
+            <span class="row-title">{{ formatShortDate(payout.paidAt) }}</span>
+            <span class="muted small">registrado {{ formatShortDateTime(payout.createdAt) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (historyTotal() > 0) {
+    <app-pager
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="historyTotal()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+}
+
+<!-- Fila de un repartidor (con o sin saldo). -->
+<ng-template #driverRow let-row>
+  <div class="row tip-row" [class.has-pending]="row.pending.tips > 0">
+    <button type="button" class="driver-ident" (click)="avatar.openViewer($event)" title="Ver perfil del repartidor">
+      <app-user-avatar
+        #avatar
+        [selfTrigger]="false"
+        [src]="row.driver.avatarUrl"
+        [name]="row.driver.name"
+        [subtitle]="typeLabel(row.driver.type)"
+        [phone]="row.driver.phone"
+        [size]="44"
+      />
+      <span class="row-info">
+        <span class="row-title">{{ row.driver.name }}</span>
+        <span class="muted small">
+          {{ typeLabel(row.driver.type) }}
+          @if (row.driver.storeName) {
+            · {{ row.driver.storeName }}
+          }
+          @if (row.driver.phone) {
+            · {{ row.driver.phone }}
+          }
+        </span>
+      </span>
+    </button>
+
+    <div class="bank-col">
+      @if (row.bankAccount; as bank) {
+        <span class="bank-ok"><app-icon name="check-circle" /> {{ bank.bankName }}</span>
+        <span class="muted small">{{ accountTypeLabel(bank.accountType) }} •••• {{ last4(bank.accountNumber) }}</span>
+      } @else {
+        <span class="pill pill-warning"><app-icon name="info-circle" /> Sin cuenta bancaria</span>
+      }
+    </div>
+
+    <div class="amount-col">
+      <span class="amount" [class.zero]="row.pending.tips <= 0">{{ money(row.pending.tips) }}</span>
+      @if (row.pending.tips > 0) {
+        <button type="button" class="link-btn" (click)="openPendingOrders(row)">
+          pendiente · {{ row.pending.count }} pedido(s)
+        </button>
+      } @else {
+        <span class="muted small">nada pendiente</span>
+      }
+    </div>
+
+    <div class="amount-col">
+      <span class="amount small-amount ok">{{ money(row.paidTotal.amount) }}</span>
+      <span class="muted small">
+        @if (row.lastPayout) {
+          pagado · último {{ formatShortDate(row.lastPayout.paidAt) }}
+        } @else {
+          nunca le registraron un pago
+        }
+      </span>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Pedidos de lo pendiente / de un pago -->
+@if (ordersModal(); as m) {
+  <div class="modal-backdrop" (click)="closeOrders()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ m.title }}</h2>
+          <span class="muted small">{{ m.subtitle }}</span>
+        </div>
+        <button class="modal-close" (click)="closeOrders()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        @if (m.orders === null) {
+          <app-skeleton variant="list" [rows]="4" [avatar]="false" />
+        } @else if (m.orders.length === 0) {
+          <p class="muted">Sin pedidos.</p>
+        } @else {
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Entregado</th>
+                <th>Pago</th>
+                <th class="num">Propina</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of m.orders; track o.orderId) {
+                <tr>
+                  <td>
+                    #{{ o.orderPublicId }}
+                    @if (o.storeName) {
+                      <span class="muted small">{{ o.storeName }}</span>
+                    }
+                  </td>
+                  <td>{{ formatShortDateTime(o.deliveredAt) }}</td>
+                  <td>{{ o.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia' }}</td>
+                  <td class="num"><strong>{{ money(o.tip) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </div>
+}

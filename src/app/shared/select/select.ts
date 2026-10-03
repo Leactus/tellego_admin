@@ -7,6 +7,8 @@ import { Icon } from '../icon/icon';
 export interface SelectOption<T = unknown> {
   value: T;
   label: string;
+  /** Imagen opcional (ej. logo de banco) que se muestra a la izquierda del label, en la lista y en el disparador. */
+  image?: string | null;
 }
 
 /** A partir de cuántas opciones se muestra el buscador dentro del panel. */
@@ -94,6 +96,10 @@ export class Select implements ControlValueAccessor {
     const fromOptions = this.options.find((o) => o.value === this.value)?.label;
     if (fromOptions !== undefined) return fromOptions;
     return this.remote ? this.selectedLabelCache : null;
+  }
+
+  protected get selectedImage(): string | null {
+    return this.options.find((o) => o.value === this.value)?.image ?? null;
   }
 
   protected get showSearch(): boolean {
