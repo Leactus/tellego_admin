@@ -89,8 +89,9 @@
 
 <!-- Editor de producto -->
 @if (editorOpen()) {
-  <div class="modal-backdrop" (click)="closeEditor()">
-    <div class="modal modal-editor" (click)="$event.stopPropagation()">
+  <!-- Sin (click) en el backdrop a propósito: un click afuera no cierra el editor (se perdían los datos). -->
+  <div class="modal-backdrop">
+    <div class="modal modal-editor">
       <div class="modal-header">
         <div>
           <h2>{{ editing() ? 'Editar producto' : 'Nuevo producto' }}</h2>
@@ -107,9 +108,41 @@
           <section>
             <h3 class="section-title">Fotos</h3>
             @if (!editing()) {
-              <p class="muted small hint-box">
-                <app-icon name="info-circle" /> Guarda el producto primero y luego podrás subirle hasta 8 fotos.
+              <p class="muted small">
+                Hasta 8 fotos; la primera es la portada. Se suben solas al tocar "Crear producto". Usa fotos claras, con
+                buena luz y fondo limpio — se ven en la tienda en formato cuadrado.
               </p>
+              <div class="gallery">
+                @for (photo of pendingPhotos(); track photo.url; let i = $index; let last = $last) {
+                  <div class="thumb" [class.cover-thumb]="i === 0">
+                    <img [src]="photo.url" alt="" (click)="previewIndex.set(i)" />
+                    @if (i === 0) {
+                      <span class="cover-tag">Portada</span>
+                    }
+                    <div class="thumb-actions">
+                      <button type="button" class="thumb-btn" title="Mover a la izquierda" [disabled]="i === 0" (click)="movePendingPhoto(i, -1)">
+                        <app-icon name="chevron-left" />
+                      </button>
+                      @if (i !== 0) {
+                        <button type="button" class="thumb-btn text" title="Usar como portada" (click)="movePendingPhoto(i, 0, true)">Portada</button>
+                      }
+                      <button type="button" class="thumb-btn" title="Mover a la derecha" [disabled]="last" (click)="movePendingPhoto(i, 1)">
+                        <app-icon name="chevron-right" />
+                      </button>
+                      <button type="button" class="thumb-btn danger" title="Quitar foto" (click)="removePendingPhoto(i)">
+                        <app-icon name="trash" />
+                      </button>
+                    </div>
+                  </div>
+                }
+                @if (pendingPhotos().length < 8) {
+                  <label class="thumb add-thumb">
+                    <app-icon name="camera" />
+                    <span>Agregar fotos</span>
+                    <input type="file" accept="image/*" multiple (change)="onFilesSelected($event)" hidden />
+                  </label>
+                }
+              </div>
             } @else {
               <p class="muted small">
                 La primera es la portada. Usa fotos claras, con buena luz y fondo limpio — se ven en la tienda en formato

@@ -14,8 +14,16 @@ export interface ZoneFeePreview {
 }
 
 export interface ZoneDeliverySettings {
+  /** Precio del galón de gasolina en la zona. */
   fuelPrice: number;
+  /** Rendimiento de referencia de una moto 125cc (km por galón). */
+  kmPerGallon: number;
+  /** Parte del $/km que no es gasolina (tiempo, desgaste). */
+  operatingPerKm: number;
+  /** fuelPrice / kmPerGallon — solo lectura. */
+  fuelPerKm: number;
   baseFare: number;
+  /** Derivado en el backend: operatingPerKm + fuelPerKm. Solo lectura. */
   pricePerKm: number;
   minFee: number;
   driverCommissionPct: number;
@@ -41,7 +49,7 @@ export interface ZonesResponse {
   currency: { code: string; symbol: string };
 }
 
-export type ZoneSettingsPayload = Omit<ZoneDeliverySettings, 'updatedAt'>;
+export type ZoneSettingsPayload = Omit<ZoneDeliverySettings, 'updatedAt' | 'fuelPerKm' | 'pricePerKm'>;
 
 /**
  * Zonas de reparto, sus departamentos y la tarifa de envío. La tarifa la

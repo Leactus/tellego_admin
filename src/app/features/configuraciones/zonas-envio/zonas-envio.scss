@@ -395,6 +395,40 @@
   color: var(--color-text);
 }
 
+/* costo por km derivado (solo lectura) */
+.tariff-modal .readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tariff-modal .readonly-value {
+  padding: 9px 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tariff-modal .calc-line {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.tariff-modal .calc-line strong {
+  color: var(--color-text);
+}
+
+.tariff-modal .split-example {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
 /* preview como tarjetas */
 .preview-group {
   background: var(--color-bg, rgba(0, 0, 0, 0.02));

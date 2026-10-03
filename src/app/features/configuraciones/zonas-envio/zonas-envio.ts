@@ -60,11 +60,15 @@ const TIMEZONE_OPTIONS: SelectOption<string>[] = [
 
 interface ZoneForm {
   fuelPrice: number;
+  kmPerGallon: number;
+  operatingPerKm: number;
   baseFare: number;
-  pricePerKm: number;
   minFee: number;
   driverCommissionPct: number;
 }
+
+/** Ejemplo fijo del reparto (comida $10 + envío $2) que se muestra en el modal de tarifa. */
+const SPLIT_EXAMPLE = { food: 10, fee: 2 };
 
 /**
  * Configuraciones > Zonas de envío. La tarifa de envío la controla 100% la
@@ -165,13 +169,7 @@ export class ZonasEnvio implements OnInit {
       const forms: Record<number, ZoneForm> = {};
       const preview: Record<number, ZoneFeePreview[]> = {};
       for (const zone of res.data) {
-        forms[zone.id] = {
-          fuelPrice: Number(zone.settings?.fuelPrice ?? 0),
-          baseFare: Number(zone.settings?.baseFare ?? 0),
-          pricePerKm: Number(zone.settings?.pricePerKm ?? 0),
-          minFee: Number(zone.settings?.minFee ?? 0),
-          driverCommissionPct: Number(zone.settings?.driverCommissionPct ?? 0),
-        };
+        forms[zone.id] = toForm(zone);
         preview[zone.id] = zone.preview;
       }
       this.forms.set(forms);
@@ -193,13 +191,7 @@ export class ZonasEnvio implements OnInit {
     // Reinicia el form desde los valores guardados por si se editó sin guardar antes.
     this.forms.update((all) => ({
       ...all,
-      [zone.id]: {
-        fuelPrice: Number(zone.settings?.fuelPrice ?? 0),
-        baseFare: Number(zone.settings?.baseFare ?? 0),
-        pricePerKm: Number(zone.settings?.pricePerKm ?? 0),
-        minFee: Number(zone.settings?.minFee ?? 0),
-        driverCommissionPct: Number(zone.settings?.driverCommissionPct ?? 0),
-      },
+      [zone.id]: toForm(zone),
     }));
     this.recalc(zone.id);
     this.tariffModalZone.set(zone);
@@ -209,12 +201,32 @@ export class ZonasEnvio implements OnInit {
     this.tariffModalZone.set(null);
   }
 
+  readonly splitExample = SPLIT_EXAMPLE;
+
+  /** Gasolina por km = galón ÷ km por galón (misma fórmula que utils/deliveryFee.ts#fuelCostPerKm). */
+  fuelPerKm(f: ZoneForm): number {
+    const kmpg = Number(f.kmPerGallon);
+    return kmpg > 0 ? round4(Number(f.fuelPrice) / kmpg) : 0;
+  }
+
+  /** $/km que se le cobra al cliente = parte operativa + gasolina por km. */
+  pricePerKm(f: ZoneForm): number {
+    return round4(Number(f.operatingPerKm) + this.fuelPerKm(f));
+  }
+
+  /** Reparto del envío de ejemplo ($2) con el % de descuento que se está editando. */
+  exampleSplit(f: ZoneForm): { driver: number; cut: number } {
+    const cut = round2(SPLIT_EXAMPLE.fee * (Number(f.driverCommissionPct) / 100));
+    return { driver: round2(SPLIT_EXAMPLE.fee - cut), cut };
+  }
+
   /** Recalcula el preview de una zona en el navegador mientras se edita (misma fórmula que el backend). */
   recalc(zoneId: number): void {
     const f = this.forms()[zoneId];
     if (!f) return;
+    const perKm = this.pricePerKm(f);
     const rows: ZoneFeePreview[] = [0, 3, 6].map((km) => {
-      const raw = Number(f.baseFare) + Number(f.pricePerKm) * km;
+      const raw = Number(f.baseFare) + perKm * km;
       const customerFee = round2(Math.max(Number(f.minFee), raw));
       const platformCut = round2(customerFee * (Number(f.driverCommissionPct) / 100));
       return { distanceKm: km, customerFee, platformCut, driverEarning: round2(customerFee - platformCut) };
@@ -226,7 +238,7 @@ export class ZonasEnvio implements OnInit {
     const f = this.forms()[zone.id];
     if (!f) return;
     if (
-      [f.fuelPrice, f.baseFare, f.pricePerKm, f.minFee, f.driverCommissionPct].some(
+      [f.fuelPrice, f.kmPerGallon, f.operatingPerKm, f.baseFare, f.minFee, f.driverCommissionPct].some(
         (n) => n == null || Number.isNaN(Number(n)) || Number(n) < 0,
       )
     ) {
@@ -234,7 +246,11 @@ export class ZonasEnvio implements OnInit {
       return;
     }
     if (Number(f.driverCommissionPct) > 100) {
-      this.toast.error('El porcentaje que retiene la plataforma no puede pasar de 100');
+      this.toast.error('El descuento de la plataforma no puede pasar de 100%');
+      return;
+    }
+    if (!(Number(f.kmPerGallon) > 0)) {
+      this.toast.error('El rendimiento de la moto (km por galón) tiene que ser mayor a 0');
       return;
     }
 
@@ -242,8 +258,9 @@ export class ZonasEnvio implements OnInit {
     try {
       const saved = await this.zonesService.updateSettings(zone.id, {
         fuelPrice: Number(f.fuelPrice),
+        kmPerGallon: Number(f.kmPerGallon),
+        operatingPerKm: Number(f.operatingPerKm),
         baseFare: Number(f.baseFare),
-        pricePerKm: Number(f.pricePerKm),
         minFee: Number(f.minFee),
         driverCommissionPct: Number(f.driverCommissionPct),
       });
@@ -421,4 +438,21 @@ export class ZonasEnvio implements OnInit {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function round4(n: number): number {
+  return Math.round(n * 10000) / 10000;
+}
+
+/** Form de tarifa a partir de lo guardado (rendimiento 120 km/galón por defecto si la zona es nueva). */
+function toForm(zone: Zone): ZoneForm {
+  const s = zone.settings;
+  return {
+    fuelPrice: Number(s?.fuelPrice ?? 0),
+    kmPerGallon: Number(s?.kmPerGallon ?? 120),
+    operatingPerKm: Number(s?.operatingPerKm ?? 0),
+    baseFare: Number(s?.baseFare ?? 0),
+    minFee: Number(s?.minFee ?? 0),
+    driverCommissionPct: Number(s?.driverCommissionPct ?? 0),
+  };
 }

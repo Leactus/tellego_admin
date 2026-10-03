@@ -92,10 +92,10 @@
                 <span class="warn-pill">Falta configurar la tarifa</span>
               } @else {
                 <span class="tag">Base {{ currencySymbol() }}{{ zone.settings!.baseFare.toFixed(2) }}</span>
-                <span class="tag">{{ currencySymbol() }}{{ zone.settings!.pricePerKm.toFixed(2) }}/km</span>
+                <span class="tag">{{ currencySymbol() }}{{ zone.settings!.pricePerKm.toFixed(4) }}/km</span>
                 <span class="tag">Mín {{ currencySymbol() }}{{ zone.settings!.minFee.toFixed(2) }}</span>
-                <span class="tag tag-accent">Plataforma {{ zone.settings!.driverCommissionPct.toFixed(0) }}%</span>
-                <span class="tag tag-muted">Gasolina {{ currencySymbol() }}{{ zone.settings!.fuelPrice.toFixed(2) }}</span>
+                <span class="tag tag-accent">Descuento {{ zone.settings!.driverCommissionPct.toFixed(0) }}%</span>
+                <span class="tag tag-muted">Gasolina {{ currencySymbol() }}{{ zone.settings!.fuelPrice.toFixed(2) }}/gal · {{ zone.settings!.kmPerGallon.toFixed(0) }} km/gal</span>
               }
             </div>
             <button class="btn-ghost btn-sm" (click)="openTariffModal(zone)">Editar tarifa</button>
@@ -124,13 +124,16 @@
   <section class="card intro">
     <h2>Cómo se calcula el envío</h2>
     <div class="formula-grid">
+      <div><span class="k">Costo por km</span><span class="v">costo sin gasolina + (precio del galón ÷ km por galón)</span></div>
       <div><span class="k">Cliente paga</span><span class="v">máx(mínimo, base + $/km × distancia)</span></div>
-      <div><span class="k">Plataforma retiene</span><span class="v">% del envío</span></div>
-      <div><span class="k">Repartidor gana</span><span class="v">envío − lo que retiene la plataforma</span></div>
+      <div><span class="k">Descuento de la plataforma</span><span class="v">% del envío (solo del envío)</span></div>
+      <div><span class="k">Repartidor gana</span><span class="v">envío − descuento de la plataforma</span></div>
     </div>
     <ul class="muted formula-notes">
       <li>La <strong>distancia</strong> es en línea recta (Haversine) entre la sucursal y la dirección de entrega.</li>
-      <li>El <strong>precio de la gasolina</strong> es solo un dato de referencia visible: no entra en la fórmula, ajustá la base y el $/km a mano.</li>
+      <li>El <strong>costo por km sigue a la gasolina</strong>: con el rendimiento de una moto 125cc, si sube el galón el envío sube un poco y si baja, baja. Solo se edita el precio del galón.</li>
+      <li>El <strong>descuento</strong> se calcula solo sobre el envío: la comida, la propina y el pago con tarjeta o efectivo no cambian lo que gana el repartidor. Ej.: comida {{ currencySymbol() }}10 + envío {{ currencySymbol() }}2 con 30% → repartidor {{ currencySymbol() }}1.40, plataforma {{ currencySymbol() }}0.60.</li>
+      <li>Cada pedido guarda la gasolina, el $/km, la distancia y el % con que se cobró.</li>
       <li>Si la distancia todavía no se conoce (el cliente no compartió ubicación), se cobra solo la <strong>tarifa base</strong> como estimado.</li>
       <li>El <strong>mínimo</strong> es el piso del envío: nunca baja de ese valor.</li>
     </ul>
@@ -167,14 +170,11 @@
                 </div>
                 <span class="field-hint">Fijo, antes de sumar distancia</span>
               </label>
-              <label>
+              <div class="readonly-field">
                 <span class="field-label">Costo por km</span>
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.pricePerKm" name="tPerKm" (ngModelChange)="recalc(zone.id)" />
-                </div>
-                <span class="field-hint">Por cada km sucursal → cliente</span>
-              </label>
+                <div class="readonly-value">{{ currencySymbol() }}{{ pricePerKm(f).toFixed(4) }}</div>
+                <span class="field-hint">Se calcula con la gasolina (abajo)</span>
+              </div>
               <label>
                 <span class="field-label">Envío mínimo</span>
                 <div class="input-money">
@@ -186,28 +186,68 @@
             </div>
           </div>
 
-          <!-- Grupo 2: reparto -->
+          <!-- Grupo 2: costo por km según la gasolina -->
+          <div class="group">
+            <div class="group-head">
+              <span class="group-title">Costo por km según la gasolina</span>
+              <span class="group-hint">$/km = sin gasolina + galón ÷ km por galón</span>
+            </div>
+            <div class="group-fields cols-3">
+              <label>
+                <span class="field-label">Precio de la gasolina</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.fuelPrice" name="tFuel" (ngModelChange)="recalc(zone.id)" />
+                </div>
+                <span class="field-hint">Por galón. Al cambiarlo se mueve el $/km</span>
+              </label>
+              <label>
+                <span class="field-label">Rendimiento moto 125cc</span>
+                <div class="input-money suffix">
+                  <input type="number" inputmode="decimal" min="1" step="1" [(ngModel)]="f.kmPerGallon" name="tKmpg" (ngModelChange)="recalc(zone.id)" />
+                  <span>km/gal</span>
+                </div>
+                <span class="field-hint">Km que recorre con un galón</span>
+              </label>
+              <label>
+                <span class="field-label">Costo por km sin gasolina</span>
+                <div class="input-money">
+                  <span>{{ currencySymbol() }}</span>
+                  <input type="number" inputmode="decimal" min="0" step="0.0001" [(ngModel)]="f.operatingPerKm" name="tOpKm" (ngModelChange)="recalc(zone.id)" />
+                </div>
+                <span class="field-hint">Tiempo y desgaste del repartidor</span>
+              </label>
+            </div>
+            <p class="calc-line">
+              {{ currencySymbol() }}{{ (+f.operatingPerKm).toFixed(4) }}
+              + {{ currencySymbol() }}{{ (+f.fuelPrice).toFixed(2) }} ÷ {{ +f.kmPerGallon }} km
+              ({{ currencySymbol() }}{{ fuelPerKm(f).toFixed(4) }} de gasolina)
+              = <strong>{{ currencySymbol() }}{{ pricePerKm(f).toFixed(4) }} por km</strong>
+            </p>
+          </div>
+
+          <!-- Grupo 3: reparto -->
           <div class="group">
             <div class="group-head">
               <span class="group-title">Reparto del envío</span>
             </div>
             <div class="group-fields cols-2">
               <label>
-                <span class="field-label">Comisión de la plataforma</span>
+                <span class="field-label">Descuento de la plataforma</span>
                 <div class="input-money suffix">
                   <input type="number" inputmode="decimal" min="0" max="100" step="0.01" [(ngModel)]="f.driverCommissionPct" name="tPct" (ngModelChange)="recalc(zone.id)" />
                   <span>%</span>
                 </div>
-                <span class="field-hint">El repartidor recibe el resto del envío</span>
+                <span class="field-hint">Se descuenta solo del envío; el repartidor recibe el resto</span>
               </label>
-              <label>
-                <span class="field-label">Precio de la gasolina</span>
-                <div class="input-money">
-                  <span>{{ currencySymbol() }}</span>
-                  <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="f.fuelPrice" name="tFuel" />
+              @if (exampleSplit(f); as ex) {
+                <div class="split-example">
+                  <span class="field-label">Ejemplo</span>
+                  <span>Comida {{ currencySymbol() }}{{ splitExample.food.toFixed(2) }} + envío {{ currencySymbol() }}{{ splitExample.fee.toFixed(2) }}</span>
+                  <span>Repartidor <strong>{{ currencySymbol() }}{{ ex.driver.toFixed(2) }}</strong> · descuento {{ currencySymbol() }}{{ ex.cut.toFixed(2) }}</span>
+                  <span class="field-hint">Igual con tarjeta o efectivo: la comida y el método de pago no tocan este monto</span>
                 </div>
-                <span class="field-hint">Solo referencia — no entra en el cálculo</span>
-              </label>
+              }
             </div>
           </div>
 
@@ -222,7 +262,7 @@
                   <span class="pc-dist">{{ row.distanceKm }} km</span>
                   <div class="pc-line"><span>Cliente paga</span><strong>{{ currencySymbol() }}{{ row.customerFee.toFixed(2) }}</strong></div>
                   <div class="pc-line earn"><span>Repartidor gana</span><strong>{{ currencySymbol() }}{{ row.driverEarning.toFixed(2) }}</strong></div>
-                  <div class="pc-line muted"><span>Plataforma</span><strong>{{ currencySymbol() }}{{ row.platformCut.toFixed(2) }}</strong></div>
+                  <div class="pc-line muted"><span>Descuento</span><strong>{{ currencySymbol() }}{{ row.platformCut.toFixed(2) }}</strong></div>
                 </div>
               }
             </div>

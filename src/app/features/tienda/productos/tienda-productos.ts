@@ -150,7 +150,11 @@ export class TiendaProductos implements OnInit {
   /** Un casillero con spinner por cada foto que se está subiendo. */
   readonly uploadingSlots = computed(() => Array.from({ length: this.uploading() }));
   readonly previewIndex = signal(0);
+  /** Fotos elegidas ANTES de crear el producto: se muestran desde ya y se suben al tocar "Crear producto". */
+  readonly pendingPhotos = signal<{ file: File; url: string }[]>([]);
   form: ProductForm = emptyProductForm();
+  /** Cómo estaba el formulario al abrir / al último guardado — para avisar antes de perder cambios. */
+  private formSnapshot = '';
 
   // --- Promo ---
   readonly promoFormOpen = signal(false);
@@ -219,6 +223,8 @@ export class TiendaProductos implements OnInit {
 
   openNew(): void {
     this.form = emptyProductForm();
+    this.clearPendingPhotos();
+    this.takeSnapshot();
     this.editing.set(null);
     this.promoFormOpen.set(false);
     this.previewIndex.set(0);
@@ -237,14 +243,45 @@ export class TiendaProductos implements OnInit {
       active: product.status === 'active',
       sortOrder: product.sortOrder,
     };
+    this.takeSnapshot();
     this.editing.set(product);
     this.promoFormOpen.set(false);
     this.previewIndex.set(0);
     this.editorOpen.set(true);
   }
 
-  closeEditor(): void {
-    if (this.saving() || this.uploading() > 0) return;
+  private takeSnapshot(): void {
+    this.formSnapshot = JSON.stringify(this.form);
+  }
+
+  /** Datos del producto sin guardar, o una promoción a medio escribir. */
+  hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.form) !== this.formSnapshot || this.promoFormOpen() || this.pendingPhotos().length > 0;
+  }
+
+  /**
+   * El editor solo se cierra con la X o "Cerrar" (nunca con un click afuera), y si hay cambios sin
+   * guardar pide confirmación — así no se pierde lo escrito por un click accidental.
+   */
+  async closeEditor(): Promise<void> {
+    if (this.saving() || this.uploading() > 0) {
+      this.toast.info(this.uploading() > 0 ? 'Espera a que terminen de subir las fotos' : 'Guardando, espera un momento…');
+      return;
+    }
+    if (this.hasUnsavedChanges()) {
+      const ok = await this.confirm.confirm({
+        title: 'Descartar cambios',
+        message: this.editing()
+          ? 'Tienes cambios sin guardar en este producto. Si cierras, se pierden.'
+          : 'Todavía no creaste el producto. Si cierras, se pierde lo que escribiste.',
+        confirmLabel: 'Descartar y cerrar',
+        cancelLabel: 'Seguir editando',
+        variant: 'danger',
+        icon: 'info-circle',
+      });
+      if (!ok) return;
+    }
+    this.clearPendingPhotos();
     this.editorOpen.set(false);
   }
 
@@ -277,12 +314,21 @@ export class TiendaProductos implements OnInit {
       const current = this.editing();
       if (current) {
         this.applyProduct(await this.api.updateProduct(current.id, payload));
+        this.takeSnapshot();
         this.toast.success('Producto guardado');
       } else {
         const created = await this.api.createProduct(payload);
         this.applyProduct(created);
         this.editing.set(created);
-        this.toast.success('Producto creado — ahora agrégale fotos y promociones');
+        this.takeSnapshot();
+        const photos = this.pendingPhotos().map((p) => p.file);
+        this.clearPendingPhotos();
+        if (photos.length > 0) {
+          this.toast.success('Producto creado — subiendo las fotos…');
+          await this.uploadFiles(created.id, photos);
+        } else {
+          this.toast.success('Producto creado — ahora agrégale fotos y promociones');
+        }
       }
     } catch (err) {
       this.toast.error(this.errorMessage(err, 'No se pudo guardar el producto'));
@@ -317,28 +363,62 @@ export class TiendaProductos implements OnInit {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
     input.value = '';
+    if (files.length === 0) return;
     const product = this.editing();
-    if (!product || files.length === 0) return;
 
-    const room = 8 - product.images.length;
+    const current = product ? product.images.length + this.uploading() : this.pendingPhotos().length;
+    const room = 8 - current;
     if (room <= 0) {
       this.toast.error('Máximo 8 fotos por producto');
       return;
     }
     const batch = files.slice(0, room);
-    if (files.length > room) this.toast.info(`Solo se subirán ${room} foto(s): el máximo es 8 por producto`);
+    if (files.length > room) this.toast.info(`Solo se agregarán ${room} foto(s): el máximo es 8 por producto`);
 
-    // Una por una (el backend las re-codifica a WebP); se va viendo cada una al terminar.
-    for (const file of batch) {
+    if (!product) {
+      // Producto todavía sin crear: quedan en espera con vista previa local.
+      this.pendingPhotos.update((list) => [...list, ...batch.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+      return;
+    }
+    await this.uploadFiles(product.id, batch);
+  }
+
+  /** Una por una (el backend las re-codifica a WebP); se va viendo cada una al terminar. */
+  private async uploadFiles(productId: number, files: File[]): Promise<void> {
+    for (const file of files) {
       this.uploading.update((n) => n + 1);
       try {
-        this.applyProduct(await this.api.uploadImage(product.id, file));
+        this.applyProduct(await this.api.uploadImage(productId, file));
       } catch (err) {
         this.toast.error(this.errorMessage(err, `No se pudo subir ${file.name}`));
       } finally {
         this.uploading.update((n) => n - 1);
       }
     }
+  }
+
+  removePendingPhoto(index: number): void {
+    const photo = this.pendingPhotos()[index];
+    if (!photo) return;
+    URL.revokeObjectURL(photo.url);
+    this.pendingPhotos.update((list) => list.filter((_, i) => i !== index));
+    if (this.previewIndex() >= this.pendingPhotos().length) this.previewIndex.set(0);
+  }
+
+  /** Mueve una foto en espera (delta) o la pasa a portada (toCover). */
+  movePendingPhoto(index: number, delta: number, toCover = false): void {
+    const list = [...this.pendingPhotos()];
+    const target = toCover ? 0 : index + delta;
+    if (target < 0 || target >= list.length || target === index) return;
+    const [picked] = list.splice(index, 1);
+    list.splice(target, 0, picked);
+    this.pendingPhotos.set(list);
+    if (toCover) this.previewIndex.set(0);
+  }
+
+  private clearPendingPhotos(): void {
+    for (const photo of this.pendingPhotos()) URL.revokeObjectURL(photo.url);
+    this.pendingPhotos.set([]);
   }
 
   async removeImage(imageId: number): Promise<void> {
@@ -377,7 +457,8 @@ export class TiendaProductos implements OnInit {
   }
 
   previewImages(): string[] {
-    return this.editing()?.images.map((img) => img.imageUrl) ?? [];
+    const product = this.editing();
+    return product ? product.images.map((img) => img.imageUrl) : this.pendingPhotos().map((p) => p.url);
   }
 
   stepPreview(delta: number): void {
