@@ -126,6 +126,10 @@ export const routes: Routes = [
           import('./features/configuraciones/cuentas-pago/cuentas-pago').then((m) => m.CuentasPago),
       },
       {
+        path: 'configuraciones/correos',
+        loadComponent: () => import('./features/configuraciones/correos/correos').then((m) => m.Correos),
+      },
+      {
         path: 'configuraciones/terminos-privacidad',
         loadComponent: () =>
           import('./features/configuraciones/terminos-privacidad/terminos-privacidad').then(

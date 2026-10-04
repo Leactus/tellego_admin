@@ -1,0 +1,290 @@
+<header class="page-head">
+  <h1>Correos</h1>
+  <p class="muted">
+    Los correos que envía la plataforma. Puedes cambiar el texto, el botón y el arte de cada uno, por público.
+    El código, el detalle del pedido y el motivo de rechazo los completa el sistema con los datos reales.
+  </p>
+</header>
+
+@if (isLoading()) {
+  <app-skeleton variant="modal" [rows]="5" />
+} @else {
+  @if (!sendingEnabled()) {
+    <div class="alert">
+      <app-icon name="info-circle" />
+      <span>
+        El envío real todavía no está activo en el servidor (falta <code>RESEND_API_KEY</code>). Puedes editar y ver
+        la vista previa, pero los correos no salen hasta configurarlo.
+      </span>
+    </div>
+  }
+
+  <!-- ===================== Marca ===================== -->
+  <section class="card brand">
+    <div class="card__head">
+      <span class="card__icon"><app-icon name="photo" /></span>
+      <div>
+        <h2>Marca de los correos</h2>
+        <span class="card__sub">Se aplica a todos los correos</span>
+      </div>
+    </div>
+
+    <div class="brand__grid">
+      <div class="brand__logo">
+        <span class="field-label">Logo de la cabecera</span>
+        <div class="logo-preview">
+          @if (settings(); as s) {
+            <img [src]="s.logoUrl" alt="Logo de los correos" />
+          }
+        </div>
+        <p class="hint">Va sobre fondo verde oscuro. Usa un PNG con fondo transparente, idealmente claro o amarillo.</p>
+        <div class="row-actions">
+          <label class="btn-secondary file-btn" [class.disabled]="logoUploading()">
+            <app-icon name="camera" />
+            {{ logoUploading() ? 'Subiendo…' : 'Cambiar logo' }}
+            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" hidden />
+          </label>
+          @if (settings()?.hasCustomLogo) {
+            <button type="button" class="btn-link" [disabled]="logoUploading()" (click)="removeLogo()">
+              Usar el original
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="brand__fields">
+        <label>
+          <span class="field-label">Texto del pie</span>
+          <input
+            type="text"
+            maxlength="500"
+            [ngModel]="brandFooter()"
+            (ngModelChange)="brandFooter.set($event)"
+            name="brandFooter"
+            placeholder="Recibes este correo porque tienes una cuenta en Tellego."
+          />
+        </label>
+        <label>
+          <span class="field-label">Correo de soporte (opcional)</span>
+          <input
+            type="email"
+            [ngModel]="brandSupport()"
+            (ngModelChange)="brandSupport.set($event)"
+            name="brandSupport"
+            placeholder="soporte@tudominio.com"
+          />
+        </label>
+        <div class="row-actions">
+          <button class="btn-primary" [disabled]="brandSaving()" (click)="saveBrand()">
+            {{ brandSaving() ? 'Guardando…' : 'Guardar marca' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== Público ===================== -->
+  <div class="audience-tabs" role="tablist">
+    @for (aud of audiences; track aud) {
+      <button
+        type="button"
+        role="tab"
+        class="audience-tab"
+        [class.active]="activeAudience() === aud"
+        [attr.aria-selected]="activeAudience() === aud"
+        (click)="setAudience(aud)"
+      >
+        <span class="audience-tab__icon">
+          <app-icon [name]="aud === 'cliente' ? 'users' : aud === 'repartidor' ? 'truck' : 'store'" />
+        </span>
+        <span>{{ audienceLabels[aud] }}</span>
+        <span class="audience-tab__count">{{ countFor(aud) }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="template-list">
+    @for (t of visibleTemplates(); track t.key) {
+      <article class="template" [class.template--active]="editingKey() === t.key" [class.template--off]="!t.isEnabled">
+        <span class="template__icon"><app-icon [name]="blockIcon(t.block)" /></span>
+        <div class="template__body">
+          <div class="template__title">
+            <h3>{{ t.name }}</h3>
+            @if (t.isCustomized) {
+              <span class="badge badge--custom">Personalizado</span>
+            }
+            @if (t.bannerUrl) {
+              <span class="badge">Con arte</span>
+            }
+            @if (!t.isEnabled) {
+              <span class="badge badge--off">Desactivado</span>
+            }
+          </div>
+          <p class="template__trigger">{{ t.trigger }}</p>
+          <p class="template__subject"><strong>Asunto:</strong> {{ t.content.subject }}</p>
+        </div>
+        <div class="template__actions">
+          @if (t.canDisable) {
+            <span class="switch-wrap" title="Activar o desactivar este correo">
+              <app-toggle-switch [checked]="t.isEnabled" (checkedChange)="toggleEnabled(t, $event)" />
+            </span>
+          } @else {
+            <span class="always" title="Sin este correo nadie podría entrar a su cuenta">Siempre activo</span>
+          }
+          <button class="btn-primary btn-sm" (click)="openEditor(t.key)">
+            <app-icon name="edit" /> Editar
+          </button>
+        </div>
+      </article>
+    }
+  </div>
+
+  <!-- ===================== Editor ===================== -->
+  @if (editing(); as t) {
+    @if (draft(); as d) {
+      <section class="editor card" id="email-editor">
+        <div class="editor__head">
+          <div>
+            <span class="editor__eyebrow">{{ audienceLabels[t.audience] }}</span>
+            <h2>{{ t.name }}</h2>
+          </div>
+          <button type="button" class="icon-btn" (click)="closeEditor()" aria-label="Cerrar editor">
+            <app-icon name="close" />
+          </button>
+        </div>
+
+        <div class="editor__grid">
+          <!-- Formulario -->
+          <div class="editor__form">
+            <label>
+              <span class="field-label">Asunto</span>
+              <input type="text" maxlength="200" [ngModel]="d.subject" (ngModelChange)="patchDraft('subject', $event)" name="subject" />
+            </label>
+            <label>
+              <span class="field-label">Texto de vista previa <small>(lo que se ve en el buzón al lado del asunto)</small></span>
+              <input type="text" maxlength="255" [ngModel]="d.preheader" (ngModelChange)="patchDraft('preheader', $event)" name="preheader" />
+            </label>
+
+            <div class="banner-field">
+              <span class="field-label">Arte / banner <small>(opcional, va debajo del logo)</small></span>
+              @if (t.bannerUrl) {
+                <img class="banner-thumb" [src]="t.bannerUrl" alt="Arte del correo" />
+              } @else {
+                <div class="banner-empty">
+                  <app-icon name="photo" />
+                  <span>Sin arte. Recomendado: 1200 × 500 px, JPG o PNG.</span>
+                </div>
+              }
+              <div class="row-actions">
+                <label class="btn-secondary file-btn" [class.disabled]="bannerUploading()">
+                  <app-icon name="camera" />
+                  {{ bannerUploading() ? 'Subiendo…' : t.bannerUrl ? 'Cambiar arte' : 'Subir arte' }}
+                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onBannerSelected($event)" hidden />
+                </label>
+                @if (t.bannerUrl) {
+                  <button type="button" class="btn-link" [disabled]="bannerUploading()" (click)="removeBanner()">Quitar</button>
+                }
+              </div>
+            </div>
+
+            <label>
+              <span class="field-label">Título</span>
+              <input type="text" maxlength="200" [ngModel]="d.heading" (ngModelChange)="patchDraft('heading', $event)" name="heading" />
+            </label>
+            <label>
+              <span class="field-label">Texto principal</span>
+              <textarea rows="5" [ngModel]="d.body" (ngModelChange)="patchDraft('body', $event)" name="body"></textarea>
+            </label>
+
+            @if (t.block !== 'none') {
+              <div class="fixed-block">
+                <app-icon name="info-circle" />
+                <span>Aquí el sistema agrega <strong>{{ blockLabels[t.block] }}</strong>.</span>
+              </div>
+            }
+
+            <label>
+              <span class="field-label">Texto final</span>
+              <textarea rows="3" [ngModel]="d.closing" (ngModelChange)="patchDraft('closing', $event)" name="closing"></textarea>
+            </label>
+
+            <div class="two-cols">
+              <label>
+                <span class="field-label">Botón <small>(opcional)</small></span>
+                <input type="text" maxlength="80" [ngModel]="d.buttonLabel" (ngModelChange)="patchDraft('buttonLabel', $event)" name="buttonLabel" placeholder="Ej. Abrir la app" />
+              </label>
+              <label>
+                <span class="field-label">Enlace del botón</span>
+                <input type="url" maxlength="500" [ngModel]="d.buttonUrl" (ngModelChange)="patchDraft('buttonUrl', $event)" name="buttonUrl" placeholder="https://…" />
+              </label>
+            </div>
+
+            <div class="variables">
+              <span class="field-label">Variables <small>(toca para copiar)</small></span>
+              <div class="chips">
+                @for (v of t.variables; track v.name) {
+                  <button type="button" class="chip" [title]="v.description" (click)="copyVariable(v.name)">
+                    {{ token(v.name) }}
+                  </button>
+                }
+              </div>
+              <p class="hint">
+                Una línea en blanco separa párrafos. Escribe <code>**así**</code> para poner texto en negrita.
+              </p>
+            </div>
+
+            <div class="editor__actions">
+              <button class="btn-primary" [disabled]="saving() || !isDirty()" (click)="save()">
+                {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+              </button>
+              <button class="btn-secondary" [disabled]="sendingTest()" (click)="sendTest()">
+                <app-icon name="send" /> {{ sendingTest() ? 'Enviando…' : 'Enviarme una prueba' }}
+              </button>
+              @if (t.isCustomized) {
+                <button class="btn-link danger" (click)="resetTemplate()">Restaurar original</button>
+              }
+            </div>
+            @if (t.updatedBy && t.updatedAt) {
+              <p class="hint">Última edición: {{ t.updatedBy.name }}</p>
+            }
+          </div>
+
+          <!-- Vista previa -->
+          <div class="editor__preview">
+            <div class="preview-toolbar">
+              <div class="segmented" role="group" aria-label="Tema">
+                <button type="button" [class.on]="!previewDark()" (click)="setPreviewDark(false)">Claro</button>
+                <button type="button" [class.on]="previewDark()" (click)="setPreviewDark(true)">Oscuro</button>
+              </div>
+              <div class="segmented" role="group" aria-label="Dispositivo">
+                <button type="button" [class.on]="!previewMobile()" (click)="previewMobile.set(false)">PC</button>
+                <button type="button" [class.on]="previewMobile()" (click)="previewMobile.set(true)">Celular</button>
+              </div>
+              @if (previewLoading()) {
+                <span class="preview-status">Actualizando…</span>
+              }
+            </div>
+
+            <div class="inbox-line">
+              <span class="inbox-line__from">Tellego</span>
+              <span class="inbox-line__subject">{{ previewSubject() }}</span>
+            </div>
+
+            @if (previewError(); as err) {
+              <p class="preview-error"><app-icon name="x-circle" /> {{ err }}</p>
+            }
+
+            <div class="preview-frame" [class.preview-frame--mobile]="previewMobile()" [class.preview-frame--dark]="previewDark()">
+              @if (previewHtml(); as html) {
+                <iframe [srcdoc]="html" sandbox="" title="Vista previa del correo"></iframe>
+              } @else {
+                <app-skeleton variant="card" />
+              }
+            </div>
+            <p class="hint center">Vista previa con datos de ejemplo. Se actualiza mientras escribes, sin guardar.</p>
+          </div>
+        </div>
+      </section>
+    }
+  }
+}

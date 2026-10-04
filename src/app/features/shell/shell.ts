@@ -76,6 +76,7 @@ export class Shell {
         { path: 'configuraciones/zonas-envio', label: 'Zonas de envío', icon: 'map-pin' },
         { path: 'configuraciones/cuentas-pago', label: 'Cuentas de pago', icon: 'credit-card' },
         { path: 'configuraciones/terminos-privacidad', label: 'Términos y privacidad', icon: 'receipt' },
+        { path: 'configuraciones/correos', label: 'Correos', icon: 'mail' },
       ],
     },
   ];
