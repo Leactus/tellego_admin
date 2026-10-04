@@ -335,8 +335,26 @@ label.check input {
   }
 }
 
-.field-row .field-options {
+.field-row .field-options,
+.field-row .field-full {
   flex: 1 1 100%;
+}
+
+.field-extra {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+}
+
+.field-extra .field-format {
+  flex: 0 1 200px;
+  font-size: 0.8rem;
+}
+
+.field-extra label.check.compact {
+  padding-bottom: 8px;
 }
 
 label.check.compact {

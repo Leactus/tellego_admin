@@ -139,6 +139,8 @@ export class Repartidores implements OnInit, OnDestroy {
     vehicleType: '',
     plateNumber: '',
     licenseNumber: '',
+    duiNumber: '',
+    drivingPermitNumber: '',
     countryId: null as number | null,
   };
   readonly countries = signal<Country[]>([]);
@@ -260,6 +262,8 @@ export class Repartidores implements OnInit, OnDestroy {
       vehicleType: '',
       plateNumber: '',
       licenseNumber: '',
+      duiNumber: '',
+      drivingPermitNumber: '',
       countryId: this.countries()[0]?.id ?? null,
     };
     this.formSubmitted.set(false);
@@ -275,6 +279,8 @@ export class Repartidores implements OnInit, OnDestroy {
       vehicleType: driver.vehicleType ?? '',
       plateNumber: driver.plateNumber ?? '',
       licenseNumber: driver.licenseNumber ?? '',
+      duiNumber: driver.duiNumber ?? '',
+      drivingPermitNumber: driver.drivingPermitNumber ?? '',
       countryId: driver.countryId ?? null,
     };
     this.formSubmitted.set(false);
@@ -303,6 +309,8 @@ export class Repartidores implements OnInit, OnDestroy {
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
           licenseNumber: this.form.licenseNumber.trim(),
+          duiNumber: this.form.duiNumber.trim(),
+          drivingPermitNumber: this.form.drivingPermitNumber.trim(),
           countryId: this.form.countryId,
         });
         this.closeFormModal();
@@ -315,6 +323,8 @@ export class Repartidores implements OnInit, OnDestroy {
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),
           licenseNumber: this.form.licenseNumber.trim(),
+          duiNumber: this.form.duiNumber.trim(),
+          drivingPermitNumber: this.form.drivingPermitNumber.trim(),
           countryId: this.form.countryId,
         });
         this.closeFormModal();

@@ -21,6 +21,8 @@ interface CreateDriverInput {
   vehicleType?: string;
   plateNumber?: string;
   licenseNumber?: string;
+  duiNumber?: string;
+  drivingPermitNumber?: string;
   countryId?: number | null;
 }
 
@@ -30,6 +32,8 @@ interface UpdateDriverInput {
   vehicleType?: string;
   plateNumber?: string;
   licenseNumber?: string;
+  duiNumber?: string;
+  drivingPermitNumber?: string;
   countryId?: number | null;
 }
 

@@ -8,6 +8,10 @@ export interface Driver {
   vehicleType: string | null;
   plateNumber: string | null;
   licenseNumber: string | null;
+  /** Nº de DUI ("01234567-8"). Lo llena el repartidor al subir su DUI; único por repartidor. */
+  duiNumber: string | null;
+  /** Nº de permiso de conducir (distinto de la licencia). */
+  drivingPermitNumber: string | null;
   isOnline: boolean;
   isAvailable: boolean;
   ratingAvg: string;

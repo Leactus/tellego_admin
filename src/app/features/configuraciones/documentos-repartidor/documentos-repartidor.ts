@@ -9,9 +9,11 @@ import {
   CountryDriverSettings,
   DriverDocumentAccepts,
   DriverDocumentFieldDef,
+  DriverDocumentFieldFormat,
   DriverDocumentFieldType,
   DriverDocumentPhotoSource,
   DriverDocumentType,
+  DriverProfileField,
 } from '../../../core/models/driver-onboarding.model';
 import { Icon } from '../../../shared/icon/icon';
 import { EmptyState } from '../../../shared/empty-state/empty-state';
@@ -29,6 +31,18 @@ interface FieldRow {
   type: DriverDocumentFieldType;
   required: boolean;
   optionsText: string;
+  /** '' = texto libre. */
+  format: DriverDocumentFieldFormat | '';
+  /** Autollenar leyendo la foto del frente (solo type='text'). */
+  ocr: boolean;
+  ocrPattern: string;
+  ocrAfterLabel: string;
+  /** '' = no se copia al perfil. */
+  profileField: DriverProfileField | '';
+}
+
+function emptyFieldRow(): FieldRow {
+  return { label: '', type: 'text', required: true, optionsText: '', format: '', ocr: false, ocrPattern: '', ocrAfterLabel: '', profileField: '' };
 }
 
 /**
@@ -82,6 +96,16 @@ export class DocumentosRepartidor implements OnInit {
     { value: 'text', label: 'Texto' },
     { value: 'date', label: 'Fecha' },
     { value: 'select', label: 'Lista de opciones' },
+  ];
+  readonly profileFieldOptions: SelectOption<DriverProfileField | ''>[] = [
+    { value: '', label: 'No guardar en el perfil' },
+    { value: 'duiNumber', label: 'Nº de DUI' },
+    { value: 'licenseNumber', label: 'Nº de licencia' },
+    { value: 'drivingPermitNumber', label: 'Nº de permiso de conducir' },
+  ];
+  readonly fieldFormatOptions: SelectOption<DriverDocumentFieldFormat | ''>[] = [
+    { value: '', label: 'Texto libre' },
+    { value: 'dui', label: 'Número de DUI' },
   ];
 
   get scopeOptions(): SelectOption<Scope>[] {
@@ -168,6 +192,10 @@ export class DocumentosRepartidor implements OnInit {
     return t.countryId == null ? 'Global' : (t.country?.name ?? 'País');
   }
 
+  hasOcrFields(t: DriverDocumentType): boolean {
+    return (t.fields ?? []).some((f) => f.ocr != null);
+  }
+
   acceptsLabel(accepts: DriverDocumentAccepts): string {
     return this.acceptsOptions.find((o) => o.value === accepts)?.label ?? accepts;
   }
@@ -215,7 +243,12 @@ export class DocumentosRepartidor implements OnInit {
   // --- Documentos ---
 
   addField(): void {
-    this.fields.push({ label: '', type: 'text', required: true, optionsText: '' });
+    this.fields.push(emptyFieldRow());
+  }
+
+  /** Autollenado sin patrón ni texto de referencia: solo un campo DUI sabe qué buscar. */
+  isOcrIncomplete(f: FieldRow): boolean {
+    return f.type === 'text' && f.ocr && f.format !== 'dui' && !f.ocrPattern.trim() && !f.ocrAfterLabel.trim();
   }
 
   removeField(i: number): void {
@@ -232,6 +265,15 @@ export class DocumentosRepartidor implements OnInit {
           .split(/[\n,]/)
           .map((o) => o.trim())
           .filter(Boolean);
+      }
+      if (f.type === 'text') {
+        if (f.format) def.format = f.format;
+        if (f.profileField) def.profileField = f.profileField;
+        if (f.ocr) {
+          def.ocr = {};
+          if (f.ocrPattern.trim()) def.ocr.pattern = f.ocrPattern.trim();
+          if (f.ocrAfterLabel.trim()) def.ocr.afterLabel = f.ocrAfterLabel.trim();
+        }
       }
       out.push(def);
     }
@@ -284,6 +326,11 @@ export class DocumentosRepartidor implements OnInit {
       type: f.type,
       required: f.required ?? false,
       optionsText: (f.options ?? []).join(', '),
+      format: f.format ?? '',
+      ocr: f.ocr != null,
+      ocrPattern: f.ocr?.pattern ?? '',
+      ocrAfterLabel: f.ocr?.afterLabel ?? '',
+      profileField: f.profileField ?? '',
     }));
     this.submitted.set(false);
     this.modalOpen.set(true);
@@ -302,6 +349,19 @@ export class DocumentosRepartidor implements OnInit {
     if (!this.form.label.trim()) return;
     if (this.fields.some((f) => f.type === 'select' && f.label.trim() && !f.optionsText.trim())) {
       this.toast.error('Cada campo de tipo lista necesita al menos una opción');
+      return;
+    }
+    const profileTargets = this.fields.filter((f) => f.label.trim() && f.type === 'text' && f.profileField);
+    if (new Set(profileTargets.map((f) => f.profileField)).size !== profileTargets.length) {
+      this.toast.error('Dos campos se guardan en el mismo dato del perfil');
+      return;
+    }
+    if (profileTargets.some((f) => f.profileField === 'duiNumber' && f.format !== 'dui')) {
+      this.toast.error('Para guardarlo como DUI del perfil, el formato del campo debe ser "Número de DUI"');
+      return;
+    }
+    if (this.fields.some((f) => f.label.trim() && this.isOcrIncomplete(f))) {
+      this.toast.error('Para autollenar con OCR indica un patrón o el texto que va antes del dato');
       return;
     }
 

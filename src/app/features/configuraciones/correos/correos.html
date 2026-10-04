@@ -162,16 +162,42 @@
             @if (t.isCustomized) {
               <button type="button" class="btn-link danger hide-sm" (click)="resetTemplate()">Restaurar original</button>
             }
-            <button
-              type="button"
-              class="btn-secondary btn-icon"
-              [disabled]="sendingTest()"
-              (click)="sendTest()"
-              [title]="isDirty() ? 'Guarda primero: la prueba sale con la versión guardada' : 'Te llega a tu correo'"
-            >
-              <app-icon name="send" />
-              <span class="hide-sm">{{ sendingTest() ? 'Enviando…' : 'Enviarme una prueba' }}</span>
-            </button>
+            <div class="test-send">
+              <button
+                type="button"
+                class="btn-secondary btn-icon"
+                [disabled]="sendingTest()"
+                (click)="openTestPanel()"
+                [attr.aria-expanded]="testPanelOpen()"
+                [title]="isDirty() ? 'Guarda primero: la prueba sale con la versión guardada' : 'Elige a qué correo enviarla'"
+              >
+                <app-icon name="send" />
+                <span class="hide-sm">{{ sendingTest() ? 'Enviando…' : 'Enviar prueba' }}</span>
+              </button>
+              @if (testPanelOpen()) {
+                <form class="test-send__panel" (ngSubmit)="sendTest()">
+                  <label for="test-to">Enviar prueba a</label>
+                  <input
+                    id="test-to"
+                    name="testTo"
+                    type="email"
+                    [(ngModel)]="testTo"
+                    placeholder="correo@ejemplo.com"
+                    autocomplete="email"
+                    maxlength="254"
+                    autofocus
+                  />
+                  <p class="test-send__hint">Si lo dejas vacío, llega a tu correo de administrador.</p>
+                  <div class="test-send__actions">
+                    <button type="button" class="btn-link" (click)="testPanelOpen.set(false)">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-icon" [disabled]="sendingTest()">
+                      <app-icon name="send" />
+                      {{ sendingTest() ? 'Enviando…' : 'Enviar' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
             <button
               type="button"
               class="btn-primary btn-icon"

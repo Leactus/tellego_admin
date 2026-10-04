@@ -6,6 +6,18 @@ export type DriverDocumentPhotoSource = 'camera' | 'gallery' | 'camera_or_galler
 
 export type DriverDocumentFieldType = 'text' | 'date' | 'select';
 
+/** 'dui' = 8 dígitos + verificador; el backend lo valida y lo guarda como "01234567-8". */
+export type DriverDocumentFieldFormat = 'dui';
+
+/** Autollenado con OCR (la app lee la foto del frente). Sin pattern ni afterLabel solo vale con format='dui'. */
+export interface DriverDocumentFieldOcr {
+  pattern?: string;
+  afterLabel?: string;
+}
+
+/** Columna del perfil del repartidor donde se copia el valor del campo al subir el documento. */
+export type DriverProfileField = 'duiNumber' | 'licenseNumber' | 'drivingPermitNumber';
+
 /** Campo extra que el repartidor llena al subir un documento (nº de DUI, vencimiento, ...). */
 export interface DriverDocumentFieldDef {
   key: string;
@@ -13,6 +25,12 @@ export interface DriverDocumentFieldDef {
   type: DriverDocumentFieldType;
   options?: string[];
   required?: boolean;
+  /** Solo type='text'. */
+  format?: DriverDocumentFieldFormat;
+  /** Solo type='text'. Presente = se autollena con OCR. */
+  ocr?: DriverDocumentFieldOcr;
+  /** Solo type='text'. Se copia a este dato del perfil del repartidor. */
+  profileField?: DriverProfileField;
 }
 
 /** Catálogo dinámico de documentos que se le piden a un repartidor, POR PAÍS. */
@@ -53,6 +71,8 @@ export interface DriverDocumentFile {
   mimeType: string;
   isPdf: boolean;
   fieldValues: Record<string, unknown> | null;
+  /** Lo que leyó el OCR de la app por campo (null = no lo encontró). null = sin autollenado. */
+  ocrValues: Record<string, string | null> | null;
   /** Cuándo el repartidor autorizó el uso del archivo. null = lo subió un admin. */
   consentAcceptedAt: string | null;
   status: DriverDocumentStatus;
@@ -78,6 +98,9 @@ export interface OnboardingDocType {
   fields: DriverDocumentFieldDef[];
   isRequired: boolean;
   slots: OnboardingDocSlot[];
+  /** Campos obligatorios llenos (el repartidor los valida después de subir las fotos). */
+  dataComplete: boolean;
+  /** Fotos aprobadas + datos completos. */
   complete: boolean;
 }
 

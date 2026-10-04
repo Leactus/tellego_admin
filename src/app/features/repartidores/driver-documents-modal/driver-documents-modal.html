@@ -53,6 +53,12 @@
               }
             </div>
             @if (type.description) { <p class="muted small">{{ type.description }}</p> }
+            @if (!type.dataComplete) {
+              <p class="data-missing small">
+                Faltan datos: el repartidor todavía no validó los datos de este documento (nº, etc.). No cuenta como
+                completo hasta que lo haga.
+              </p>
+            }
 
             <div class="slots">
               @for (slot of type.slots; track slot.side) {
@@ -77,7 +83,26 @@
                     @if (fieldEntries(type, doc).length) {
                       <dl class="field-values">
                         @for (fv of fieldEntries(type, doc); track fv.label) {
-                          <div><dt>{{ fv.label }}</dt><dd>{{ fv.value }}</dd></div>
+                          <div>
+                            <dt>{{ fv.label }}</dt>
+                            <dd>{{ fv.value }}</dd>
+                            @if (fv.duiValid === true) {
+                              <span class="ocr-tag ocr-read" title="Cumple el dígito verificador del DUI">✓ DUI válido</span>
+                            } @else if (fv.duiValid === false) {
+                              <span class="ocr-tag ocr-invalid" title="No cumple el dígito verificador">✗ DUI inválido</span>
+                            }
+                            @switch (fv.ocr) {
+                              @case ('read') {
+                                <span class="ocr-tag ocr-read" title="El repartidor confirmó lo que leyó la app">Leído de la foto</span>
+                              }
+                              @case ('edited') {
+                                <span class="ocr-tag ocr-edited">Corregido · la foto decía «{{ fv.ocrRead }}»</span>
+                              }
+                              @case ('missed') {
+                                <span class="ocr-tag" title="El OCR no encontró el dato; lo escribió a mano">Escrito a mano</span>
+                              }
+                            }
+                          </div>
                         }
                       </dl>
                     }

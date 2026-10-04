@@ -44,6 +44,9 @@ const FIELD_LABELS: Record<TextField, string> = {
  * completa (formulario + vista previa lado a lado; en pantallas angostas, con
  * pestañas Editar / Vista previa).
  */
+/** Último correo usado en "Enviar prueba a…" (solo comodidad de este navegador). */
+const TEST_TO_STORAGE_KEY = 'correos.testTo';
+
 @Component({
   selector: 'app-correos',
   standalone: true,
@@ -82,6 +85,9 @@ export class Correos implements OnInit, OnDestroy {
   readonly draft = signal<EmailTemplateContent | null>(null);
   readonly saving = signal(false);
   readonly sendingTest = signal(false);
+  /** Panel "Enviar prueba a…" abierto, y el correo escrito ahí (vacío = el del admin). */
+  readonly testPanelOpen = signal(false);
+  testTo = '';
   readonly bannerUploading = signal(false);
   readonly previewDark = signal(false);
   readonly previewMobile = signal(false);
@@ -131,6 +137,11 @@ export class Correos implements OnInit, OnDestroy {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
       event.preventDefault();
       if (this.isDirty() && !this.saving()) void this.save();
+      return;
+    }
+    if (event.key === 'Escape' && this.testPanelOpen()) {
+      event.preventDefault();
+      this.testPanelOpen.set(false);
       return;
     }
     if (event.key === 'Escape' && !this.closePromptOpen) {
@@ -429,6 +440,22 @@ export class Correos implements OnInit, OnDestroy {
     }
   }
 
+  /** Abre el panel para elegir a qué correo mandar la prueba (recuerda el último usado). */
+  openTestPanel(): void {
+    if (this.isDirty()) {
+      this.toast.error('Guarda los cambios primero: la prueba se envía con la versión guardada');
+      return;
+    }
+    if (!this.testPanelOpen()) {
+      try {
+        this.testTo = localStorage.getItem(TEST_TO_STORAGE_KEY) ?? '';
+      } catch {
+        this.testTo = '';
+      }
+    }
+    this.testPanelOpen.update((open) => !open);
+  }
+
   async sendTest(): Promise<void> {
     const key = this.editingKey();
     if (!key) return;
@@ -436,9 +463,20 @@ export class Correos implements OnInit, OnDestroy {
       this.toast.error('Guarda los cambios primero: la prueba se envía con la versión guardada');
       return;
     }
+    const to = this.testTo.trim();
+    if (to && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      this.toast.error('Escribe un correo válido');
+      return;
+    }
     this.sendingTest.set(true);
     try {
-      this.toast.success(await this.service.sendTest(key));
+      this.toast.success(await this.service.sendTest(key, to || undefined));
+      try {
+        localStorage.setItem(TEST_TO_STORAGE_KEY, to);
+      } catch {
+        // Sin storage (modo privado): solo no se recuerda el correo.
+      }
+      this.testPanelOpen.set(false);
     } catch (err: any) {
       this.toast.error(err?.error?.message ?? 'No se pudo enviar la prueba');
     } finally {

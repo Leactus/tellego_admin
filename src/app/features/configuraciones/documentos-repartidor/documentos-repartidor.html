@@ -74,6 +74,7 @@
                 @if (type.fields && type.fields.length) {
                   <span class="pill">{{ type.fields.length }} campo(s)</span>
                 }
+                @if (hasOcrFields(type)) { <span class="pill">Autollenado OCR</span> }
                 @if (type.isRequired) {
                   <span class="pill pill-req">Obligatorio</span>
                 } @else {
@@ -221,7 +222,10 @@
                 <h3 class="doc-section-title">Campos adicionales</h3>
                 <button type="button" class="btn-text" (click)="addField()">+ Agregar campo</button>
               </div>
-              <p class="field-hint">Datos que el repartidor escribe al subir el documento (nº, vencimiento…).</p>
+              <p class="field-hint">
+                Datos que el repartidor escribe al subir el documento (nº, vencimiento…). Los de texto se pueden
+                autollenar leyendo la foto.
+              </p>
 
               @for (f of fields; track $index) {
                 <div class="field-row">
@@ -242,6 +246,61 @@
                       [name]="'fo' + $index"
                       placeholder="Opciones separadas por coma (ej. A, B, C)"
                     />
+                  }
+                  @if (f.type === 'text') {
+                    <div class="field-extra">
+                      <label class="field-format">
+                        Formato
+                        <app-select [(ngModel)]="f.format" [name]="'ffmt' + $index" [options]="fieldFormatOptions" />
+                      </label>
+                      <label class="field-format">
+                        Guardar en el perfil como
+                        <app-select [(ngModel)]="f.profileField" [name]="'fprof' + $index" [options]="profileFieldOptions" />
+                      </label>
+                      <label class="check compact">
+                        <input type="checkbox" [(ngModel)]="f.ocr" [name]="'focr' + $index" />
+                        Autollenar leyendo la foto (OCR)
+                      </label>
+                    </div>
+                    @if (f.profileField === 'duiNumber' && f.format !== 'dui') {
+                      <span class="field-error field-full">Para guardarlo como DUI, elige el formato "Número de DUI".</span>
+                    }
+                    @if (f.format === 'dui') {
+                      <span class="field-hint field-full">
+                        Se valida el dígito verificador: un DUI mal escrito o mal leído no se puede enviar.
+                      </span>
+                    }
+                    @if (f.ocr) {
+                      <div class="ocr-box field-full">
+                        <span class="field-hint">
+                          La app lee la foto del {{ form.twoSided ? 'frente' : 'documento' }}, llena este campo y el
+                          repartidor lo confirma o corrige. Tú verás si lo cambió.
+                        </span>
+                        <label>
+                          Texto impreso antes del dato
+                          <input
+                            type="text"
+                            [(ngModel)]="f.ocrAfterLabel"
+                            [name]="'focral' + $index"
+                            placeholder="Ej. APELLIDOS"
+                          />
+                          <span class="field-hint">Se toma lo que sigue en esa línea o la línea de abajo.</span>
+                        </label>
+                        <label>
+                          o patrón (expresión regular)
+                          <input
+                            type="text"
+                            [(ngModel)]="f.ocrPattern"
+                            [name]="'focrp' + $index"
+                            [placeholder]="f.format === 'dui' ? 'Vacío = busca el DUI automáticamente' : 'Ej. Licencia: ([0-9-]+)'"
+                          />
+                          <span class="field-hint">Si tiene un grupo entre paréntesis, se toma solo ese grupo.</span>
+                        </label>
+                        @if (isOcrIncomplete(f)) {
+                          <span class="field-error">Indica el texto de referencia o un patrón.</span>
+                        }
+                      </div>
+                    }
                   }
                 </div>
               }

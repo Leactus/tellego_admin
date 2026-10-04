@@ -179,6 +179,18 @@
             placeholder="Ej. 04521987-1"
           />
         </label>
+        <label>
+          Número de DUI
+          <input type="text" [(ngModel)]="form.duiNumber" name="driverDui" placeholder="Ej. 01234567-8" maxlength="10" />
+        </label>
+        <label>
+          Número de permiso de conducir
+          <input type="text" [(ngModel)]="form.drivingPermitNumber" name="driverPermit" maxlength="30" />
+        </label>
+        <p class="hint muted">
+          DUI, licencia y permiso los llena el repartidor al subir sus documentos (si el campo del documento está
+          configurado para guardarse en su perfil). Aquí puedes corregirlos.
+        </p>
         @if (countries().length > 0) {
           <label>
             País

@@ -39,8 +39,11 @@ export class EmailTemplatesService {
   }
 
   /** Envía la versión GUARDADA al correo del admin con sesión iniciada. */
-  sendTest(key: string): Promise<string> {
-    return firstValueFrom(this.http.post<{ message: string }>(`${this.base}/${key}/test`, {})).then((r) => r.message);
+  /** `to` vacío = al correo del admin que lo pide. */
+  sendTest(key: string, to?: string): Promise<string> {
+    return firstValueFrom(this.http.post<{ message: string }>(`${this.base}/${key}/test`, to ? { to } : {})).then(
+      (r) => r.message,
+    );
   }
 
   uploadBanner(key: string, file: File): Promise<EmailTemplate> {

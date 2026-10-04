@@ -14,6 +14,23 @@ import { Icon } from '../../../shared/icon/icon';
 import { Skeleton } from '../../../shared/skeleton/skeleton';
 import { ToastService } from '../../../shared/toast/toast.service';
 import { ConfirmService } from '../../../shared/confirm/confirm.service';
+import { isValidDui } from '../../../core/utils/dui';
+
+interface FieldEntry {
+  label: string;
+  value: string;
+  ocr: 'read' | 'edited' | 'missed' | null;
+  ocrRead: string | null;
+  /** Solo campos format='dui': si cumple el dígito verificador. null = no es DUI. */
+  duiValid: boolean | null;
+}
+
+/** Sin distinguir mayúsculas, tildes ni espacios: "Pérez  Gómez" = "PEREZ GOMEZ". */
+function sameText(a: string, b: string): boolean {
+  const norm = (s: string) =>
+    s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+  return norm(a) === norm(b);
+}
 
 /**
  * Revisión del onboarding de un repartidor: su capital declarado y cada
@@ -74,11 +91,24 @@ export class DriverDocumentsModal implements OnInit {
     return type.label;
   }
 
-  /** Campos extra que el repartidor llenó, con sus labels legibles. */
-  fieldEntries(type: OnboardingDocType, doc: DriverDocumentFile): { label: string; value: string }[] {
+  /**
+   * Campos extra que el repartidor llenó, con sus labels legibles. `ocr`
+   * compara con lo que leyó el OCR de la app: 'read' = lo dejó tal cual,
+   * 'edited' = lo corrigió (`ocrRead` = lo que se leyó), 'missed' = el OCR no
+   * lo encontró y lo escribió a mano. null = el campo no se autollena.
+   */
+  fieldEntries(type: OnboardingDocType, doc: DriverDocumentFile): FieldEntry[] {
     const values = doc.fieldValues ?? {};
+    const ocrValues = doc.ocrValues ?? {};
     return (type.fields ?? [])
-      .map((f) => ({ label: f.label, value: values[f.key] != null ? String(values[f.key]) : '' }))
+      .map((f): FieldEntry => {
+        const value = values[f.key] != null ? String(values[f.key]) : '';
+        const base = { label: f.label, value, duiValid: f.format === 'dui' ? isValidDui(value) : null };
+        if (!(f.key in ocrValues)) return { ...base, ocr: null, ocrRead: null };
+        const read = ocrValues[f.key];
+        if (read == null) return { ...base, ocr: 'missed', ocrRead: null };
+        return { ...base, ocr: sameText(read, value) ? 'read' : 'edited', ocrRead: read };
+      })
       .filter((e) => e.value !== '');
   }
 

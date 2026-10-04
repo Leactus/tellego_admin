@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { Icon } from '../../shared/icon/icon';
+import { passwordPolicyError } from '../../core/utils/password-policy';
 
 type Step = 'email' | 'reset';
 
@@ -45,8 +46,13 @@ export class RecuperarPassword {
     this.showPassword.update((v) => !v);
   }
 
+  /** Requisito que todavía no cumple la contraseña nueva (null = la cumple). */
+  get newPasswordProblem(): string | null {
+    return passwordPolicyError(this.newPassword);
+  }
+
   get canSubmitReset(): boolean {
-    return this.code.trim().length >= 4 && this.newPassword.length >= 6 && this.newPassword === this.confirmPassword;
+    return this.code.trim().length >= 4 && !this.newPasswordProblem && this.newPassword === this.confirmPassword;
   }
 
   async submitEmail(): Promise<void> {
