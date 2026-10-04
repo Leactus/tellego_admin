@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,13 +24,25 @@ import { ToggleSwitch } from '../../../shared/toggle-switch/toggle-switch';
 
 type TextField = keyof EmailTemplateContent;
 
+const FIELD_LABELS: Record<TextField, string> = {
+  subject: 'el asunto',
+  preheader: 'el texto de vista previa',
+  heading: 'el título',
+  body: 'el texto principal',
+  closing: 'el texto final',
+  buttonLabel: 'el texto del botón',
+  buttonUrl: 'el enlace del botón',
+};
+
 /**
  * Configuraciones > Correos: el súper-admin personaliza los correos que manda
  * la plataforma (códigos de registro y de contraseña, documento rechazado,
  * comprobante de compra) — texto, botón y arte de cada uno, por público — y la
  * marca común (logo de la cabecera, pie, correo de soporte). La vista previa
  * la arma el backend con el MISMO HTML que se envía, en claro u oscuro y en
- * ancho de PC o de celular, antes de guardar.
+ * ancho de PC o de celular, antes de guardar. El editor se abre a pantalla
+ * completa (formulario + vista previa lado a lado; en pantallas angostas, con
+ * pestañas Editar / Vista previa).
  */
 @Component({
   selector: 'app-correos',
@@ -77,6 +89,14 @@ export class Correos implements OnInit, OnDestroy {
   readonly previewSubject = signal('');
   readonly previewLoading = signal(false);
   readonly previewError = signal<string | null>(null);
+  /** En pantallas angostas el editor muestra una sola columna a la vez. */
+  readonly mobilePane = signal<'form' | 'preview'>('form');
+  /** Campo donde se insertan las variables: el último que tuvo el foco. */
+  readonly activeField = signal<TextField>('body');
+  readonly fieldLabels = FIELD_LABELS;
+  private activeFieldEl: HTMLInputElement | HTMLTextAreaElement | null = null;
+  /** Hay un "¿descartar cambios?" abierto: evita apilar otro con Esc. */
+  private closePromptOpen = false;
 
   readonly editing = computed(() => this.templates().find((t) => t.key === this.editingKey()) ?? null);
 
@@ -101,6 +121,27 @@ export class Correos implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.refreshPreviewDebounced.cancel();
+    this.lockPageScroll(false);
+  }
+
+  /** Esc cierra el editor; Ctrl/Cmd + S guarda. */
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.editingKey()) return;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      if (this.isDirty() && !this.saving()) void this.save();
+      return;
+    }
+    if (event.key === 'Escape' && !this.closePromptOpen) {
+      event.preventDefault();
+      void this.closeEditor();
+    }
+  }
+
+  /** La página de atrás no debe hacer scroll mientras el editor la tapa. */
+  private lockPageScroll(lock: boolean): void {
+    document.body.style.overflow = lock ? 'hidden' : '';
   }
 
   private async reload(): Promise<void> {
@@ -205,24 +246,32 @@ export class Correos implements OnInit, OnDestroy {
     this.editingKey.set(key);
     this.draft.set({ ...template.content });
     this.previewHtml.set(null);
+    this.previewSubject.set(template.content.subject);
+    this.mobilePane.set('form');
+    this.activeField.set('body');
+    this.activeFieldEl = null;
+    this.lockPageScroll(true);
     syncQueryParams(this.router, this.route, { plantilla: key });
     void this.refreshPreview();
-    setTimeout(() => document.getElementById('email-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   async closeEditor(): Promise<void> {
     if (this.isDirty()) {
+      this.closePromptOpen = true;
       const ok = await this.confirm.confirm({
         title: 'Descartar cambios',
         message: 'Tienes cambios sin guardar. ¿Cerrar el editor de todos modos?',
         confirmLabel: 'Descartar',
         variant: 'danger',
       });
+      this.closePromptOpen = false;
       if (!ok) return;
     }
     this.refreshPreviewDebounced.cancel();
     this.editingKey.set(null);
     this.draft.set(null);
+    this.activeFieldEl = null;
+    this.lockPageScroll(false);
     syncQueryParams(this.router, this.route, { plantilla: null });
   }
 
@@ -231,6 +280,10 @@ export class Correos implements OnInit, OnDestroy {
     if (!d) return;
     this.draft.set({ ...d, [field]: value });
     this.refreshPreviewDebounced();
+  }
+
+  audienceIcon(audience: EmailAudience): IconName {
+    return audience === 'cliente' ? 'users' : audience === 'repartidor' ? 'truck' : 'store';
   }
 
   blockIcon(block: EmailBlock): IconName {
@@ -249,14 +302,40 @@ export class Correos implements OnInit, OnDestroy {
     return `{{${name}}}`;
   }
 
-  /** Inserta {{variable}} al final del campo de texto principal (o lo copia, si el navegador lo permite). */
-  async copyVariable(name: string): Promise<void> {
+  onFieldFocus(field: TextField, el: HTMLInputElement | HTMLTextAreaElement): void {
+    this.activeField.set(field);
+    this.activeFieldEl = el;
+  }
+
+  /**
+   * Inserta {{variable}} donde estaba el cursor en el último campo enfocado
+   * (o al final del texto principal si todavía no se tocó ninguno) y deja el
+   * cursor justo después.
+   */
+  insertVariable(name: string): void {
+    const d = this.draft();
+    if (!d) return;
+    const field = this.activeField();
+    const el = this.activeFieldEl;
+    const current = d[field] ?? '';
     const token = `{{${name}}}`;
-    try {
-      await navigator.clipboard.writeText(token);
-      this.toast.success(`${token} copiado — pégalo donde quieras`);
-    } catch {
-      this.patchDraft('body', `${this.draft()?.body ?? ''} ${token}`);
+    const start = el?.selectionStart ?? current.length;
+    const end = el?.selectionEnd ?? current.length;
+    const before = current.slice(0, start);
+    const after = current.slice(end);
+    // Un espacio de separación si el token quedaría pegado a una palabra.
+    const pad = before && !/\s$/.test(before) ? ' ' : '';
+    this.patchDraft(field, `${before}${pad}${token}${after}`);
+    if (el) {
+      const caret = start + pad.length + token.length;
+      setTimeout(() => {
+        el.focus();
+        try {
+          el.setSelectionRange(caret, caret);
+        } catch {
+          // type="url" no admite selección: queda el foco sin mover el cursor.
+        }
+      });
     }
   }
 

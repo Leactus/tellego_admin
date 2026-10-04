@@ -139,118 +139,269 @@
     }
   </div>
 
-  <!-- ===================== Editor ===================== -->
+  <!-- ===================== Editor (pantalla completa) ===================== -->
   @if (editing(); as t) {
     @if (draft(); as d) {
-      <section class="editor card" id="email-editor">
-        <div class="editor__head">
-          <div>
-            <span class="editor__eyebrow">{{ audienceLabels[t.audience] }}</span>
+      <div class="studio" role="dialog" aria-modal="true" [attr.aria-label]="'Editar correo: ' + t.name">
+        <!-- Barra superior -->
+        <header class="studio__bar">
+          <button type="button" class="studio__back" (click)="closeEditor()" aria-label="Volver a la lista de correos">
+            <app-icon name="chevron-left" />
+          </button>
+          <div class="studio__title">
+            <span class="studio__eyebrow">
+              <app-icon [name]="audienceIcon(t.audience)" /> {{ audienceLabels[t.audience] }}
+            </span>
             <h2>{{ t.name }}</h2>
           </div>
-          <button type="button" class="icon-btn" (click)="closeEditor()" aria-label="Cerrar editor">
-            <app-icon name="close" />
+          <span class="save-state" [class.save-state--dirty]="isDirty()">
+            <span class="save-state__dot"></span>
+            {{ isDirty() ? 'Cambios sin guardar' : t.isCustomized ? 'Guardado' : 'Versión original' }}
+          </span>
+          <div class="studio__actions">
+            @if (t.isCustomized) {
+              <button type="button" class="btn-link danger hide-sm" (click)="resetTemplate()">Restaurar original</button>
+            }
+            <button
+              type="button"
+              class="btn-secondary btn-icon"
+              [disabled]="sendingTest()"
+              (click)="sendTest()"
+              [title]="isDirty() ? 'Guarda primero: la prueba sale con la versión guardada' : 'Te llega a tu correo'"
+            >
+              <app-icon name="send" />
+              <span class="hide-sm">{{ sendingTest() ? 'Enviando…' : 'Enviarme una prueba' }}</span>
+            </button>
+            <button
+              type="button"
+              class="btn-primary btn-icon"
+              [disabled]="saving() || !isDirty()"
+              (click)="save()"
+              title="Guardar (Ctrl + S)"
+            >
+              <app-icon name="check" />
+              {{ saving() ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </header>
+
+        <!-- Selector Editar / Vista previa (solo pantallas angostas) -->
+        <div class="studio__panes" role="tablist">
+          <button type="button" role="tab" [class.on]="mobilePane() === 'form'" (click)="mobilePane.set('form')">
+            <app-icon name="edit" /> Editar
+          </button>
+          <button type="button" role="tab" [class.on]="mobilePane() === 'preview'" (click)="mobilePane.set('preview')">
+            <app-icon name="eye" /> Vista previa
           </button>
         </div>
 
-        <div class="editor__grid">
+        <div class="studio__grid" [attr.data-pane]="mobilePane()">
           <!-- Formulario -->
-          <div class="editor__form">
-            <label>
-              <span class="field-label">Asunto</span>
-              <input type="text" maxlength="200" [ngModel]="d.subject" (ngModelChange)="patchDraft('subject', $event)" name="subject" />
-            </label>
-            <label>
-              <span class="field-label">Texto de vista previa <small>(lo que se ve en el buzón al lado del asunto)</small></span>
-              <input type="text" maxlength="255" [ngModel]="d.preheader" (ngModelChange)="patchDraft('preheader', $event)" name="preheader" />
-            </label>
+          <div class="studio__form-col">
+            <div class="studio__form">
+              <p class="studio__trigger"><app-icon name="info-circle" /> {{ t.trigger }}</p>
 
-            <div class="banner-field">
-              <span class="field-label">Arte / banner <small>(opcional, va debajo del logo)</small></span>
-              @if (t.bannerUrl) {
-                <img class="banner-thumb" [src]="t.bannerUrl" alt="Arte del correo" />
-              } @else {
-                <div class="banner-empty">
-                  <app-icon name="photo" />
-                  <span>Sin arte. Recomendado: 1200 × 500 px, JPG o PNG.</span>
-                </div>
-              }
-              <div class="row-actions">
-                <label class="btn-secondary file-btn" [class.disabled]="bannerUploading()">
-                  <app-icon name="camera" />
-                  {{ bannerUploading() ? 'Subiendo…' : t.bannerUrl ? 'Cambiar arte' : 'Subir arte' }}
-                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onBannerSelected($event)" hidden />
+              <!-- Bandeja de entrada -->
+              <section class="group">
+                <header class="group__head">
+                  <span class="group__num">1</span>
+                  <div>
+                    <h3>En la bandeja de entrada</h3>
+                    <p>Lo primero que ve la persona, antes de abrir el correo.</p>
+                  </div>
+                </header>
+                <label>
+                  <span class="field-label">
+                    Asunto
+                    <span class="counter" [class.counter--warn]="d.subject.length > 60">{{ d.subject.length }}/60</span>
+                  </span>
+                  <input
+                    #subjectInput
+                    type="text"
+                    maxlength="200"
+                    [ngModel]="d.subject"
+                    (ngModelChange)="patchDraft('subject', $event)"
+                    (focus)="onFieldFocus('subject', subjectInput)"
+                    name="subject"
+                    [class.invalid]="!d.subject.trim()"
+                  />
+                  @if (d.subject.length > 60) {
+                    <span class="hint">Los celulares cortan el asunto cerca de los 60 caracteres.</span>
+                  }
                 </label>
-                @if (t.bannerUrl) {
-                  <button type="button" class="btn-link" [disabled]="bannerUploading()" (click)="removeBanner()">Quitar</button>
+                <label>
+                  <span class="field-label">
+                    Texto de vista previa
+                    <span class="counter" [class.counter--warn]="d.preheader.length > 110">{{ d.preheader.length }}/110</span>
+                  </span>
+                  <input
+                    #preheaderInput
+                    type="text"
+                    maxlength="255"
+                    [ngModel]="d.preheader"
+                    (ngModelChange)="patchDraft('preheader', $event)"
+                    (focus)="onFieldFocus('preheader', preheaderInput)"
+                    name="preheader"
+                    placeholder="Se ve en gris al lado del asunto"
+                  />
+                </label>
+              </section>
+
+              <!-- Contenido -->
+              <section class="group">
+                <header class="group__head">
+                  <span class="group__num">2</span>
+                  <div>
+                    <h3>Contenido</h3>
+                    <p>Una línea en blanco separa párrafos. <code>**así**</code> pone texto en negrita.</p>
+                  </div>
+                </header>
+
+                <div class="banner-field">
+                  <span class="field-label">Arte / banner <small>(opcional, va debajo del logo)</small></span>
+                  @if (t.bannerUrl) {
+                    <div class="banner-box" [class.disabled]="bannerUploading()">
+                      <img class="banner-thumb" [src]="t.bannerUrl" alt="Arte del correo" />
+                      <div class="banner-box__actions">
+                        <label class="btn-secondary btn-sm file-btn">
+                          <app-icon name="camera" /> {{ bannerUploading() ? 'Subiendo…' : 'Cambiar' }}
+                          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onBannerSelected($event)" hidden />
+                        </label>
+                        <button type="button" class="btn-secondary btn-sm" [disabled]="bannerUploading()" (click)="removeBanner()">
+                          <app-icon name="trash" /> Quitar
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <label class="banner-drop" [class.disabled]="bannerUploading()">
+                      <span class="banner-drop__icon"><app-icon name="photo" /></span>
+                      <span class="banner-drop__text">
+                        <strong>{{ bannerUploading() ? 'Subiendo…' : 'Subir arte' }}</strong>
+                        <small>Recomendado 1200 × 500 px · JPG o PNG</small>
+                      </span>
+                      <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onBannerSelected($event)" hidden />
+                    </label>
+                  }
+                </div>
+
+                <label>
+                  <span class="field-label">Título</span>
+                  <input
+                    #headingInput
+                    type="text"
+                    maxlength="200"
+                    [ngModel]="d.heading"
+                    (ngModelChange)="patchDraft('heading', $event)"
+                    (focus)="onFieldFocus('heading', headingInput)"
+                    name="heading"
+                    [class.invalid]="!d.heading.trim()"
+                  />
+                </label>
+                <label>
+                  <span class="field-label">Texto principal</span>
+                  <textarea
+                    #bodyInput
+                    rows="5"
+                    [ngModel]="d.body"
+                    (ngModelChange)="patchDraft('body', $event)"
+                    (focus)="onFieldFocus('body', bodyInput)"
+                    name="body"
+                  ></textarea>
+                </label>
+
+                @if (t.block !== 'none') {
+                  <div class="fixed-block">
+                    <app-icon name="puzzle" />
+                    <span>Aquí el sistema agrega <strong>{{ blockLabels[t.block] }}</strong>. Esta parte no se edita.</span>
+                  </div>
                 }
-              </div>
-            </div>
 
-            <label>
-              <span class="field-label">Título</span>
-              <input type="text" maxlength="200" [ngModel]="d.heading" (ngModelChange)="patchDraft('heading', $event)" name="heading" />
-            </label>
-            <label>
-              <span class="field-label">Texto principal</span>
-              <textarea rows="5" [ngModel]="d.body" (ngModelChange)="patchDraft('body', $event)" name="body"></textarea>
-            </label>
+                <label>
+                  <span class="field-label">Texto final <small>(opcional)</small></span>
+                  <textarea
+                    #closingInput
+                    rows="3"
+                    [ngModel]="d.closing"
+                    (ngModelChange)="patchDraft('closing', $event)"
+                    (focus)="onFieldFocus('closing', closingInput)"
+                    name="closing"
+                  ></textarea>
+                </label>
+              </section>
 
-            @if (t.block !== 'none') {
-              <div class="fixed-block">
-                <app-icon name="info-circle" />
-                <span>Aquí el sistema agrega <strong>{{ blockLabels[t.block] }}</strong>.</span>
-              </div>
-            }
-
-            <label>
-              <span class="field-label">Texto final</span>
-              <textarea rows="3" [ngModel]="d.closing" (ngModelChange)="patchDraft('closing', $event)" name="closing"></textarea>
-            </label>
-
-            <div class="two-cols">
-              <label>
-                <span class="field-label">Botón <small>(opcional)</small></span>
-                <input type="text" maxlength="80" [ngModel]="d.buttonLabel" (ngModelChange)="patchDraft('buttonLabel', $event)" name="buttonLabel" placeholder="Ej. Abrir la app" />
-              </label>
-              <label>
-                <span class="field-label">Enlace del botón</span>
-                <input type="url" maxlength="500" [ngModel]="d.buttonUrl" (ngModelChange)="patchDraft('buttonUrl', $event)" name="buttonUrl" placeholder="https://…" />
-              </label>
-            </div>
-
-            <div class="variables">
-              <span class="field-label">Variables <small>(toca para copiar)</small></span>
-              <div class="chips">
-                @for (v of t.variables; track v.name) {
-                  <button type="button" class="chip" [title]="v.description" (click)="copyVariable(v.name)">
-                    {{ token(v.name) }}
-                  </button>
+              <!-- Botón -->
+              <section class="group">
+                <header class="group__head">
+                  <span class="group__num">3</span>
+                  <div>
+                    <h3>Botón <small>(opcional)</small></h3>
+                    <p>Si dejas el texto vacío, el correo sale sin botón.</p>
+                  </div>
+                </header>
+                <div class="two-cols">
+                  <label>
+                    <span class="field-label">Texto del botón</span>
+                    <input
+                      #buttonLabelInput
+                      type="text"
+                      maxlength="80"
+                      [ngModel]="d.buttonLabel"
+                      (ngModelChange)="patchDraft('buttonLabel', $event)"
+                      (focus)="onFieldFocus('buttonLabel', buttonLabelInput)"
+                      name="buttonLabel"
+                      placeholder="Ej. Abrir la app"
+                    />
+                  </label>
+                  <label>
+                    <span class="field-label">Enlace</span>
+                    <input
+                      #buttonUrlInput
+                      type="url"
+                      maxlength="500"
+                      [ngModel]="d.buttonUrl"
+                      (ngModelChange)="patchDraft('buttonUrl', $event)"
+                      (focus)="onFieldFocus('buttonUrl', buttonUrlInput)"
+                      name="buttonUrl"
+                      placeholder="https://…"
+                      [class.invalid]="!!d.buttonLabel.trim() && !d.buttonUrl.trim()"
+                    />
+                  </label>
+                </div>
+                @if (d.buttonLabel.trim() && !d.buttonUrl.trim()) {
+                  <span class="hint warn">Falta el enlace: sin él, el botón no aparece.</span>
                 }
-              </div>
-              <p class="hint">
-                Una línea en blanco separa párrafos. Escribe <code>**así**</code> para poner texto en negrita.
-              </p>
-            </div>
+              </section>
 
-            <div class="editor__actions">
-              <button class="btn-primary" [disabled]="saving() || !isDirty()" (click)="save()">
-                {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
-              </button>
-              <button class="btn-secondary" [disabled]="sendingTest()" (click)="sendTest()">
-                <app-icon name="send" /> {{ sendingTest() ? 'Enviando…' : 'Enviarme una prueba' }}
-              </button>
-              @if (t.isCustomized) {
-                <button class="btn-link danger" (click)="resetTemplate()">Restaurar original</button>
+              @if (t.updatedBy && t.updatedAt) {
+                <p class="hint center">Última edición: {{ t.updatedBy.name }}</p>
               }
             </div>
-            @if (t.updatedBy && t.updatedAt) {
-              <p class="hint">Última edición: {{ t.updatedBy.name }}</p>
+
+            <!-- Variables: fijas abajo del formulario, se insertan donde está el cursor -->
+            @if (t.variables.length) {
+              <footer class="studio__vars">
+                <span class="studio__vars-label">
+                  Insertar en <strong>{{ fieldLabels[activeField()] }}</strong>
+                </span>
+                <div class="chips">
+                  @for (v of t.variables; track v.name) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [title]="v.description"
+                      (mousedown)="$event.preventDefault()"
+                      (click)="insertVariable(v.name)"
+                    >
+                      <app-icon name="plus" /> {{ token(v.name) }}
+                    </button>
+                  }
+                </div>
+              </footer>
             }
           </div>
 
           <!-- Vista previa -->
-          <div class="editor__preview">
+          <div class="studio__preview">
             <div class="preview-toolbar">
               <div class="segmented" role="group" aria-label="Tema">
                 <button type="button" [class.on]="!previewDark()" (click)="setPreviewDark(false)">Claro</button>
@@ -260,31 +411,46 @@
                 <button type="button" [class.on]="!previewMobile()" (click)="previewMobile.set(false)">PC</button>
                 <button type="button" [class.on]="previewMobile()" (click)="previewMobile.set(true)">Celular</button>
               </div>
-              @if (previewLoading()) {
-                <span class="preview-status">Actualizando…</span>
-              }
+              <span class="preview-status" [class.preview-status--busy]="previewLoading()">
+                <span class="preview-status__dot"></span>
+                {{ previewLoading() ? 'Actualizando…' : 'Al día' }}
+              </span>
             </div>
 
             <div class="inbox-line">
-              <span class="inbox-line__from">Tellego</span>
-              <span class="inbox-line__subject">{{ previewSubject() }}</span>
+              <span class="inbox-line__avatar">T</span>
+              <div class="inbox-line__text">
+                <div class="inbox-line__top">
+                  <span class="inbox-line__from">Tellego</span>
+                  <span class="inbox-line__time">ahora</span>
+                </div>
+                <span class="inbox-line__subject">{{ previewSubject() }}</span>
+                @if (d.preheader.trim()) {
+                  <span class="inbox-line__pre">{{ d.preheader }}</span>
+                }
+              </div>
             </div>
 
             @if (previewError(); as err) {
               <p class="preview-error"><app-icon name="x-circle" /> {{ err }}</p>
             }
 
-            <div class="preview-frame" [class.preview-frame--mobile]="previewMobile()" [class.preview-frame--dark]="previewDark()">
+            <div
+              class="preview-frame"
+              [class.preview-frame--mobile]="previewMobile()"
+              [class.preview-frame--dark]="previewDark()"
+              [class.preview-frame--busy]="previewLoading()"
+            >
               @if (previewHtml(); as html) {
                 <iframe [srcdoc]="html" sandbox="" title="Vista previa del correo"></iframe>
               } @else {
-                <app-skeleton variant="card" />
+                <div class="preview-frame__loading"><app-skeleton variant="card" /></div>
               }
             </div>
-            <p class="hint center">Vista previa con datos de ejemplo. Se actualiza mientras escribes, sin guardar.</p>
+            <p class="hint center">Datos de ejemplo. Se actualiza mientras escribes, sin guardar.</p>
           </div>
         </div>
-      </section>
+      </div>
     }
   }
 }
