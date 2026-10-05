@@ -71,6 +71,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/desembolsos/desembolsos').then((m) => m.Desembolsos),
       },
       {
+        path: 'referidos',
+        loadComponent: () => import('./features/referidos/referidos').then((m) => m.Referidos),
+      },
+      {
         path: 'tienda/productos',
         loadComponent: () =>
           import('./features/tienda/productos/tienda-productos').then((m) => m.TiendaProductos),

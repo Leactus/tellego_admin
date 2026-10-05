@@ -1,0 +1,433 @@
+<h1>Referidos de repartidores</h1>
+<p class="muted">
+  Cada repartidor (propio o freelance) tiene un código de asociado. Un repartidor nuevo lo escribe al registrarse o
+  desde su app antes de su primera entrega. Cuando el recomendado completa las entregas que pide el programa, se le
+  debe el premio a quien lo recomendó (y al recomendado, si así lo defines).
+</p>
+
+<!-- Programa -->
+<section class="programs">
+  <div class="section-head">
+    <h2>Programa</h2>
+    <button class="btn-primary" (click)="openProgram(null)"><app-icon name="plus" /> Nuevo programa</button>
+  </div>
+
+  @if (programsLoading()) {
+    <app-skeleton variant="list" [rows]="2" />
+  } @else {
+    @if (activeProgram(); as p) {
+      <div class="active-card">
+        <div class="active-head">
+          <app-icon name="gift" />
+          <div>
+            <span class="active-label">Programa activo</span>
+            <strong class="active-name">{{ p.name }}</strong>
+          </div>
+        </div>
+        <div class="rules">
+          <div class="rule">
+            <span class="rule-value">{{ p.requiredDeliveries }}</span>
+            <span class="rule-label">entregas del recomendado</span>
+          </div>
+          <div class="rule">
+            <span class="rule-value">{{ prizeText(p.referrerRewardAmount, p.rewardDescription) }}</span>
+            <span class="rule-label">premio para quien recomienda</span>
+          </div>
+          <div class="rule">
+            <span class="rule-value">{{ p.referredRewardAmount > 0 ? money(p.referredRewardAmount) : '—' }}</span>
+            <span class="rule-label">bono para el recomendado</span>
+          </div>
+          <div class="rule">
+            <span class="rule-value">{{ p.daysToComplete ? p.daysToComplete + ' días' : 'Sin límite' }}</span>
+            <span class="rule-label">plazo para lograrlo</span>
+          </div>
+          <div class="rule">
+            <span class="rule-value">{{ audienceLabel(p.audience) }}</span>
+            <span class="rule-label">
+              pueden ser recomendados{{ p.maxReferralsPerDriver ? ' · máx. ' + p.maxReferralsPerDriver + ' por código' : '' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="warning-bar">
+        <app-icon name="info-circle" />
+        No hay ningún programa activo: los códigos de referido no se pueden usar hasta que actives uno.
+      </div>
+    }
+
+    @if (programs().length > 0) {
+      <div class="list">
+        @for (p of programs(); track p.id) {
+          <div class="row">
+            <app-icon name="gift" class="row-icon" [class.on]="p.isActive" />
+            <div class="row-info">
+              <span class="row-title">
+                {{ p.name }}
+                @if (p.isActive) {
+                  <span class="pill pill-active">Activo</span>
+                }
+              </span>
+              <span class="muted small">
+                {{ p.requiredDeliveries }} entregas · premio {{ prizeText(p.referrerRewardAmount, p.rewardDescription) }}
+                @if (p.referredRewardAmount > 0) {
+                  · recomendado {{ money(p.referredRewardAmount) }}
+                }
+                · {{ p.daysToComplete ? p.daysToComplete + ' días' : 'sin plazo' }} · {{ audienceLabel(p.audience) }}
+              </span>
+              <span class="muted small">
+                {{ (p.referralCounts?.in_progress ?? 0) }} en curso · {{ (p.referralCounts?.completed ?? 0) }} por pagar ·
+                {{ (p.referralCounts?.paid ?? 0) }} pagados
+              </span>
+            </div>
+            <div class="row-actions">
+              <app-toggle-switch
+                [checked]="p.isActive"
+                [disabled]="togglingId() === p.id"
+                (checkedChange)="toggleActive(p, $event)"
+              />
+              <button class="icon-btn" title="Editar" (click)="openProgram(p)"><app-icon name="edit" /></button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+<!-- Referidos -->
+<section>
+  <div class="section-head">
+    <h2>Recomendados</h2>
+  </div>
+
+  @if (summary(); as s) {
+    <div class="totals">
+      <div class="total-card due">
+        <span class="total-label">Por pagar</span>
+        <span class="total-amount">{{ money(s.completed.amount) }}</span>
+        <span class="muted small">{{ s.completed.count }} {{ s.completed.count === 1 ? 'premio' : 'premios' }} ganados</span>
+      </div>
+      <div class="total-card">
+        <span class="total-label">En curso</span>
+        <span class="total-amount">{{ s.in_progress.count }}</span>
+        <span class="muted small">recomendados juntando entregas</span>
+      </div>
+      <div class="total-card">
+        <span class="total-label">Pagado</span>
+        <span class="total-amount">{{ money(s.paid.amount) }}</span>
+        <span class="muted small">{{ s.paid.count }} premios</span>
+      </div>
+    </div>
+  }
+
+  <div class="status-tabs">
+    @for (t of statusTabs; track t) {
+      <button type="button" class="tab" [class.active]="status() === t" (click)="setStatus(t)">
+        {{ statusLabel(t) }}
+        <span class="tab-count" [class.alert]="t === 'completed' && statusCount(t) > 0">{{ statusCount(t) }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="search-bar">
+    <app-icon name="search" />
+    <input
+      type="search"
+      placeholder="Buscar por nombre, correo o código"
+      [(ngModel)]="search"
+      (ngModelChange)="onSearch()"
+      name="search"
+    />
+  </div>
+
+  @if (listLoading()) {
+    <app-skeleton variant="list" [rows]="4" />
+  } @else if (rows().length === 0) {
+    <app-empty-state
+      [variant]="search || status() !== 'all' ? 'no-results' : 'no-data'"
+      title="No hay recomendados para mostrar."
+      icon="users"
+    />
+  } @else {
+    <div class="list">
+      @for (r of rows(); track r.id) {
+        <div class="row referral-row" (click)="openDetail(r)">
+          <div class="pair">
+            <div class="person">
+              <app-user-avatar [src]="r.referrer?.avatarUrl" [name]="r.referrer?.name" [size]="32" [zoomable]="false" />
+              <div class="person-info">
+                <span class="row-title">{{ r.referrer?.name ?? '—' }}</span>
+                <span class="muted small">recomendó · {{ r.codeUsed }}</span>
+              </div>
+            </div>
+            <app-icon name="chevron-right" class="arrow" />
+            <div class="person">
+              <app-user-avatar [src]="r.referred?.avatarUrl" [name]="r.referred?.name" [size]="32" [zoomable]="false" />
+              <div class="person-info">
+                <span class="row-title">{{ r.referred?.name ?? '—' }}</span>
+                <span class="muted small">
+                  {{ r.referred ? driverTypeLabel(r.referred.type) : '' }} · desde {{ formatShortDate(r.createdAt) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-col">
+            <div class="progress"><div class="progress-fill" [style.width.%]="progressPct(r)"></div></div>
+            <span class="muted small">
+              {{ r.deliveredCount }} / {{ r.requiredDeliveries }} entregas
+              @if (r.status === 'in_progress') {
+                · le {{ r.remaining === 1 ? 'falta' : 'faltan' }} {{ r.remaining }}
+                @if (r.expiresAt) {
+                  · vence {{ formatShortDate(r.expiresAt) }}
+                }
+              }
+            </span>
+          </div>
+
+          <div class="amount-col">
+            <span class="amount">{{ money(r.referrerRewardAmount + r.referredRewardAmount) }}</span>
+            <span class="status-pill" [class]="'status-pill st-' + r.status">{{ statusLabel(r.status) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (total() > 0) {
+    <app-pager
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="total()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</section>
+
+<!-- Crear / editar programa -->
+@if (programModal(); as m) {
+  <div class="modal-backdrop" (click)="closeProgram()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ m.program ? 'Editar programa' : 'Nuevo programa' }}</h2>
+        <button class="modal-close" (click)="closeProgram()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" maxlength="120" [(ngModel)]="form.name" name="name" placeholder="Invita y gana" />
+        </label>
+        <label>
+          Entregas que debe completar el recomendado
+          <input type="number" min="1" max="1000" step="1" [(ngModel)]="form.requiredDeliveries" name="requiredDeliveries" />
+        </label>
+
+        <div class="form-grid">
+          <label>
+            Bono para quien recomienda ($)
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.referrerRewardAmount" name="referrerReward" />
+          </label>
+          <label>
+            Bono para el recomendado ($)
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.referredRewardAmount" name="referredReward" />
+          </label>
+        </div>
+        <label>
+          Premio extra o no monetario (opcional)
+          <input
+            type="text"
+            maxlength="255"
+            [(ngModel)]="form.rewardDescription"
+            name="rewardDescription"
+            placeholder="Ej. Mochila Tellego gratis"
+          />
+        </label>
+
+        <div class="form-grid">
+          <label>
+            Plazo en días (vacío = sin límite)
+            <input type="number" min="1" max="365" step="1" [(ngModel)]="form.daysToComplete" name="daysToComplete" />
+          </label>
+          <label>
+            Máx. recomendados por código (vacío = sin tope)
+            <input type="number" min="1" max="1000" step="1" [(ngModel)]="form.maxReferralsPerDriver" name="maxReferrals" />
+          </label>
+        </div>
+
+        <label>
+          ¿Quién puede ser recomendado?
+          <app-select [(ngModel)]="form.audience" name="audience" [options]="audienceOptions" />
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" />
+          Activo (desactiva el programa activo actual)
+        </label>
+
+        <p class="muted small">
+          Los recomendados que ya están en curso conservan las reglas con las que empezaron; los cambios aplican a los
+          que usen un código desde ahora. Solo cuentan las entregas hechas después de usar el código.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" [disabled]="savingProgram()" (click)="closeProgram()">Cancelar</button>
+        <button class="btn-primary" [disabled]="savingProgram()" (click)="saveProgram()">
+          {{ savingProgram() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Detalle de un referido: pagar / cancelar -->
+@if (detail(); as r) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>Referido #{{ r.id }}</h2>
+          <span class="muted small">
+            {{ r.program?.name ?? 'Programa' }} · código {{ r.codeUsed }} ·
+            {{ r.source === 'signup' ? 'en el registro' : 'desde la app' }} · {{ formatShortDateTime(r.createdAt) }}
+          </span>
+        </div>
+        <button class="modal-close" (click)="closeDetail()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-status">
+          <span class="status-pill" [class]="'status-pill st-' + r.status">{{ statusLabel(r.status) }}</span>
+          <div class="progress-col grow">
+            <div class="progress"><div class="progress-fill" [style.width.%]="progressPct(r)"></div></div>
+            <span class="muted small">
+              {{ r.deliveredCount }} de {{ r.requiredDeliveries }} entregas
+              @if (r.status === 'in_progress') {
+                · le {{ r.remaining === 1 ? 'falta' : 'faltan' }} {{ r.remaining }}
+              }
+              @if (r.expiresAt) {
+                · plazo hasta {{ formatShortDate(r.expiresAt) }}
+              }
+              @if (r.completedAt) {
+                · meta lograda el {{ formatShortDate(r.completedAt) }}
+              }
+            </span>
+          </div>
+        </div>
+
+        @if (detailLoading()) {
+          <app-skeleton variant="list" [rows]="2" />
+        } @else {
+          <div class="beneficiaries">
+            @for (b of beneficiaries(r); track b.label) {
+              <div class="beneficiary">
+                <span class="muted small">{{ b.label }}</span>
+                <div class="person">
+                  <app-user-avatar
+                    [src]="b.driver?.avatarUrl"
+                    [name]="b.driver?.name"
+                    [size]="36"
+                    [phone]="b.driver?.phone"
+                  />
+                  <div class="person-info">
+                    <span class="row-title">{{ b.driver?.name ?? '—' }}</span>
+                    <span class="muted small">
+                      {{ b.driver ? driverTypeLabel(b.driver.type) : '' }}
+                      @if (b.driver?.phone) {
+                        · {{ b.driver?.phone }}
+                      }
+                    </span>
+                  </div>
+                </div>
+                <div class="prize">Premio: <strong>{{ b.prize }}</strong></div>
+                @if (b.amount > 0) {
+                  @if (b.driver?.bankAccount; as bank) {
+                    <div class="bank-box">
+                      <div class="bank-line"><span>Banco</span><strong>{{ bank.bankName }}</strong></div>
+                      <div class="bank-line"><span>Tipo</span><strong>{{ accountTypeLabel(bank.accountType) }}</strong></div>
+                      <div class="bank-line">
+                        <span>Cuenta</span>
+                        <strong>{{ bank.accountNumber }}</strong>
+                        <button class="icon-btn" title="Copiar" (click)="copy(bank.accountNumber)">
+                          <app-icon name="receipt" />
+                        </button>
+                      </div>
+                      <div class="bank-line"><span>Titular</span><strong>{{ bank.accountHolder }}</strong></div>
+                    </div>
+                  } @else {
+                    <span class="pill pill-warning">Sin cuenta bancaria registrada</span>
+                  }
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (r.status === 'paid') {
+          <div class="info-bar ok">
+            <app-icon name="check-circle" />
+            Pagado el {{ formatShortDateTime(r.paidAt) }}
+            @if (r.paymentReference) {
+              · Ref. {{ r.paymentReference }}
+            }
+            @if (r.note) {
+              · {{ r.note }}
+            }
+          </div>
+        }
+        @if (r.status === 'cancelled' && r.note) {
+          <div class="info-bar">
+            <app-icon name="x-circle" />
+            Cancelado: {{ r.note }}
+          </div>
+        }
+        @if (r.status === 'expired') {
+          <div class="info-bar">
+            <app-icon name="clock" />
+            Venció el plazo sin llegar a la meta.
+          </div>
+        }
+
+        @if (r.status === 'completed' && !cancelMode()) {
+          <hr class="modal-divider" />
+          <p class="modal-section-title">Registrar pago del premio · {{ money(r.referrerRewardAmount + r.referredRewardAmount) }}</p>
+          <label>
+            Referencia / nº de transferencia (opcional)
+            <input type="text" maxlength="120" [(ngModel)]="payForm.reference" name="payRef" />
+          </label>
+          <label>
+            Nota (opcional)
+            <input type="text" maxlength="500" [(ngModel)]="payForm.note" name="payNote" />
+          </label>
+        }
+
+        @if (cancelMode()) {
+          <hr class="modal-divider" />
+          <label>
+            Motivo de la cancelación
+            <textarea rows="2" maxlength="500" [(ngModel)]="cancelReason" name="cancelReason"></textarea>
+          </label>
+          <p class="muted small">El referido deja de contar y no se paga premio. No se puede deshacer.</p>
+        }
+      </div>
+      @if (r.status === 'in_progress' || r.status === 'completed') {
+        <div class="modal-actions">
+          @if (cancelMode()) {
+            <button class="btn-secondary" [disabled]="acting()" (click)="cancelMode.set(false)">Volver</button>
+            <button class="btn-primary danger" [disabled]="acting()" (click)="confirmCancel()">
+              {{ acting() ? 'Cancelando…' : 'Cancelar referido' }}
+            </button>
+          } @else {
+            <button class="btn-text" [disabled]="acting()" (click)="cancelMode.set(true)">Cancelar referido</button>
+            @if (r.status === 'completed') {
+              <button class="btn-primary" [disabled]="acting()" (click)="confirmPay()">
+                {{ acting() ? 'Registrando…' : 'Marcar como pagado' }}
+              </button>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
