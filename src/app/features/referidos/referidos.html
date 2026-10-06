@@ -209,7 +209,7 @@
 
 <!-- Crear / editar programa -->
 @if (programModal(); as m) {
-  <div class="modal-backdrop" (click)="closeProgram()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ m.program ? 'Editar programa' : 'Nuevo programa' }}</h2>
@@ -284,7 +284,7 @@
 
 <!-- Detalle de un referido: pagar / cancelar -->
 @if (detail(); as r) {
-  <div class="modal-backdrop" (click)="closeDetail()">
+  <div class="modal-backdrop">
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>

@@ -320,3 +320,53 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* --- Botones (el modal no importa styles/page, donde viven los globales) --- */
+
+.btn-primary,
+.btn-text,
+.btn-force {
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-text {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+}
+
+.btn-text:hover {
+  color: var(--color-text);
+}
+
+/* Saltea la revisión de documentos/capital: se distingue del flujo normal. */
+.btn-force {
+  border: 1px solid color-mix(in srgb, var(--color-warning) 55%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
+  color: var(--color-warning);
+}
+
+.btn-force:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-surface));
+}
+
+.btn-primary:disabled,
+.btn-force:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -111,7 +111,7 @@
 
 <!-- Detalle del pedido (solo lectura) -->
 @if (selectedOrder(); as o) {
-  <div class="modal-backdrop" (click)="closeDetail()">
+  <div class="modal-backdrop">
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Pedido #{{ o.publicId }}</h2>

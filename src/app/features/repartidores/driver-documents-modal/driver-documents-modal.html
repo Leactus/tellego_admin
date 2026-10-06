@@ -1,4 +1,4 @@
-<div class="modal-backdrop" (click)="close.emit()">
+<div class="modal-backdrop">
   <div class="modal modal-wide" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>
@@ -218,7 +218,14 @@
     @if (state(); as data) {
       @if (data.status === 'pending_approval') {
         <div class="modal-actions">
-          <button class="btn-text" (click)="approveDriver(true)">Forzar aprobación</button>
+          <button
+            class="btn-force"
+            [disabled]="isApproving()"
+            (click)="approveDriver(true)"
+            title="Aprueba aunque falten documentos o el capital"
+          >
+            Forzar aprobación
+          </button>
           <button
             class="btn-primary"
             [disabled]="isApproving() || !data.readyForApproval"

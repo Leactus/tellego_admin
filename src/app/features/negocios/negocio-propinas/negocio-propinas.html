@@ -231,7 +231,7 @@
 
 <!-- Pedidos de lo pendiente / de un pago -->
 @if (ordersModal(); as m) {
-  <div class="modal-backdrop" (click)="closeOrders()">
+  <div class="modal-backdrop">
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>

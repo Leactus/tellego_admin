@@ -166,7 +166,7 @@
 
 <!-- Registrar desembolso -->
 @if (payTarget(); as row) {
-  <div class="modal-backdrop" (click)="closePay()">
+  <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Registrar desembolso</h2>
@@ -228,7 +228,7 @@
 
 <!-- Pedidos de un pendiente / de un desembolso -->
 @if (ordersModal(); as m) {
-  <div class="modal-backdrop" (click)="closeOrders()">
+  <div class="modal-backdrop">
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>
