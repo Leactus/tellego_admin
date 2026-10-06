@@ -30,15 +30,18 @@
   }
 </div>
 
-<div class="search-bar">
-  <app-icon name="search" />
-  <input
-    type="search"
-    placeholder="Buscar por nombre o teléfono..."
-    [(ngModel)]="search"
-    (ngModelChange)="onSearchChange()"
-    spellcheck="false"
-  />
+<div class="filters-row">
+  <div class="search-bar">
+    <app-icon name="search" />
+    <input
+      type="search"
+      placeholder="Buscar por nombre, correo o teléfono..."
+      [(ngModel)]="search"
+      (ngModelChange)="onSearchChange()"
+      spellcheck="false"
+    />
+  </div>
+  <app-select class="type-filter" [(ngModel)]="typeFilter" (ngModelChange)="onTypeChange()" [options]="typeOptions" />
 </div>
 
 @if (isLoading() || isRefreshing()) {
@@ -58,8 +61,14 @@
       <div class="row">
         <app-icon name="truck" class="row-icon" />
         <div class="row-info">
-          <span class="row-title">{{ driver.User?.name || 'Repartidor #' + driver.id }}</span>
+          <button type="button" class="row-title row-link" (click)="openDetail(driver)">
+            {{ driver.User?.name || 'Repartidor #' + driver.id }}
+          </button>
           <span class="muted">
+            {{ driver.User?.email || 'Sin correo' }}
+          </span>
+          <span class="muted">
+            <span class="type-tag" [class.own]="driver.type === 'propio'">{{ typeLabel(driver) }}</span>
             {{ driver.User?.phone || 'Sin teléfono' }} · {{ driver.vehicleType || 'Vehículo no especificado' }}
             @if (driver.country?.name) { · {{ driver.country?.name }} }
             @if (driver.ratingCount > 0) {
@@ -82,6 +91,9 @@
           }
         </span>
         <div class="row-actions">
+          <button class="icon-btn" (click)="openDetail(driver)" aria-label="Ver detalle" title="Pedidos y pagos">
+            <app-icon name="eye" />
+          </button>
           <button class="icon-btn" (click)="openRatings(driver)" aria-label="Calificaciones">
             <app-icon name="star" />
           </button>
@@ -143,20 +155,21 @@
         @if (isNameInvalid()) {
           <span class="invalid-hint">Ingresa un nombre</span>
         }
-        @if (!editingDriver) {
-          <label>
-            Email
-            <input
-              type="email"
-              [(ngModel)]="form.email"
-              name="driverEmail"
-              [class.invalid]="isEmailInvalid()"
-              placeholder="repartidor@correo.com"
-            />
-          </label>
-          @if (isEmailInvalid()) {
-            <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
-          }
+        <label>
+          Email
+          <input
+            type="email"
+            [(ngModel)]="form.email"
+            name="driverEmail"
+            [class.invalid]="isEmailInvalid()"
+            placeholder="repartidor@correo.com"
+          />
+        </label>
+        @if (isEmailInvalid()) {
+          <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
+        }
+        @if (editingDriver) {
+          <p class="hint muted">Es su usuario para entrar a la app: si lo cambias, inicia sesión con el correo nuevo.</p>
         }
         <label>
           Teléfono

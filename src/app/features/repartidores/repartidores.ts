@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DriversService, DriverStatusFilter } from '../../core/services/drivers.service';
 import { CompaniesService } from '../../core/services/companies.service';
-import { Driver } from '../../core/models/driver.model';
+import { Driver, DriverType } from '../../core/models/driver.model';
 import { Country } from '../../core/models/company.model';
 import { DEFAULT_PAGE_SIZE } from '../../core/models/pagination.model';
 import { Select, SelectOption } from '../../shared/select/select';
@@ -72,6 +72,29 @@ export class Repartidores implements OnInit, OnDestroy {
     { value: 'pending', label: 'Pendientes' },
     { value: 'suspended', label: 'Suspendidos' },
   ];
+
+  /** Freelance / propio / todos. Se refleja en la URL (?tipo=). */
+  typeFilter: DriverType | null = null;
+  readonly typeOptions: SelectOption<DriverType | null>[] = [
+    { value: null, label: 'Todos los tipos' },
+    { value: 'freelance', label: 'Freelance (les paga Tellego)' },
+    { value: 'propio', label: 'Propios de negocios' },
+  ];
+
+  onTypeChange(): void {
+    this.page.set(1);
+    this.reload();
+  }
+
+  openDetail(driver: Driver): void {
+    this.router.navigate(['/repartidores', driver.id]);
+  }
+
+  typeLabel(driver: Driver): string {
+    if (driver.type === 'freelance') return 'Freelance';
+    const company = driver.store?.company?.name ?? driver.store?.name;
+    return company ? `Propio · ${company}` : 'Propio';
+  }
 
   readonly ratingsDriverId = signal<number | null>(null);
   readonly ratingsDriverName = signal('');
@@ -155,9 +178,9 @@ export class Repartidores implements OnInit, OnDestroy {
     return this.formSubmitted() && !this.form.name.trim();
   }
 
-  /** El correo solo es obligatorio al crear — al editar el campo ni siquiera se muestra. */
+  /** Obligatorio al crear y al editar: es su usuario para entrar a la app. */
   isEmailInvalid(): boolean {
-    if (!this.formSubmitted() || this.editingDriver) return false;
+    if (!this.formSubmitted()) return false;
     const email = this.form.email.trim();
     return !email || !EMAIL_PATTERN.test(email);
   }
@@ -188,6 +211,8 @@ export class Repartidores implements OnInit, OnDestroy {
     this.search = getQueryParam(this.route, 'search') ?? '';
     const tab = getQueryParam(this.route, 'estado') as DriverStatusFilter | null;
     if (tab && this.tabs.some((t) => t.value === tab)) this.tab.set(tab);
+    const tipo = getQueryParam(this.route, 'tipo');
+    this.typeFilter = tipo === 'freelance' || tipo === 'propio' ? tipo : null;
     this.companiesService
       .listCountries()
       .then((c) => this.countries.set(c))
@@ -232,6 +257,7 @@ export class Repartidores implements OnInit, OnDestroy {
       pageSize: this.pageSize() !== DEFAULT_PAGE_SIZE ? this.pageSize() : null,
       search: this.search.trim() || null,
       estado: this.tab() !== 'active' ? this.tab() : null,
+      tipo: this.typeFilter,
     });
     if (!silent) this.isRefreshing.set(true);
     try {
@@ -240,6 +266,7 @@ export class Repartidores implements OnInit, OnDestroy {
         pageSize: this.pageSize(),
         search: this.search.trim(),
         status: this.tab(),
+        type: this.typeFilter,
       });
       this.items.set(data);
       this.totalPages.set(meta.totalPages);
@@ -295,7 +322,7 @@ export class Repartidores implements OnInit, OnDestroy {
     this.formSubmitted.set(true);
     const name = this.form.name.trim();
     const email = this.form.email.trim();
-    if (!name || (!this.editingDriver && (!email || !EMAIL_PATTERN.test(email)))) {
+    if (!name || !email || !EMAIL_PATTERN.test(email)) {
       scrollToFirstInvalid(this.elementRef.nativeElement);
       return;
     }
@@ -305,6 +332,7 @@ export class Repartidores implements OnInit, OnDestroy {
       if (this.editingDriver) {
         await this.drivers.update(this.editingDriver.id, {
           name,
+          email,
           phone: this.form.phone.trim(),
           vehicleType: this.form.vehicleType.trim(),
           plateNumber: this.form.plateNumber.trim(),

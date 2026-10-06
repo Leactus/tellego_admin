@@ -1,0 +1,374 @@
+<a class="back-link" routerLink="/repartidores">&larr; Volver a repartidores</a>
+
+@if (loading()) {
+  <app-skeleton variant="list" [rows]="5" />
+} @else if (detail(); as d) {
+  <!-- Encabezado -->
+  <section class="card header-card">
+    <app-user-avatar [src]="d.driver.User?.avatarUrl" [name]="d.driver.User?.name" [size]="64" />
+    <div class="header-info">
+      <h1>{{ d.driver.User?.name || 'Repartidor #' + d.driver.id }}</h1>
+      <div class="tags">
+        @if (d.driver.type === 'freelance') {
+          <span class="pill pill-freelance">Freelance · le paga Tellego</span>
+        } @else {
+          <span class="pill pill-own">
+            Propio{{ company() ? ' de ' + company()!.name : '' }} · le paga su negocio
+          </span>
+        }
+        @if (d.driver.freelanceUntil) {
+          <span class="pill">Ex-freelance · contratado el {{ formatShortDate(d.driver.freelanceUntil) }}</span>
+        }
+        <span class="pill" [class.pill-ok]="d.driver.status === 'active'" [class.pill-warn]="d.driver.status !== 'active'">
+          {{ statusLabel(d.driver.status) }}
+        </span>
+      </div>
+      <div class="contact">
+        <span><app-icon name="mail" /> {{ d.driver.User?.email || 'Sin correo' }}</span>
+        <span><app-icon name="phone" /> {{ d.driver.User?.phone || 'Sin teléfono' }}</span>
+        @if (d.driver.store) {
+          <span><app-icon name="store" /> {{ d.driver.store.name }}</span>
+        }
+      </div>
+    </div>
+    <button class="btn-secondary" (click)="openEdit()"><app-icon name="edit" /> Editar datos</button>
+  </section>
+
+  <!-- KPIs de pedidos -->
+  <div class="summary-row">
+    <div class="summary-card success">
+      <div class="summary-icon"><app-icon name="check-circle" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Pedidos entregados</span>
+        <span class="summary-amount">{{ d.counts.delivered }}</span>
+        <span class="summary-count">{{ d.counts.deliveredThisMonth }} este mes</span>
+      </div>
+    </div>
+    <div class="summary-card info">
+      <div class="summary-icon"><app-icon name="truck" /></div>
+      <div class="summary-text">
+        <span class="summary-label">En curso</span>
+        <span class="summary-amount">{{ d.counts.inProgress }}</span>
+        <span class="summary-count">{{ d.counts.cancelled }} cancelado(s)</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><app-icon name="trending-up" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Ganado por envíos</span>
+        <span class="summary-amount">{{ money(d.money.total.earnings) }}</span>
+        <span class="summary-count">en {{ d.money.total.orders }} entrega(s)</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><app-icon name="gift" /></div>
+      <div class="summary-text">
+        <span class="summary-label">Propinas recibidas</span>
+        <span class="summary-amount">{{ money(d.money.total.tips) }}</span>
+        <span class="summary-count">
+          @if (d.driver.ratingCount > 0) {
+            {{ d.driver.ratingAvg }}★ ({{ d.driver.ratingCount }} reseñas)
+          } @else {
+            Sin reseñas todavía
+          }
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ¿Quién le paga? -->
+  <h2 class="section-title">¿Quién le paga y cuánto?</h2>
+  <div class="payers">
+    @if (showPlatform()) {
+      <section class="card payer-card platform">
+        <div class="payer-head">
+          <h3>Tellego le paga</h3>
+          <span class="muted small">Pedidos con tarjeta / transferencia entregados como freelance: envío + propina.</span>
+        </div>
+        <div class="payer-grid">
+          <div>
+            <span class="label">Listo para pagar</span>
+            <span class="value warn">{{ money(d.platform.ready.amount) }}</span>
+            <span class="muted small">
+              {{ d.platform.ready.count }} pedido(s) · envíos {{ money(d.platform.ready.earnings) }} + propinas
+              {{ money(d.platform.ready.tips) }}
+            </span>
+          </div>
+          <div>
+            <span class="label">Acumulando esta semana</span>
+            <span class="value">{{ money(d.platform.running.amount) }}</span>
+            <span class="muted small">
+              {{ d.platform.running.count }} pedido(s) · se paga el {{ formatShortDate(d.platform.nextPayoutDate) }}
+            </span>
+          </div>
+          <div>
+            <span class="label">Ya pagado</span>
+            <span class="value ok">{{ money(d.platform.paid.amount) }}</span>
+            <span class="muted small">
+              {{ d.platform.paid.count }} desembolso(s)
+              @if (d.platform.paid.lastPaidAt) {
+                · último {{ formatShortDate(d.platform.paid.lastPaidAt) }}
+              }
+            </span>
+          </div>
+        </div>
+        <a class="link-btn" routerLink="/desembolsos">Ir a Desembolsos &rarr;</a>
+      </section>
+    }
+
+    @if (showCompany()) {
+      <section class="card payer-card company">
+        <div class="payer-head">
+          <h3>Su negocio le paga{{ company() ? ' · ' + company()!.name : '' }}</h3>
+          <span class="muted small">
+            Propinas con tarjeta / transferencia de lo que entregó como propio. El envío lo arregla con su negocio.
+          </span>
+        </div>
+        <div class="payer-grid">
+          <div>
+            <span class="label">Propinas pendientes</span>
+            <span class="value warn">{{ money(d.company.pending.tips) }}</span>
+            <span class="muted small">{{ d.company.pending.count }} pedido(s)</span>
+          </div>
+          <div>
+            <span class="label">Ya pagado por el negocio</span>
+            <span class="value ok">{{ money(d.company.paid.amount) }}</span>
+            <span class="muted small">
+              {{ d.company.paid.count }} pago(s)
+              @if (d.company.paid.lastPaidAt) {
+                · último {{ formatShortDate(d.company.paid.lastPaidAt) }}
+              }
+            </span>
+          </div>
+        </div>
+        @if (company(); as c) {
+          <a class="link-btn" [routerLink]="['/negocios', c.id, 'propinas']">Ver propinas del negocio &rarr;</a>
+        }
+      </section>
+    }
+  </div>
+
+  <!-- Desglose -->
+  <section class="card">
+    <h3 class="card-title">Desglose de lo entregado</h3>
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Tipo de entrega</th>
+          <th class="num">Pedidos</th>
+          <th class="num">Envíos</th>
+          <th class="num">Propinas</th>
+          <th>¿Quién le paga?</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of breakdown(); track r.label) {
+          <tr>
+            <td>
+              {{ r.label }}
+              <span class="muted small block">{{ r.hint }}</span>
+            </td>
+            <td class="num">{{ r.bucket.orders }}</td>
+            <td class="num">{{ money(r.bucket.earnings) }}</td>
+            <td class="num">{{ money(r.bucket.tips) }}</td>
+            <td><span class="payer-tag" [class]="'payer-tag ' + r.tone">{{ r.payer }}</span></td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num">{{ d.money.total.orders }}</td>
+          <td class="num">{{ money(d.money.total.earnings) }}</td>
+          <td class="num">{{ money(d.money.total.tips) }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  <div class="two-col">
+    <!-- Datos -->
+    <section class="card">
+      <h3 class="card-title">Datos del repartidor</h3>
+      <dl class="info">
+        <div><dt>País</dt><dd>{{ d.driver.country?.name || '—' }}</dd></div>
+        <div><dt>DUI</dt><dd>{{ d.driver.duiNumber || '—' }}</dd></div>
+        <div><dt>Licencia</dt><dd>{{ d.driver.licenseNumber || '—' }}</dd></div>
+        <div><dt>Permiso de conducir</dt><dd>{{ d.driver.drivingPermitNumber || '—' }}</dd></div>
+        <div><dt>Vehículo</dt><dd>{{ d.driver.vehicleType || '—' }}</dd></div>
+        <div><dt>Placa</dt><dd>{{ d.driver.plateNumber || '—' }}</dd></div>
+        <div><dt>Registrado</dt><dd>{{ d.driver.User?.createdAt ? formatShortDate(d.driver.User!.createdAt) : '—' }}</dd></div>
+      </dl>
+    </section>
+
+    <!-- Cuentas bancarias -->
+    <section class="card">
+      <h3 class="card-title">Cuentas bancarias</h3>
+      @if (!d.driver.bankAccounts?.length) {
+        <p class="warn-text">
+          <app-icon name="info-circle" /> No ha registrado cuenta bancaria: no se le puede depositar. La agrega en su app
+          (Perfil › Mis pagos y cuenta bancaria).
+        </p>
+      } @else {
+        <ul class="accounts">
+          @for (a of d.driver.bankAccounts; track a.id) {
+            <li>
+              <strong>{{ a.bankName }}</strong> · {{ accountTypeLabel(a.accountType) }} •••• {{ last4(a.accountNumber) }}
+              @if (a.isPrimary) { <span class="pill pill-ok">Principal</span> }
+              <span class="muted small block">Titular: {{ a.accountHolder }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+
+  <!-- Pagos recibidos -->
+  @if (d.recentPayouts.length > 0) {
+    <section class="card">
+      <h3 class="card-title">Últimos pagos recibidos</h3>
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Pagó</th>
+            <th class="num">Envíos</th>
+            <th class="num">Propinas</th>
+            <th class="num">Total</th>
+            <th>Cuenta</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of d.recentPayouts; track p.id) {
+            <tr>
+              <td>{{ formatShortDate(p.paidAt) }}</td>
+              <td>
+                {{ p.payer === 'platform' ? 'Tellego' : (p.company?.name || 'Su negocio') }}
+                <span class="muted small block">{{ p.ordersCount }} pedido(s){{ p.reference ? ' · Ref. ' + p.reference : '' }}</span>
+              </td>
+              <td class="num">{{ money(p.earningsAmount) }}</td>
+              <td class="num">{{ money(p.tipsAmount) }}</td>
+              <td class="num"><strong>{{ money(p.amount) }}</strong></td>
+              <td>{{ p.bankName }} •••• {{ last4(p.accountNumber) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  <!-- Pedidos -->
+  <h2 class="section-title">Pedidos</h2>
+  <div class="tabs">
+    @for (f of filters; track f.value) {
+      <button type="button" class="tab" [class.active]="filter() === f.value" (click)="setFilter(f.value)">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (ordersLoading()) {
+    <app-skeleton variant="list" [rows]="5" [avatar]="false" />
+  } @else if (orders().length === 0) {
+    <app-empty-state variant="no-data" title="No hay pedidos en esta vista." icon="package" />
+  } @else {
+    <section class="card table-card">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Pago</th>
+            <th class="num">Envío</th>
+            <th class="num">Propina</th>
+            <th>¿Quién le paga?</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of orders(); track o.id) {
+            <tr>
+              <td>
+                #{{ o.publicId }}
+                <span class="muted small block">
+                  {{ o.storeName || '—' }}{{ o.companyName && o.companyName !== o.storeName ? ' · ' + o.companyName : '' }}
+                </span>
+              </td>
+              <td>{{ formatShortDateTime(o.deliveredAt || o.createdAt) }}</td>
+              <td>
+                <span class="status" [class]="'status ' + statusColor[o.status]">{{ statusLabels[o.status] }}</span>
+                @if (o.deliveredAs) {
+                  <span class="muted small block">como {{ o.deliveredAs === 'freelance' ? 'freelance' : 'propio' }}</span>
+                }
+              </td>
+              <td>{{ paymentLabel(o.paymentMethod) }}</td>
+              <td class="num">{{ o.driverEarning != null ? money(o.driverEarning) : '—' }}</td>
+              <td class="num">{{ o.tip > 0 ? money(o.tip) : '—' }}</td>
+              <td>
+                {{ payerLabel(o) }}
+                @if (o.payer === 'platform' || (o.payer === 'company' && o.paid !== null)) {
+                  @if (o.paid) {
+                    <span class="paid ok block">Pagado{{ o.paidAt ? ' · ' + formatShortDate(o.paidAt) : '' }}</span>
+                  } @else {
+                    <span class="paid warn block">Pendiente</span>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  @if (total() > 0) {
+    <app-pager
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="total()"
+      [pageSize]="pageSize()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+} @else {
+  <app-empty-state variant="no-data" title="No se encontró el repartidor." icon="truck" />
+}
+
+<!-- Editar datos -->
+@if (editOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Editar datos</h2>
+        <button class="modal-close" (click)="closeEdit()" aria-label="Cerrar"><app-icon name="close" /></button>
+      </div>
+      <div class="modal-body">
+        <label>
+          Nombre
+          <input type="text" [(ngModel)]="editForm.name" name="editName" [class.invalid]="isEditNameInvalid()" />
+        </label>
+        @if (isEditNameInvalid()) { <span class="invalid-hint">Ingresa un nombre</span> }
+        <label>
+          Correo
+          <input type="email" [(ngModel)]="editForm.email" name="editEmail" [class.invalid]="isEditEmailInvalid()" />
+        </label>
+        @if (isEditEmailInvalid()) {
+          <span class="invalid-hint">Ingresa un correo con formato válido, ej. nombre&#64;dominio.com</span>
+        }
+        <p class="hint muted">Es su usuario para entrar a la app: desde que guardes, inicia sesión con el correo nuevo.</p>
+        <label>
+          Teléfono
+          <input type="text" [(ngModel)]="editForm.phone" name="editPhone" placeholder="+503 7000-0000" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-text" (click)="closeEdit()">Cancelar</button>
+        <button class="btn-primary" [disabled]="saving()" (click)="saveEdit()">
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

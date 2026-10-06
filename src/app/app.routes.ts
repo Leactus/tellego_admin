@@ -63,6 +63,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/repartidores/repartidores').then((m) => m.Repartidores),
       },
       {
+        path: 'repartidores/:id',
+        loadComponent: () =>
+          import('./features/repartidores/repartidor-detalle/repartidor-detalle').then((m) => m.RepartidorDetalle),
+      },
+      {
         path: 'centro-de-pagos',
         loadComponent: () => import('./features/pagos/pagos').then((m) => m.Pagos),
       },

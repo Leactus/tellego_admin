@@ -3,7 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../config/environment';
-import { Driver, DriverRating, DriverRatingsSummary, DriverStatus } from '../models/driver.model';
+import {
+  Driver,
+  DriverDetail,
+  DriverOrderFilter,
+  DriverOrderRow,
+  DriverRating,
+  DriverRatingsSummary,
+  DriverStatus,
+  DriverType,
+} from '../models/driver.model';
 import { Paginated, PageParams, toHttpParams } from '../models/pagination.model';
 
 /** Pestañas de repartidores.html — 'all' no manda filtro (útil si algún día se agrega esa pestaña). */
@@ -28,6 +37,8 @@ interface CreateDriverInput {
 
 interface UpdateDriverInput {
   name?: string;
+  /** Es su usuario para entrar a la app. */
+  email?: string;
   phone?: string;
   vehicleType?: string;
   plateNumber?: string;
@@ -42,7 +53,7 @@ export class DriversService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/admin/drivers`;
 
-  list(params?: PageParams & { status?: DriverStatusFilter }): Promise<DriversPage> {
+  list(params?: PageParams & { status?: DriverStatusFilter; type?: DriverType | null }): Promise<DriversPage> {
     const statusMap: Record<Exclude<DriverStatusFilter, 'all'>, string> = {
       active: 'active',
       pending: 'pending_approval',
@@ -51,8 +62,22 @@ export class DriversService {
     const httpParams = {
       ...toHttpParams(params),
       ...(params?.status && params.status !== 'all' ? { status: statusMap[params.status] } : {}),
+      ...(params?.type ? { type: params.type } : {}),
     };
     return firstValueFrom(this.http.get<DriversPage>(this.base, { params: httpParams }));
+  }
+
+  /** Ficha: datos, pedidos y desglose de dinero por quién le paga. */
+  getDetail(id: number): Promise<DriverDetail> {
+    return firstValueFrom(this.http.get<{ data: DriverDetail }>(`${this.base}/${id}/summary`)).then((r) => r.data);
+  }
+
+  listOrders(id: number, filter: DriverOrderFilter, params?: PageParams): Promise<Paginated<DriverOrderRow>> {
+    return firstValueFrom(
+      this.http.get<Paginated<DriverOrderRow>>(`${this.base}/${id}/orders`, {
+        params: { ...toHttpParams(params), filter },
+      }),
+    );
   }
 
   create(input: CreateDriverInput): Promise<{ data: Driver; tempPassword: string }> {

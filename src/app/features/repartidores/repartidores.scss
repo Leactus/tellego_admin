@@ -94,3 +94,48 @@
   background: color-mix(in srgb, var(--color-warning) 16%, white);
   color: var(--color-warning);
 }
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filters-row .search-bar {
+  flex: 1 1 280px;
+}
+
+.type-filter {
+  min-width: 230px;
+}
+
+.row-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.type-tag {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-info) 14%, white);
+  color: var(--color-info);
+}
+
+.type-tag.own {
+  background: color-mix(in srgb, var(--color-primary) 12%, white);
+  color: var(--color-primary);
+}
