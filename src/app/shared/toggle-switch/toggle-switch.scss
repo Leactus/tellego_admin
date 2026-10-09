@@ -15,13 +15,13 @@
   border: none;
   outline: none;
   border-radius: 999px;
-  background: var(--color-border);
+  background: var(--color-border-strong);
   cursor: pointer;
   font: inherit;
   line-height: 0;
   vertical-align: middle;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s ease;
 }
 
 .toggle-switch:disabled {
@@ -30,8 +30,8 @@
 }
 
 .toggle-switch:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
+  outline: 2px solid color-mix(in srgb, var(--color-focus) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .toggle-switch.on {
@@ -46,8 +46,8 @@
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s ease;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.2), 0 1px 3px rgb(16 24 40 / 0.1);
+  transition: transform 0.28s var(--ease-spring);
 }
 
 .toggle-switch.on .knob {

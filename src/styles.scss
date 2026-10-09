@@ -1,31 +1,37 @@
 /*
- * Design tokens del panel de Admin Global — equivalente Angular de
- * lib/theme/app_colors.dart en las 3 apps Flutter. Para cambiar la
- * paleta de TODO el panel basta con cambiar --color-primary aquí; el
- * resto de tonos (hover, contenedor, texto sobre color) se derivan de
- * esa misma variable con color-mix().
+ * Design tokens del panel — estilo SaaS minimalista (Linear / shadcn): neutros zinc, Verde oscuro
+ * como color de marca, sombras suaves en capas y radios moderados. Para cambiar la paleta de TODO el
+ * panel basta con cambiar --color-primary aquí; el resto de tonos (hover, contenedor, foco) se
+ * derivan de las variables de abajo.
  */
 :root {
-  /* Paleta de marca. Verde oscuro es el primario; Verde torogoz se reserva para
-   * el foco de los inputs y Anaranjado para el hover. */
+  /* Paleta de marca Tellego — mismos valores que lib/theme/app_colors.dart en las apps Flutter. */
   --brand-verde-oscuro: #0c3533;
   --brand-verde-torogoz: #049788;
   --brand-celeste-cielo: #26bece;
   --brand-anaranjado: #ed7224;
   --brand-amarillo-mango: #fdbd36;
 
+  /* Color de marca del panel: Verde oscuro. El hover (y el ítem activo del menú) usa Anaranjado
+   * claro; el foco usa Verde torogoz. Los tintes claros (contenedor, suave, medio) derivan de
+   * Verde torogoz sobre blanco. */
   --color-primary: var(--brand-verde-oscuro);
-  --color-primary-hover: var(--brand-anaranjado);
+  --color-primary-hover: #fd8d36;
+  /* Fondo de hover de botones rellenos (texto blanco): naranja más profundo de la misma familia,
+   * porque sobre #fd8d36 el texto blanco no se lee (2.3:1); aquí queda en 3.6:1. */
+  --color-button-hover: #e0600c;
   /* Borde/anillo de foco de inputs, selects y textareas. */
   --color-focus: var(--brand-verde-torogoz);
-  --color-primary-container: color-mix(in srgb, var(--color-primary) 12%, white);
+  --color-primary-container: #e6f5f3;
+  --color-primary-soft: #cdeae7;
+  --color-primary-muted: #a7dbd5;
   --color-on-primary: #ffffff;
 
   --color-secondary: var(--brand-celeste-cielo);
-  --color-success: #2e7d32;
-  --color-warning: var(--brand-anaranjado);
-  --color-error: #b3261e;
-  --color-info: #0288d1;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #0284c7;
 
   /* Acentos decorativos de marca — mismos valores que lib/theme/app_colors.dart en las apps Flutter.
    * --color-accent-cream es Amarillo mango 40% + blanco. */
@@ -33,16 +39,33 @@
   --color-accent-cream: #fee5af;
   --color-accent-orange: var(--brand-anaranjado);
 
+  /* Neutros (zinc). --color-background es el lienzo detrás de las tarjetas. */
+  --color-background: #f8f8fa;
   --color-surface: #ffffff;
-  --color-surface-variant: #f5f5f5;
-  --color-text: #1b1b1b;
-  --color-text-muted: #6b7280;
-  --color-border: #e0e0e0;
+  --color-surface-variant: #f4f4f5;
+  --color-text: #18181b;
+  --color-text-strong: #09090b;
+  --color-text-muted: #71717a;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
 
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-card-lg: 0 8px 24px rgba(12, 53, 51, 0.1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Sombras suaves en capas; la de tarjeta lleva un filo de 1px casi invisible (look shadcn). */
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-card: 0 0 0 1px rgb(24 24 27 / 0.04), 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.05);
+  --shadow-card-lg: 0 0 0 1px rgb(24 24 27 / 0.04), 0 4px 8px -4px rgb(16 24 40 / 0.06),
+    0 12px 32px -12px rgb(16 24 40 / 0.14);
+  --shadow-popover: 0 0 0 1px rgb(24 24 27 / 0.04), 0 4px 10px -4px rgb(16 24 40 / 0.08),
+    0 16px 36px -12px rgb(16 24 40 / 0.18);
+  --shadow-modal: 0 8px 20px -8px rgb(16 24 40 / 0.12), 0 24px 64px -16px rgb(16 24 40 / 0.28);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--color-focus) 20%, transparent);
+
+  /* Curvas de animación: salida suave tipo "ease-out-expo" y un rebote muy leve. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
 * {
@@ -56,9 +79,37 @@ body {
 }
 
 body {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--color-surface-variant);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-background);
   color: var(--color-text);
+}
+
+/* Los controles de formulario no heredan la fuente por defecto del navegador. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* Barras de scroll finas y discretas en todo el panel. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
 }
 
 /* Anillo de foco consistente para todos los campos de formulario de la app. */
@@ -67,6 +118,13 @@ textarea:focus-visible,
 select:focus-visible {
   outline: none;
   border-color: var(--color-focus);
+}
+
+/* Foco por teclado visible y suave en botones y enlaces. */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-focus) 55%, transparent);
+  outline-offset: 2px;
 }
 
 /*
@@ -81,7 +139,7 @@ select:focus-visible {
 .pac-container {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-popover);
   margin-top: 6px;
   padding: 6px 0 !important;
   padding-bottom: 6px !important;
@@ -136,4 +194,84 @@ select:focus-visible {
 .user-name-link:focus-visible {
   text-decoration: underline;
   outline: none;
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Movimiento global — solo agrega transiciones/animaciones que los componentes no declaran (las
+ * reglas de cada componente siguen ganando por especificidad). Todo usa opacity/transform y
+ * fill-mode "backwards": al terminar no queda ningún transform aplicado, así no se altera el
+ * posicionamiento de dropdowns/modales con position: fixed dentro de la página.
+ * ---------------------------------------------------------------------------------------------- */
+
+a,
+button {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Hover de botones: el fondo cambia a --color-primary-hover (definido en cada componente) y aquí
+ * se suma una leve elevación. Va antes de :active para que la pulsación gane mientras se presiona. */
+.btn-primary:hover:not(:disabled),
+.btn-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--color-button-hover) 60%, transparent);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-cancel:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -4px rgb(16 24 40 / 0.12);
+}
+
+/* Pulsación sutil en los botones principales. */
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-confirm:active:not(:disabled),
+.btn-cancel:active:not(:disabled),
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Entrada de cada página del panel al navegar (el componente ruteado es hermano del outlet). */
+main.content > router-outlet + * {
+  animation: ui-fade-in 0.35s var(--ease-out) backwards;
+}
+
+/* Filas de listas: aparecen con un leve desplazamiento escalonado. Las filas ya renderizadas no se
+ * re-animan al refrescar datos (el @for reutiliza el DOM), solo las nuevas. */
+.list > .row {
+  animation: ui-rise-in 0.4s var(--ease-out) backwards;
+}
+
+.list > .row:nth-child(2) { animation-delay: 30ms; }
+.list > .row:nth-child(3) { animation-delay: 60ms; }
+.list > .row:nth-child(4) { animation-delay: 90ms; }
+.list > .row:nth-child(5) { animation-delay: 120ms; }
+.list > .row:nth-child(6) { animation-delay: 150ms; }
+.list > .row:nth-child(n + 7) { animation-delay: 180ms; }
+
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ui-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main.content > router-outlet + *,
+  .list > .row {
+    animation: none;
+  }
+
+  a,
+  button {
+    transition: none;
+  }
 }

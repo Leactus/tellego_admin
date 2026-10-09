@@ -7,19 +7,20 @@
   width: 260px;
   flex-shrink: 0;
   height: 100vh;
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-background) 70%, var(--color-surface));
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  padding: 20px 12px;
+  padding: 18px 12px;
   overflow: hidden;
+  transition: width 0.25s var(--ease-out), padding 0.25s var(--ease-out);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px 24px;
+  padding: 6px 12px 20px;
 }
 
 .brand-mark {
@@ -46,7 +47,7 @@
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -75,30 +76,50 @@
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border-radius: var(--radius-md);
-  color: var(--color-text-muted);
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--color-primary);
   text-decoration: none;
-  font-size: 0.92rem;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Hover: tinte suave de Anaranjado claro (--color-primary-hover). */
 .menu-item:hover {
-  background: var(--color-surface-variant);
-  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-primary-hover) 10%, transparent);
+  color: var(--color-primary);
 }
 
+.menu-item:hover .menu-icon {
+  color: var(--color-primary-hover);
+}
+
+/* Activo: la misma familia del hover, más marcada (fondo más intenso + filo naranja). */
 .menu-item.active {
-  background: var(--color-primary-container);
+  background: color-mix(in srgb, var(--color-primary-hover) 18%, var(--color-surface));
   color: var(--color-primary);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary-hover) 40%, transparent);
+}
+
+.menu-item.active .menu-icon {
+  color: var(--color-primary-hover);
+}
+
+/* Grupo desplegado: solo resalta el texto (no es la página activa). */
+.menu-group-toggle.active:not(:hover) {
+  background: none;
+  box-shadow: none;
+  color: var(--color-primary);
 }
 
 .menu-icon {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   width: 22px;
   flex-shrink: 0;
+  transition: color 0.15s ease;
 }
 
 .menu-label {
@@ -117,7 +138,7 @@
 .menu-chevron {
   font-size: 1rem;
   flex-shrink: 0;
-  transition: transform 0.15s ease;
+  transition: transform 0.25s var(--ease-out);
 }
 
 .menu-chevron.rotated {
@@ -127,13 +148,23 @@
 .menu-submenu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-left: 22px;
+  gap: 6px;
+  margin: 0 0 0 21px;
+  padding-left: 8px;
+  border-left: 1px solid var(--color-border);
+  animation: submenu-in 0.25s var(--ease-out);
 }
 
 .menu-subitem {
-  padding: 9px 12px;
-  font-size: 0.88rem;
+  padding: 7px 10px;
+  font-size: 0.85rem;
+}
+
+@keyframes submenu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 .sidebar-footer {
@@ -158,20 +189,32 @@
 }
 
 .sidebar-user:hover {
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  color: var(--color-error);
+}
+
+.sidebar-user .user-avatar {
   background: var(--color-surface-variant);
+  color: var(--color-text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-user:hover .user-avatar {
+  background: var(--color-error);
+  color: #fff;
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--color-primary-container);
+  background: linear-gradient(135deg, var(--color-primary-soft), var(--color-primary-muted));
   color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   flex-shrink: 0;
 }
 
@@ -180,9 +223,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-text);
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .main {
@@ -198,14 +241,16 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 28px;
+  min-height: 60px;
+  padding: 12px 28px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 
 .topbar-title {
   flex: 1;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--color-text);
 }
 
@@ -225,19 +270,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-xs);
+  font-size: 1.1rem;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .menu-toggle:hover {
   background: var(--color-surface-variant);
+  color: var(--color-text);
 }
 
 .backdrop {
@@ -293,8 +340,8 @@
     inset: 0 auto 0 0;
     z-index: 50;
     transform: translateX(-100%);
-    box-shadow: var(--shadow-card);
-    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-modal);
+    transition: transform 0.3s var(--ease-out);
   }
 
   .sidebar.open {
@@ -305,8 +352,10 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgb(9 9 11 / 0.35);
+    backdrop-filter: blur(2px);
     z-index: 40;
+    animation: backdrop-in 0.2s ease;
   }
 
   .topbar {
@@ -315,5 +364,11 @@
 
   .content {
     padding: 16px;
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
   }
 }

@@ -15,7 +15,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-xs);
 }
 
 .pager-label {
@@ -43,7 +43,7 @@
 
 .pager-btn:hover:not(:disabled) {
   background: var(--color-primary-container);
-  color: var(--color-primary-hover);
+  color: var(--color-primary);
 }
 
 .pager-btn:disabled {
@@ -65,15 +65,16 @@
 
 .pager-size-select {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-variant);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   color: var(--color-text);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 4px 8px;
   cursor: pointer;
+  transition: border-color 0.15s ease;
 }
 
 .pager-size-select:hover {
-  border-color: var(--color-primary-hover);
+  border-color: var(--color-border-strong);
 }

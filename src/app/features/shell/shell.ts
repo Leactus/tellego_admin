@@ -43,9 +43,16 @@ export class Shell {
     { key: 'estadisticas', path: 'estadisticas', label: 'Estadísticas', icon: 'dashboard' },
     { key: 'negocios', path: 'negocios', label: 'Negocios', icon: 'store' },
     { key: 'repartidores', path: 'repartidores', label: 'Repartidores', icon: 'truck' },
+    {
+      key: 'pagos-repartidores',
+      label: 'Recompensas y pagos',
+      icon: 'users',
+      children: [
+        { path: 'desembolsos', label: 'Desembolsos', icon: 'send' },
+        { path: 'referidos', label: 'Referidos', icon: 'gift' },
+      ],
+    },
     { key: 'centro-de-pagos', path: 'centro-de-pagos', label: 'Centro de pagos', icon: 'credit-card' },
-    { key: 'desembolsos', path: 'desembolsos', label: 'Desembolsos', icon: 'send' },
-    { key: 'referidos', path: 'referidos', label: 'Referidos', icon: 'gift' },
     {
       key: 'tienda',
       label: 'Tienda',

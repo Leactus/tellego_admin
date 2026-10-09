@@ -3,14 +3,14 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
+  background: rgb(9 9 11 / 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 24px;
-  animation: modal-fade 0.15s ease;
+  animation: modal-fade 0.2s ease;
 }
 
 /*
@@ -26,11 +26,11 @@
   max-height: 90vh;
   overflow: hidden;
   background: var(--color-surface);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
-  animation: modal-pop 0.18s ease;
+  box-shadow: var(--shadow-modal);
+  animation: modal-pop 0.32s var(--ease-out);
 }
 
 .modal-wide {
@@ -40,7 +40,7 @@
 .modal-body {
   overflow-y: auto;
   min-height: 0;
-  padding: 20px 30px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -51,7 +51,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 28px 30px 14px;
+  padding: 20px 24px 16px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
@@ -59,7 +59,8 @@
 .modal-header h2 {
   margin: 0;
   color: var(--color-text);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .modal-close {
@@ -70,25 +71,25 @@
   height: 32px;
   flex-shrink: 0;
   border: none;
-  border-radius: 999px;
-  background: var(--color-surface-variant);
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--color-text-muted);
   font-size: 1rem;
   cursor: pointer;
 }
 
 .modal-close:hover {
-  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface-variant));
-  color: var(--color-error);
+  background: var(--color-surface-variant);
+  color: var(--color-text);
 }
 
 .modal label {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
 }
 
 .modal input[type='text'],
@@ -99,14 +100,26 @@
 .modal input[type='date'],
 .modal input[type='time'],
 .modal textarea {
-  padding: 11px 13px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--color-text);
   background: var(--color-surface);
   font-family: inherit;
+  box-shadow: var(--shadow-xs);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal :is(input:not([type='search']), textarea):hover:not(:disabled, .invalid) {
+  border-color: var(--color-border-strong);
+}
+
+/* focus-visible: en checkboxes/radios el anillo solo aparece al navegar con teclado. */
+.modal :is(input:not([type='search']), textarea):focus-visible:not(.invalid) {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--ring);
 }
 
 .modal input:disabled {
@@ -127,7 +140,7 @@
 .modal input.invalid,
 .modal textarea.invalid {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 1px var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 16%, transparent);
 }
 
 .modal-divider {
@@ -162,8 +175,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 16px 30px 26px;
+  padding: 14px 24px;
   border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-variant) 45%, var(--color-surface));
   flex-shrink: 0;
 }
 
@@ -179,7 +193,7 @@
 @keyframes modal-pop {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(6px);
+    transform: scale(0.97) translateY(10px);
   }
   to {
     opacity: 1;

@@ -18,20 +18,21 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-family: inherit;
   cursor: pointer;
   text-align: left;
+  box-shadow: var(--shadow-xs);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .select-trigger:hover {
-  border-color: color-mix(in srgb, var(--color-primary-hover) 45%, var(--color-border));
+  border-color: var(--color-border-strong);
 }
 
 .app-select.open .select-trigger {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-container);
+  border-color: var(--color-focus);
+  box-shadow: var(--ring);
 }
 
 .select-trigger:disabled {
@@ -41,7 +42,7 @@
 
 .select-trigger.invalid {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 1px var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 16%, transparent);
 }
 
 .select-value {
@@ -58,7 +59,7 @@
   flex-shrink: 0;
   font-size: 1rem;
   color: var(--color-text-muted);
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition: transform 0.25s var(--ease-out), color 0.15s ease;
 }
 
 .app-select.open .select-chevron {
@@ -74,9 +75,10 @@
   z-index: 200;
   background: var(--color-surface);
   border-radius: var(--radius-md);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-popover);
   border: 1px solid var(--color-border);
-  animation: select-pop 0.12s ease;
+  animation: select-pop 0.2s var(--ease-out);
+  transform-origin: top center;
   overflow: hidden;
 }
 
@@ -129,8 +131,8 @@
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 0.92rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   color: var(--color-text);
   cursor: pointer;
 }
@@ -159,8 +161,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--color-border);
-  border-radius: 5px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 4px;
   color: transparent;
   font-size: 0.75rem;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
@@ -175,10 +177,10 @@
 @keyframes select-pop {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-4px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }

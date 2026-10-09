@@ -95,19 +95,33 @@
   color: var(--color-warning);
 }
 
+/* Buscador y filtro de tipo en la misma fila; el margen vertical vive en la fila (no en el
+ * buscador) para que ambos queden alineados y separados de la lista. */
 .filters-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  margin: 20px 0;
 }
 
 .filters-row .search-bar {
-  flex: 1 1 280px;
+  flex: 0 1 360px;
+  margin: 0;
 }
 
+/* app-select ocupa width:100% por defecto (:host) — aquí se fija para que no salte de línea. */
 .type-filter {
-  min-width: 230px;
+  flex: 0 0 220px;
+  width: 220px;
+}
+
+@media (max-width: 640px) {
+  .filters-row .search-bar,
+  .type-filter {
+    flex: 1 1 100%;
+    width: 100%;
+  }
 }
 
 .row-link {
